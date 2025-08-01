@@ -26,6 +26,12 @@ import {
   type InsertTimeEntry,
   type MaterialEntry,
   type InsertMaterialEntry,
+  clockEntries,
+  timesheetLineItems,
+  type ClockEntry,
+  type InsertClockEntry,
+  type TimesheetLineItem,
+  type InsertTimesheetLineItem,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -85,18 +91,17 @@ export interface IStorage {
   createMaterialEntry(materialEntry: InsertMaterialEntry): Promise<MaterialEntry>;
   updateMaterialEntry(id: string, materialEntry: Partial<InsertMaterialEntry>): Promise<MaterialEntry>;
   deleteMaterialEntry(id: string): Promise<void>;
-  getTimeEntries(userId: string): Promise<TimeEntry[]>;
-  getTimeEntry(id: string): Promise<TimeEntry | undefined>;
-  createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
-  updateTimeEntry(id: string, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry>;
-  deleteTimeEntry(id: string): Promise<void>;
-  
-  // Material entry operations
-  getMaterialEntries(userId: string): Promise<MaterialEntry[]>;
-  getMaterialEntry(id: string): Promise<MaterialEntry | undefined>;
-  createMaterialEntry(materialEntry: InsertMaterialEntry): Promise<MaterialEntry>;
-  updateMaterialEntry(id: string, materialEntry: Partial<InsertMaterialEntry>): Promise<MaterialEntry>;
-  deleteMaterialEntry(id: string): Promise<void>;
+
+  // Clock entry operations
+  getClockEntries(userId: string): Promise<ClockEntry[]>;
+  getActiveClockEntry(userId: string): Promise<ClockEntry | undefined>;
+  createClockEntry(clockEntry: InsertClockEntry): Promise<ClockEntry>;
+  updateClockEntry(id: string, clockEntry: Partial<InsertClockEntry>): Promise<ClockEntry>;
+
+  // Timesheet line item operations
+  getTimesheetLineItems(timeEntryId: string): Promise<TimesheetLineItem[]>;
+  createTimesheetLineItem(lineItem: InsertTimesheetLineItem): Promise<TimesheetLineItem>;
+  deleteTimesheetLineItems(timeEntryId: string): Promise<void>;
   
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
@@ -381,6 +386,44 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMaterialEntry(id: string): Promise<void> {
     await db.delete(materialEntries).where(eq(materialEntries.id, id));
+  }
+
+  // Clock entry operations
+  async getClockEntries(userId: string): Promise<ClockEntry[]> {
+    return await db.select().from(clockEntries).where(eq(clockEntries.userId, userId)).orderBy(desc(clockEntries.createdAt));
+  }
+
+  async getActiveClockEntry(userId: string): Promise<ClockEntry | undefined> {
+    const [entry] = await db.select().from(clockEntries).where(and(eq(clockEntries.userId, userId), eq(clockEntries.status, 'active')));
+    return entry;
+  }
+
+  async createClockEntry(clockEntry: InsertClockEntry): Promise<ClockEntry> {
+    const [newEntry] = await db.insert(clockEntries).values(clockEntry).returning();
+    return newEntry;
+  }
+
+  async updateClockEntry(id: string, clockEntry: Partial<InsertClockEntry>): Promise<ClockEntry> {
+    const [updatedEntry] = await db
+      .update(clockEntries)
+      .set({ ...clockEntry, updatedAt: new Date() })
+      .where(eq(clockEntries.id, id))
+      .returning();
+    return updatedEntry;
+  }
+
+  // Timesheet line item operations
+  async getTimesheetLineItems(timeEntryId: string): Promise<TimesheetLineItem[]> {
+    return await db.select().from(timesheetLineItems).where(eq(timesheetLineItems.timeEntryId, timeEntryId));
+  }
+
+  async createTimesheetLineItem(lineItem: InsertTimesheetLineItem): Promise<TimesheetLineItem> {
+    const [newItem] = await db.insert(timesheetLineItems).values(lineItem).returning();
+    return newItem;
+  }
+
+  async deleteTimesheetLineItems(timeEntryId: string): Promise<void> {
+    await db.delete(timesheetLineItems).where(eq(timesheetLineItems.timeEntryId, timeEntryId));
   }
 }
 

@@ -94,7 +94,7 @@ export default function Dashboard() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">
           <div className="container mx-auto px-6 py-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-900">Employee Dashboard</h1>
+              <h1 className="text-3xl font-bold text-slate-900">Marin Pest Control Dashboard</h1>
               <p className="text-slate-600 mt-1">Track your time, materials, and submissions</p>
             </div>
             
@@ -154,13 +154,13 @@ export default function Dashboard() {
               <Link href="/time">
                 <Button className="w-full flex items-center space-x-2 bg-slate-800 hover:bg-slate-700">
                   <Clock className="w-4 h-4" />
-                  <span>Track Time</span>
+                  <span>Clock In/Out</span>
                 </Button>
               </Link>
               <Link href="/materials">
                 <Button className="w-full flex items-center space-x-2" variant="outline">
                   <Package className="w-4 h-4" />
-                  <span>Add Materials</span>
+                  <span>Enter Hours and Materials</span>
                 </Button>
               </Link>
               <Link href="/customers">

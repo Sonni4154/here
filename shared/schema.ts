@@ -129,7 +129,7 @@ export const timeEntries = pgTable("time_entries", {
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
   hours: decimal("hours", { precision: 5, scale: 2 }),
-  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+  billable: boolean("billable").default(true),
   status: varchar("status").notNull().default('draft'), // 'draft', 'submitted', 'approved', 'invoiced'
   submittedAt: timestamp("submitted_at"),
   approvedAt: timestamp("approved_at"),
@@ -158,6 +158,33 @@ export const materialEntries = pgTable("material_entries", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Clock entries for simple clock in/out functionality
+export const clockEntries = pgTable("clock_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  clockInTime: timestamp("clock_in_time").notNull(),
+  clockOutTime: timestamp("clock_out_time"),
+  totalHours: decimal("total_hours", { precision: 5, scale: 2 }),
+  status: varchar("status", { length: 20 }).default("active"), // active, completed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Invoice line items for timesheet entries (products and services)
+export const timesheetLineItems = pgTable("timesheet_line_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  timeEntryId: varchar("time_entry_id").notNull().references(() => timeEntries.id),
+  type: varchar("type", { length: 20 }).notNull(), // product, service
+  quickbooksItemId: varchar("quickbooks_item_id"),
+  itemName: varchar("item_name").notNull(),
+  description: text("description"),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }),
+  hours: decimal("hours", { precision: 5, scale: 2 }),
+  rate: decimal("rate", { precision: 10, scale: 2 }),
+  amount: decimal("amount", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Activity log table
 export const activityLogs = pgTable("activity_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -177,6 +204,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   activityLogs: many(activityLogs),
   timeEntries: many(timeEntries),
   materialEntries: many(materialEntries),
+  clockEntries: many(clockEntries),
 }));
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
@@ -244,6 +272,20 @@ export const materialEntriesRelations = relations(materialEntries, ({ one }) => 
   customer: one(customers, {
     fields: [materialEntries.customerId],
     references: [customers.id],
+  }),
+}));
+
+export const clockEntriesRelations = relations(clockEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [clockEntries.userId],
+    references: [users.id],
+  }),
+}));
+
+export const timesheetLineItemsRelations = relations(timesheetLineItems, ({ one }) => ({
+  timeEntry: one(timeEntries, {
+    fields: [timesheetLineItems.timeEntryId],
+    references: [timeEntries.id],
   }),
 }));
 
@@ -320,3 +362,9 @@ export type InsertMaterialEntry = z.infer<typeof insertMaterialEntrySchema>;
 export type MaterialEntry = typeof materialEntries.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+
+// New types for clock entries and timesheet line items
+export type InsertClockEntry = typeof clockEntries.$inferInsert;
+export type ClockEntry = typeof clockEntries.$inferSelect;
+export type InsertTimesheetLineItem = typeof timesheetLineItems.$inferInsert;
+export type TimesheetLineItem = typeof timesheetLineItems.$inferSelect;

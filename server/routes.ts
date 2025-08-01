@@ -486,6 +486,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clock entry routes
+  app.get('/api/clock-entries', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entries = await storage.getClockEntries(userId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching clock entries:", error);
+      res.status(500).json({ message: "Failed to fetch clock entries" });
+    }
+  });
+
+  app.post('/api/clock-entries', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Check if user already has an active clock entry
+      const activeEntry = await storage.getActiveClockEntry(userId);
+      if (activeEntry) {
+        return res.status(400).json({ message: "You are already clocked in" });
+      }
+
+      const entryData = { ...req.body, userId };
+      const entry = await storage.createClockEntry(entryData);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'clock_in',
+        description: 'Clocked in',
+        metadata: { clockEntryId: entry.id },
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating clock entry:", error);
+      res.status(500).json({ message: "Failed to clock in" });
+    }
+  });
+
+  app.post('/api/clock-entries/:id/clock-out', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { id } = req.params;
+      
+      const clockOutTime = new Date();
+      const entry = await storage.updateClockEntry(id, {
+        clockOutTime,
+        status: 'completed',
+      });
+
+      // Calculate total hours
+      const totalHours = (clockOutTime.getTime() - new Date(entry.clockInTime).getTime()) / (1000 * 60 * 60);
+      await storage.updateClockEntry(id, {
+        totalHours: totalHours.toFixed(2),
+      });
+
+      await storage.createActivityLog({
+        userId,
+        type: 'clock_out',
+        description: `Clocked out after ${totalHours.toFixed(2)} hours`,
+        metadata: { clockEntryId: entry.id },
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error clocking out:", error);
+      res.status(500).json({ message: "Failed to clock out" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

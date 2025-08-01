@@ -16,7 +16,7 @@ export default function Landing() {
             <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
               <Clock className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-semibold text-slate-900">TimeSync Pro</span>
+            <span className="text-xl font-semibold text-slate-900">Marin Pest Control Dashboard</span>
           </div>
           <Button onClick={handleLogin} className="bg-slate-800 hover:bg-slate-700">
             Employee Login
@@ -28,8 +28,8 @@ export default function Landing() {
       <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl font-bold text-slate-900 mb-6">
-            Employee Time & Material
-            <span className="text-slate-600"> Tracking System</span>
+            Marin Pest Control
+            <span className="text-slate-600"> Employee Dashboard</span>
           </h1>
           <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
             Clock your hours, submit time sheets, manage materials, and track project expenses. 
