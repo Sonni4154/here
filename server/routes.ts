@@ -486,6 +486,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync and integration routes
+  app.post('/api/sync/quickbooks', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { createQuickBooksService } = await import('./services/quickbooks');
+      
+      const qbService = await createQuickBooksService(userId);
+      if (!qbService) {
+        return res.status(400).json({ message: "QuickBooks integration not configured" });
+      }
+
+      // Update integration sync status
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      if (integration) {
+        await storage.upsertIntegration({
+          ...integration,
+          syncStatus: 'syncing',
+          lastSyncAt: new Date(),
+        });
+      }
+
+      // Perform sync operations
+      await Promise.all([
+        qbService.syncCustomers(),
+        qbService.syncProducts(),
+      ]);
+
+      // Update sync status to success
+      if (integration) {
+        await storage.upsertIntegration({
+          ...integration,
+          syncStatus: 'success',
+          lastSyncAt: new Date(),
+        });
+      }
+
+      await storage.createActivityLog({
+        userId,
+        type: 'quickbooks_sync',
+        description: 'QuickBooks synchronization completed successfully',
+        metadata: { syncAt: new Date().toISOString() },
+      });
+
+      res.json({ message: "QuickBooks sync completed successfully" });
+    } catch (error) {
+      console.error("Error syncing with QuickBooks:", error);
+      
+      // Update sync status to error
+      const userId = req.user!.claims.sub;
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      if (integration) {
+        await storage.upsertIntegration({
+          ...integration,
+          syncStatus: 'error',
+        });
+      }
+
+      res.status(500).json({ message: "Failed to sync with QuickBooks" });
+    }
+  });
+
+  app.post('/api/webhooks/quickbooks', async (req: Request, res: Response) => {
+    try {
+      const payload = req.body;
+      console.log('QuickBooks webhook received:', payload);
+
+      // Verify webhook signature if needed
+      const signature = req.headers['intuit-signature'];
+      // TODO: Implement signature verification
+
+      // Process each notification
+      for (const event of payload.eventNotifications || []) {
+        const realmId = event.realmId;
+        
+        // Find user by QuickBooks realm ID
+        const integration = await storage.getIntegrationByRealmId(realmId);
+        if (!integration) {
+          console.warn(`No integration found for realm ID: ${realmId}`);
+          continue;
+        }
+
+        const { createQuickBooksService } = await import('./services/quickbooks');
+        const qbService = await createQuickBooksService(integration.userId);
+        
+        if (qbService) {
+          await qbService.handleWebhook(payload);
+        }
+      }
+
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error("Error handling QuickBooks webhook:", error);
+      res.status(500).json({ message: "Failed to process webhook" });
+    }
+  });
+
+  app.get('/api/sync/status', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const [integrations, syncLogs] = await Promise.all([
+        storage.getIntegrations(userId),
+        storage.getSyncLogs(userId, 10)
+      ]);
+
+      const syncStatus = {
+        integrations: integrations.map(integration => ({
+          provider: integration.provider,
+          isActive: integration.isActive,
+          lastSyncAt: integration.lastSyncAt,
+          syncStatus: integration.syncStatus || 'pending',
+        })),
+        recentLogs: syncLogs,
+      };
+
+      res.json(syncStatus);
+    } catch (error) {
+      console.error("Error fetching sync status:", error);
+      res.status(500).json({ message: "Failed to fetch sync status" });
+    }
+  });
+
   // Clock entry routes
   app.get('/api/clock-entries', isAuthenticated, async (req: Request, res: Response) => {
     try {

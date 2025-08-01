@@ -119,6 +119,34 @@ export const integrations = pgTable("integrations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Sync logs table for tracking all sync operations
+export const syncLogs = pgTable("sync_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  integrationId: varchar("integration_id").notNull().references(() => integrations.id),
+  operation: varchar("operation").notNull(), // 'push', 'pull', 'webhook'
+  entityType: varchar("entity_type").notNull(), // 'customer', 'product', 'invoice', 'timesheet'
+  entityId: varchar("entity_id"),
+  externalId: varchar("external_id"), // ID from external system
+  status: varchar("status").notNull(), // 'success', 'error', 'pending'
+  direction: varchar("direction").notNull(), // 'inbound', 'outbound', 'bidirectional'
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"), // Additional sync data
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Mapping table for external system IDs
+export const externalMappings = pgTable("external_mappings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(),
+  entityType: varchar("entity_type").notNull(),
+  internalId: varchar("internal_id").notNull(),
+  externalId: varchar("external_id").notNull(),
+  lastSyncAt: timestamp("last_sync_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Time entries table
 export const timeEntries = pgTable("time_entries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -368,3 +396,9 @@ export type InsertClockEntry = typeof clockEntries.$inferInsert;
 export type ClockEntry = typeof clockEntries.$inferSelect;
 export type InsertTimesheetLineItem = typeof timesheetLineItems.$inferInsert;
 export type TimesheetLineItem = typeof timesheetLineItems.$inferSelect;
+
+// Sync and mapping types
+export type InsertSyncLog = typeof syncLogs.$inferInsert;
+export type SyncLog = typeof syncLogs.$inferSelect;
+export type InsertExternalMapping = typeof externalMappings.$inferInsert;
+export type ExternalMapping = typeof externalMappings.$inferSelect;

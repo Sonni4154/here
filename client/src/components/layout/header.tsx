@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Plus, CheckCircle, Clock } from "lucide-react";
 import CreateInvoiceModal from "@/components/modals/create-invoice-modal";
+import SyncButton from "@/components/sync/sync-button";
 
 interface HeaderProps {
   title: string;
@@ -43,6 +44,8 @@ export default function Header({ title, description }: HeaderProps) {
                 QuickBooks Disconnected
               </Badge>
             )}
+
+            <SyncButton />
             
             {/* Notifications */}
             <Button variant="ghost" size="sm" className="relative">

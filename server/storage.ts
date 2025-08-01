@@ -28,10 +28,16 @@ import {
   type InsertMaterialEntry,
   clockEntries,
   timesheetLineItems,
+  syncLogs,
+  externalMappings,
   type ClockEntry,
   type InsertClockEntry,
   type TimesheetLineItem,
   type InsertTimesheetLineItem,
+  type SyncLog,
+  type InsertSyncLog,
+  type ExternalMapping,
+  type InsertExternalMapping,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -72,7 +78,8 @@ export interface IStorage {
   // Integration operations
   getIntegrations(userId: string): Promise<Integration[]>;
   getIntegration(userId: string, provider: string): Promise<Integration | undefined>;
-  upsertIntegration(integration: InsertIntegration): Promise<Integration>;
+  getIntegrationByRealmId(realmId: string): Promise<Integration | undefined>;
+  upsertIntegration(integration: any): Promise<Integration>;
   
   // Activity log operations
   getActivityLogs(userId: string, limit?: number): Promise<ActivityLog[]>;
@@ -102,6 +109,15 @@ export interface IStorage {
   getTimesheetLineItems(timeEntryId: string): Promise<TimesheetLineItem[]>;
   createTimesheetLineItem(lineItem: InsertTimesheetLineItem): Promise<TimesheetLineItem>;
   deleteTimesheetLineItems(timeEntryId: string): Promise<void>;
+
+  // Sync log operations
+  getSyncLogs(userId: string, limit?: number): Promise<SyncLog[]>;
+  createSyncLog(log: InsertSyncLog): Promise<SyncLog>;
+
+  // External mapping operations
+  getExternalMapping(userId: string, provider: string, entityType: string, externalId: string): Promise<ExternalMapping | undefined>;
+  createExternalMapping(mapping: InsertExternalMapping): Promise<ExternalMapping>;
+  updateExternalMapping(id: string, mapping: Partial<InsertExternalMapping>): Promise<ExternalMapping>;
   
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
@@ -251,6 +267,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(integrations)
       .where(and(eq(integrations.userId, userId), eq(integrations.provider, provider)));
+    return integration;
+  }
+
+  async getIntegrationByRealmId(realmId: string): Promise<Integration | undefined> {
+    const [integration] = await db.select().from(integrations).where(eq(integrations.realmId, realmId));
     return integration;
   }
 
@@ -424,6 +445,43 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTimesheetLineItems(timeEntryId: string): Promise<void> {
     await db.delete(timesheetLineItems).where(eq(timesheetLineItems.timeEntryId, timeEntryId));
+  }
+
+  // Sync log operations
+  async getSyncLogs(userId: string, limit: number = 50): Promise<SyncLog[]> {
+    return await db.select().from(syncLogs).where(eq(syncLogs.userId, userId)).orderBy(desc(syncLogs.createdAt)).limit(limit);
+  }
+
+  async createSyncLog(log: InsertSyncLog): Promise<SyncLog> {
+    const [newLog] = await db.insert(syncLogs).values(log).returning();
+    return newLog;
+  }
+
+  // External mapping operations
+  async getExternalMapping(userId: string, provider: string, entityType: string, externalId: string): Promise<ExternalMapping | undefined> {
+    const [mapping] = await db.select().from(externalMappings).where(
+      and(
+        eq(externalMappings.userId, userId),
+        eq(externalMappings.provider, provider),
+        eq(externalMappings.entityType, entityType),
+        eq(externalMappings.externalId, externalId)
+      )
+    );
+    return mapping;
+  }
+
+  async createExternalMapping(mapping: InsertExternalMapping): Promise<ExternalMapping> {
+    const [newMapping] = await db.insert(externalMappings).values(mapping).returning();
+    return newMapping;
+  }
+
+  async updateExternalMapping(id: string, mapping: Partial<InsertExternalMapping>): Promise<ExternalMapping> {
+    const [updatedMapping] = await db
+      .update(externalMappings)
+      .set(mapping)
+      .where(eq(externalMappings.id, id))
+      .returning();
+    return updatedMapping;
   }
 }
 
