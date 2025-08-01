@@ -67,6 +67,14 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **UI**: Tabbed interface in time tracking with drag-and-drop file upload
 - **Storage**: Database schema ready for cloud storage integration (AWS S3, Google Cloud Storage)
 
+### Business Data Integration
+- **Customer Database**: Real customer data from Marin Pest Control CSV files (466 customers)
+- **Service Catalog**: Complete product/service catalog with 89 items including pest control services, materials, and hardware
+- **Technician Management**: Employee records for Spencer Reiser, Boden Haines, Jorge Sisneros, and Tristan Ford
+- **Business Form**: Comprehensive job entry form matching actual business operations and JotForm structure
+- **Service Types**: Full range of services including Insect Spraying, Wasp/Hornet Removal, Exclusion, Remediation, Trapping
+- **Materials Tracking**: Hardware cloth, silicone, traps, disinfectants, and specialized pest control materials
+
 ## External Dependencies
 
 ### Database & Storage

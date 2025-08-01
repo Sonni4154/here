@@ -18,8 +18,9 @@ import marinLogo from "@assets/IMG_2539_1754017041686.jpg";
 
 const navigationItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/time", label: "Time Tracking", icon: Clock },
-  { path: "/schedule", label: "Schedule", icon: Calendar },
+  { path: "/time-tracking", label: "Time Tracking", icon: Clock },
+  { path: "/marin-job-form", label: "Job Entry Form", icon: FileText },
+  { path: "/employee-schedule", label: "Schedule", icon: Calendar },
   { path: "/materials", label: "Materials", icon: Package },
   { path: "/invoices", label: "Invoices", icon: FileText },
   { path: "/customers", label: "Customers", icon: Users },
