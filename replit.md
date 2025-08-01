@@ -9,6 +9,8 @@ The system is built as a modern web application with a React frontend, Express.j
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Design preference: Dark mode/purple theme with Marin Pest Control logo integration.
+Authentication: Dual system supporting both password login and Google OAuth for employees.
 
 ## System Architecture
 
@@ -48,8 +50,15 @@ Preferred communication style: Simple, everyday language.
 ### Third-Party Integrations
 - **QuickBooks**: OAuth 2.0 integration for accounting data synchronization
 - **JotForm**: API integration for form submission processing
+- **Google Calendar**: OAuth 2.0 for employee scheduling and task management with two-way sync
 - **Google Workspace**: OAuth 2.0 for Sheets, Docs, and Drive access
 - **Sync Strategy**: Manual and automated data synchronization with conflict resolution
+
+### Design & Branding
+- **Theme**: Dark purple color scheme (HSL 263, 50%, 6% background)
+- **Logo**: Marin Pest Control logo integrated throughout the application
+- **Brand Colors**: Red (#FF6B6B), Blue (#74C0FC), Cream (#F5F3E0) from company logo
+- **Layout**: Sidebar navigation with company branding and comprehensive menu structure
 
 ## External Dependencies
 

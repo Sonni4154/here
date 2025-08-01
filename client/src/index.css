@@ -3,48 +3,54 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(20, 14.3%, 4.1%);
-  --muted: hsl(60, 4.8%, 95.9%);
-  --muted-foreground: hsl(25, 5.3%, 44.7%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(20, 5.9%, 90%);
-  --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(60, 4.8%, 95.9%);
-  --secondary-foreground: hsl(24, 9.8%, 10%);
-  --accent: hsl(60, 4.8%, 95.9%);
-  --accent-foreground: hsl(24, 9.8%, 10%);
-  --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
+  /* Dark purple theme with Marin Pest Control brand colors */
+  --background: hsl(263, 50%, 6%);
+  --foreground: hsl(263, 20%, 98%);
+  --muted: hsl(263, 30%, 15%);
+  --muted-foreground: hsl(263, 10%, 65%);
+  --popover: hsl(263, 50%, 8%);
+  --popover-foreground: hsl(263, 20%, 98%);
+  --card: hsl(263, 50%, 8%);
+  --card-foreground: hsl(263, 20%, 98%);
+  --border: hsl(263, 30%, 18%);
+  --input: hsl(263, 30%, 18%);
+  --primary: hsl(263, 100%, 70%);
+  --primary-foreground: hsl(263, 50%, 6%);
+  --secondary: hsl(263, 30%, 15%);
+  --secondary-foreground: hsl(263, 20%, 98%);
+  --accent: hsl(263, 30%, 18%);
+  --accent-foreground: hsl(263, 20%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(263, 20%, 98%);
+  --ring: hsl(263, 100%, 70%);
   --radius: 0.5rem;
+  
+  /* Brand colors from Marin Pest Control logo */
+  --brand-red: hsl(355, 85%, 65%);
+  --brand-blue: hsl(200, 80%, 70%);
+  --brand-cream: hsl(45, 40%, 90%);
 }
 
 .dark {
-  --background: hsl(240, 10%, 3.9%);
-  --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
-  --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
-  --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
-  --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
+  --background: hsl(263, 50%, 6%);
+  --foreground: hsl(263, 20%, 98%);
+  --muted: hsl(263, 30%, 15%);
+  --muted-foreground: hsl(263, 10%, 65%);
+  --popover: hsl(263, 50%, 8%);
+  --popover-foreground: hsl(263, 20%, 98%);
+  --card: hsl(263, 50%, 8%);
+  --card-foreground: hsl(263, 20%, 98%);
+  --border: hsl(263, 30%, 18%);
+  --input: hsl(263, 30%, 18%);
+  --primary: hsl(263, 100%, 70%);
+  --primary-foreground: hsl(263, 50%, 6%);
+  --secondary: hsl(263, 30%, 15%);
+  --secondary-foreground: hsl(263, 20%, 98%);
+  --accent: hsl(263, 30%, 18%);
+  --accent-foreground: hsl(263, 20%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(263, 20%, 98%);
+  --ring: hsl(263, 100%, 70%);
   --radius: 0.5rem;
 }
 
@@ -55,5 +61,30 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  html {
+    @apply dark;
+  }
+}
+
+@layer components {
+  .brand-red {
+    color: var(--brand-red);
+  }
+  .bg-brand-red {
+    background-color: var(--brand-red);
+  }
+  .brand-blue {
+    color: var(--brand-blue);
+  }
+  .bg-brand-blue {
+    background-color: var(--brand-blue);
+  }
+  .brand-cream {
+    color: var(--brand-cream);
+  }
+  .bg-brand-cream {
+    background-color: var(--brand-cream);
   }
 }
