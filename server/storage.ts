@@ -1,0 +1,299 @@
+import {
+  users,
+  customers,
+  products,
+  invoices,
+  invoiceItems,
+  integrations,
+  activityLogs,
+  type User,
+  type UpsertUser,
+  type Customer,
+  type InsertCustomer,
+  type Product,
+  type InsertProduct,
+  type Invoice,
+  type InsertInvoice,
+  type InvoiceItem,
+  type InsertInvoiceItem,
+  type Integration,
+  type InsertIntegration,
+  type ActivityLog,
+  type InsertActivityLog,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
+
+// Interface for storage operations
+export interface IStorage {
+  // User operations (mandatory for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Customer operations
+  getCustomers(userId: string): Promise<Customer[]>;
+  getCustomer(id: string): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer>;
+  deleteCustomer(id: string): Promise<void>;
+  
+  // Product operations
+  getProducts(userId: string): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product>;
+  deleteProduct(id: string): Promise<void>;
+  
+  // Invoice operations
+  getInvoices(userId: string): Promise<Invoice[]>;
+  getInvoice(id: string): Promise<Invoice | undefined>;
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice>;
+  deleteInvoice(id: string): Promise<void>;
+  
+  // Invoice item operations
+  getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]>;
+  createInvoiceItem(item: InsertInvoiceItem): Promise<InvoiceItem>;
+  updateInvoiceItem(id: string, item: Partial<InsertInvoiceItem>): Promise<InvoiceItem>;
+  deleteInvoiceItem(id: string): Promise<void>;
+  
+  // Integration operations
+  getIntegrations(userId: string): Promise<Integration[]>;
+  getIntegration(userId: string, provider: string): Promise<Integration | undefined>;
+  upsertIntegration(integration: InsertIntegration): Promise<Integration>;
+  
+  // Activity log operations
+  getActivityLogs(userId: string, limit?: number): Promise<ActivityLog[]>;
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  
+  // Dashboard stats
+  getDashboardStats(userId: string): Promise<{
+    totalRevenue: number;
+    activeCustomers: number;
+    pendingInvoices: number;
+    lastSyncAt: Date | null;
+  }>;
+}
+
+export class DatabaseStorage implements IStorage {
+  // User operations (mandatory for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Customer operations
+  async getCustomers(userId: string): Promise<Customer[]> {
+    return await db.select().from(customers).where(eq(customers.userId, userId)).orderBy(desc(customers.createdAt));
+  }
+
+  async getCustomer(id: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer;
+  }
+
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const [newCustomer] = await db.insert(customers).values(customer).returning();
+    return newCustomer;
+  }
+
+  async updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer> {
+    const [updatedCustomer] = await db
+      .update(customers)
+      .set({ ...customer, updatedAt: new Date() })
+      .where(eq(customers.id, id))
+      .returning();
+    return updatedCustomer;
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    await db.delete(customers).where(eq(customers.id, id));
+  }
+
+  // Product operations
+  async getProducts(userId: string): Promise<Product[]> {
+    return await db.select().from(products).where(eq(products.userId, userId)).orderBy(desc(products.createdAt));
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    const [newProduct] = await db.insert(products).values(product).returning();
+    return newProduct;
+  }
+
+  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> {
+    const [updatedProduct] = await db
+      .update(products)
+      .set({ ...product, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning();
+    return updatedProduct;
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    await db.delete(products).where(eq(products.id, id));
+  }
+
+  // Invoice operations
+  async getInvoices(userId: string): Promise<Invoice[]> {
+    return await db.select().from(invoices).where(eq(invoices.userId, userId)).orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoice(id: string): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice;
+  }
+
+  async createInvoice(invoice: InsertInvoice): Promise<Invoice> {
+    const [newInvoice] = await db.insert(invoices).values(invoice).returning();
+    return newInvoice;
+  }
+
+  async updateInvoice(id: string, invoice: Partial<InsertInvoice>): Promise<Invoice> {
+    const [updatedInvoice] = await db
+      .update(invoices)
+      .set({ ...invoice, updatedAt: new Date() })
+      .where(eq(invoices.id, id))
+      .returning();
+    return updatedInvoice;
+  }
+
+  async deleteInvoice(id: string): Promise<void> {
+    await db.delete(invoices).where(eq(invoices.id, id));
+  }
+
+  // Invoice item operations
+  async getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]> {
+    return await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+  }
+
+  async createInvoiceItem(item: InsertInvoiceItem): Promise<InvoiceItem> {
+    const [newItem] = await db.insert(invoiceItems).values(item).returning();
+    return newItem;
+  }
+
+  async updateInvoiceItem(id: string, item: Partial<InsertInvoiceItem>): Promise<InvoiceItem> {
+    const [updatedItem] = await db
+      .update(invoiceItems)
+      .set(item)
+      .where(eq(invoiceItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  async deleteInvoiceItem(id: string): Promise<void> {
+    await db.delete(invoiceItems).where(eq(invoiceItems.id, id));
+  }
+
+  // Integration operations
+  async getIntegrations(userId: string): Promise<Integration[]> {
+    return await db.select().from(integrations).where(eq(integrations.userId, userId));
+  }
+
+  async getIntegration(userId: string, provider: string): Promise<Integration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(integrations)
+      .where(and(eq(integrations.userId, userId), eq(integrations.provider, provider)));
+    return integration;
+  }
+
+  async upsertIntegration(integration: InsertIntegration): Promise<Integration> {
+    const [newIntegration] = await db
+      .insert(integrations)
+      .values(integration)
+      .onConflictDoUpdate({
+        target: [integrations.userId, integrations.provider],
+        set: {
+          ...integration,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return newIntegration;
+  }
+
+  // Activity log operations
+  async getActivityLogs(userId: string, limit = 50): Promise<ActivityLog[]> {
+    return await db
+      .select()
+      .from(activityLogs)
+      .where(eq(activityLogs.userId, userId))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(limit);
+  }
+
+  async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
+    const [newLog] = await db.insert(activityLogs).values(log).returning();
+    return newLog;
+  }
+
+  // Dashboard stats
+  async getDashboardStats(userId: string): Promise<{
+    totalRevenue: number;
+    activeCustomers: number;
+    pendingInvoices: number;
+    lastSyncAt: Date | null;
+  }> {
+    // Get total revenue from paid invoices
+    const revenueResult = await db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.userId, userId), eq(invoices.status, 'paid')));
+    
+    const totalRevenue = revenueResult.reduce((sum, invoice) => 
+      sum + parseFloat(invoice.totalAmount || '0'), 0);
+
+    // Get active customers count
+    const customersResult = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.userId, userId));
+    const activeCustomers = customersResult.length;
+
+    // Get pending invoices count
+    const pendingResult = await db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.userId, userId), eq(invoices.status, 'sent')));
+    const pendingInvoices = pendingResult.length;
+
+    // Get last sync time
+    const integrationsResult = await db
+      .select()
+      .from(integrations)
+      .where(eq(integrations.userId, userId))
+      .orderBy(desc(integrations.lastSyncAt))
+      .limit(1);
+    
+    const lastSyncAt = integrationsResult[0]?.lastSyncAt || null;
+
+    return {
+      totalRevenue,
+      activeCustomers,
+      pendingInvoices,
+      lastSyncAt,
+    };
+  }
+}
+
+export const storage = new DatabaseStorage();
