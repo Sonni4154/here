@@ -42,10 +42,10 @@ export default function Dashboard() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading dashboard...</p>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -88,8 +88,8 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Marin Pest Control Dashboard</h1>
-        <p className="text-slate-600 mt-1">Track your time, materials, and submissions</p>
+        <h1 className="text-3xl font-bold text-foreground">Marin Pest Control Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Track your time, materials, and submissions</p>
       </div>
             
             {/* Quick Stats */}
@@ -98,10 +98,10 @@ export default function Dashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Hours This Week</p>
-                      <p className="text-2xl font-bold text-slate-900">{totalHoursThisWeek.toFixed(1)}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Hours This Week</p>
+                      <p className="text-2xl font-bold text-foreground">{totalHoursThisWeek.toFixed(1)}</p>
                     </div>
-                    <Clock className="w-8 h-8 text-slate-600" />
+                    <Clock className="w-8 h-8 text-muted-foreground" />
                   </div>
                 </CardContent>
               </Card>
@@ -110,8 +110,8 @@ export default function Dashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Draft Time Entries</p>
-                      <p className="text-2xl font-bold text-slate-900">{draftTimeEntries}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Draft Time Entries</p>
+                      <p className="text-2xl font-bold text-foreground">{draftTimeEntries}</p>
                     </div>
                     <AlertCircle className="w-8 h-8 text-yellow-500" />
                   </div>
@@ -122,8 +122,8 @@ export default function Dashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Submitted Entries</p>
-                      <p className="text-2xl font-bold text-slate-900">{submittedTimeEntries + submittedMaterialEntries}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Submitted Entries</p>
+                      <p className="text-2xl font-bold text-foreground">{submittedTimeEntries + submittedMaterialEntries}</p>
                     </div>
                     <CheckCircle className="w-8 h-8 text-green-500" />
                   </div>
@@ -134,10 +134,10 @@ export default function Dashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">Material Entries</p>
-                      <p className="text-2xl font-bold text-slate-900">{materialEntries.length}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Material Entries</p>
+                      <p className="text-2xl font-bold text-foreground">{materialEntries.length}</p>
                     </div>
-                    <Package className="w-8 h-8 text-slate-600" />
+                    <Package className="w-8 h-8 text-muted-foreground" />
                   </div>
                 </CardContent>
               </Card>
@@ -145,8 +145,8 @@ export default function Dashboard() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <Link href="/time">
-                <Button className="w-full flex items-center space-x-2 bg-slate-800 hover:bg-slate-700">
+              <Link href="/time-tracking">
+                <Button className="w-full flex items-center space-x-2 bg-primary hover:bg-primary/90">
                   <Clock className="w-4 h-4" />
                   <span>Clock In/Out</span>
                 </Button>
@@ -184,14 +184,14 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     {recentTimeEntries.length === 0 ? (
-                      <p className="text-slate-500 text-center py-4">No time entries yet</p>
+                      <p className="text-muted-foreground text-center py-4">No time entries yet</p>
                     ) : (
                       <div className="space-y-3">
                         {recentTimeEntries.map((entry: any) => (
-                          <div key={entry.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">{entry.description}</p>
-                              <p className="text-xs text-slate-500">{entry.hours}h • {entry.projectName}</p>
+                              <p className="text-sm font-medium text-foreground truncate">{entry.description}</p>
+                              <p className="text-xs text-muted-foreground">{entry.hours}h • {entry.projectName}</p>
                             </div>
                             {getStatusBadge(entry.status)}
                           </div>
@@ -214,14 +214,14 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     {recentMaterialEntries.length === 0 ? (
-                      <p className="text-slate-500 text-center py-4">No material entries yet</p>
+                      <p className="text-muted-foreground text-center py-4">No material entries yet</p>
                     ) : (
                       <div className="space-y-3">
                         {recentMaterialEntries.map((entry: any) => (
-                          <div key={entry.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                          <div key={entry.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">{entry.itemName}</p>
-                              <p className="text-xs text-slate-500">${entry.totalCost} • {entry.quantity} units</p>
+                              <p className="text-sm font-medium text-foreground truncate">{entry.itemName}</p>
+                              <p className="text-xs text-muted-foreground">${entry.totalCost} • {entry.quantity} units</p>
                             </div>
                             {getStatusBadge(entry.status)}
                           </div>
@@ -241,15 +241,15 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     {recentActivity.length === 0 ? (
-                      <p className="text-slate-500 text-center py-4">No recent activity</p>
+                      <p className="text-muted-foreground text-center py-4">No recent activity</p>
                     ) : (
                       <div className="space-y-3">
                         {recentActivity.map((log: any) => (
                           <div key={log.id} className="flex items-start space-x-3">
-                            <div className="w-2 h-2 bg-slate-400 rounded-full mt-2 flex-shrink-0"></div>
+                            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-slate-900">{log.description}</p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-sm text-foreground">{log.description}</p>
+                              <p className="text-xs text-muted-foreground">
                                 {new Date(log.createdAt).toLocaleDateString()}
                               </p>
                             </div>

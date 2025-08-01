@@ -212,12 +212,12 @@ export default function TimeTracking() {
   return (
     <div className="container mx-auto px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Time Tracking</h1>
-        <p className="text-slate-600 mt-1">Clock in/out and manage your time entries</p>
+        <h1 className="text-3xl font-bold text-foreground">Time Tracking</h1>
+        <p className="text-muted-foreground mt-1">Clock in/out and manage your time entries</p>
       </div>
 
-            {/* Clock In/Out Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* Clock In/Out Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -226,10 +226,10 @@ export default function TimeTracking() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-mono font-bold text-slate-900 mb-4">
+                  <div className="text-2xl font-mono font-bold text-foreground mb-4">
                     {currentTime.toLocaleTimeString()}
                   </div>
-                  <div className="text-sm text-slate-600">
+                  <div className="text-sm text-muted-foreground">
                     {currentTime.toLocaleDateString('en-US', { 
                       weekday: 'long', 
                       year: 'numeric', 
@@ -253,7 +253,7 @@ export default function TimeTracking() {
                       <div className="text-xl font-mono font-bold text-green-600 mb-2">
                         {getElapsedTime()}
                       </div>
-                      <p className="text-sm text-slate-600 mb-4">
+                      <p className="text-sm text-muted-foreground mb-4">
                         Clocked in at {new Date(activeClock.clockInTime).toLocaleTimeString()}
                       </p>
                       <Button 
@@ -267,10 +267,10 @@ export default function TimeTracking() {
                     </div>
                   ) : (
                     <div>
-                      <div className="text-xl font-mono font-bold text-slate-400 mb-2">
+                      <div className="text-xl font-mono font-bold text-muted-foreground mb-2">
                         00:00:00
                       </div>
-                      <p className="text-sm text-slate-600 mb-4">
+                      <p className="text-sm text-muted-foreground mb-4">
                         Not currently clocked in
                       </p>
                       <Button 
@@ -285,13 +285,13 @@ export default function TimeTracking() {
                   )}
                 </CardContent>
               </Card>
-            </div>
+      </div>
 
-            {/* Action Buttons */}
-            <div className="flex space-x-4 mb-8">
+      {/* Action Buttons */}
+      <div className="flex space-x-4 mb-8">
               <Dialog open={isTimeEntryDialogOpen} onOpenChange={setIsTimeEntryDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-slate-800 hover:bg-slate-700">
+                  <Button className="bg-primary hover:bg-primary/90">
                     <Plus className="w-4 h-4 mr-2" />
                     Enter Hours and Materials
                   </Button>
@@ -526,29 +526,29 @@ export default function TimeTracking() {
                   </Form>
                 </DialogContent>
               </Dialog>
-            </div>
+      </div>
 
-            {/* Recent Time Entries */}
-            <Card>
+      {/* Recent Time Entries */}
+      <Card>
               <CardHeader>
                 <CardTitle>Recent Time Entries</CardTitle>
                 <CardDescription>Your recent time tracking entries</CardDescription>
               </CardHeader>
               <CardContent>
                 {timeEntries.length === 0 ? (
-                  <p className="text-slate-500 text-center py-8">No time entries yet</p>
+                  <p className="text-muted-foreground text-center py-8">No time entries yet</p>
                 ) : (
                   <div className="space-y-4">
                     {timeEntries.slice(0, 10).map((entry: any) => (
-                      <div key={entry.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                      <div key={entry.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-medium text-slate-900">{entry.description}</h3>
+                            <h3 className="font-medium text-foreground">{entry.description}</h3>
                             {entry.billable && (
                               <Badge variant="default" className="text-xs">Billable</Badge>
                             )}
                           </div>
-                          <p className="text-sm text-slate-600">
+                          <p className="text-sm text-muted-foreground">
                             {entry.hours}h • {entry.projectName || 'No Project'} • {new Date(entry.createdAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -563,9 +563,7 @@ export default function TimeTracking() {
                   </div>
                 )}
               </CardContent>
-          </Card>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 }
