@@ -101,18 +101,24 @@ export default function Materials() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Materials & Expenses</h1>
-          <p className="text-slate-600 mt-1">Track materials, supplies, and project expenses</p>
-        </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700">
-              <Plus className="w-4 h-4" />
-              <span>Add Material</span>
-            </Button>
+    <div className="container mx-auto px-6 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Materials & Expenses</h1>
+        <p className="text-muted-foreground mt-1">Track materials, supplies, and project expenses</p>
+      </div>
+      
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Material Entries</h2>
+            <p className="text-muted-foreground">Manage material costs and expense tracking</p>
+          </div>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center space-x-2">
+                <Plus className="w-4 h-4" />
+                <span>Add Material</span>
+              </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -297,9 +303,9 @@ export default function Materials() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
 
-      <Card>
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Package className="w-5 h-5" />
@@ -313,19 +319,19 @@ export default function Materials() {
           {isLoading ? (
             <div className="text-center py-8">Loading material entries...</div>
           ) : materialEntries.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-8 text-muted-foreground">
               No material entries yet. Start tracking your materials and expenses!
             </div>
           ) : (
             <div className="space-y-4">
               {materialEntries.map((entry: any) => (
-                <div key={entry.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+                <div key={entry.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-medium">{entry.itemName}</h3>
+                      <h3 className="font-medium text-foreground">{entry.itemName}</h3>
                       {getStatusBadge(entry.status)}
                     </div>
-                    <div className="text-sm text-slate-600 space-y-1">
+                    <div className="text-sm text-muted-foreground space-y-1">
                       {entry.description && <p>{entry.description}</p>}
                       {entry.projectName && <p>Project: {entry.projectName}</p>}
                       {entry.customerId && <p>Customer: {entry.customer?.name}</p>}
@@ -361,7 +367,8 @@ export default function Materials() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
