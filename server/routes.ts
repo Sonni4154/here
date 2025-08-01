@@ -2,6 +2,8 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { quickbooksService } from "./services/quickbooks-service";
+import { importAllData } from "./data-import";
 import { z } from "zod";
 import {
   insertCustomerSchema,
@@ -361,8 +363,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/customers', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.claims.sub;
-      const customers = await storage.getCustomers(userId);
-      res.json(customers);
+      const { search } = req.query;
+      
+      if (search && typeof search === 'string') {
+        const customers = await storage.searchCustomers(userId, search);
+        res.json(customers);
+      } else {
+        const customers = await storage.getCustomers(userId);
+        res.json(customers);
+      }
     } catch (error) {
       console.error("Error fetching customers:", error);
       res.status(500).json({ message: "Failed to fetch customers" });
@@ -1078,6 +1087,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error triggering workflow:", error);
       res.status(500).json({ message: "Failed to trigger workflow" });
+    }
+  });
+
+  // QuickBooks Integration routes
+  app.get('/api/integrations/quickbooks/connect', isAuthenticated, (req: Request, res: Response) => {
+    const userId = req.user!.claims.sub;
+    const redirectUri = `${req.protocol}://${req.get('host')}/api/integrations/quickbooks/callback`;
+    const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
+    res.redirect(authUrl);
+  });
+
+  app.get('/api/integrations/quickbooks/callback', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { code, realmId } = req.query;
+      
+      if (!code || !realmId) {
+        return res.status(400).json({ message: 'Missing authorization code or realm ID' });
+      }
+
+      const userId = req.user!.claims.sub;
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/integrations/quickbooks/callback`;
+      
+      const tokens = await quickbooksService.exchangeCodeForTokens(
+        code as string, 
+        redirectUri, 
+        realmId as string
+      );
+
+      // Store integration
+      await storage.upsertIntegration({
+        userId,
+        provider: 'quickbooks',
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        realmId: tokens.realmId,
+        isActive: true,
+        lastSyncAt: new Date()
+      });
+
+      // Start initial sync
+      await quickbooksService.fullSync(userId);
+
+      await storage.createActivityLog({
+        userId,
+        type: 'integration_connected',
+        description: 'QuickBooks integration connected successfully',
+        metadata: { realmId: tokens.realmId }
+      });
+
+      res.redirect('/integrations?success=quickbooks');
+    } catch (error) {
+      console.error('QuickBooks callback error:', error);
+      res.redirect('/integrations?error=quickbooks');
+    }
+  });
+
+  app.post('/api/integrations/quickbooks/sync', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await quickbooksService.fullSync(userId);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'manual_sync',
+        description: 'Manual QuickBooks sync completed',
+        metadata: { timestamp: new Date() }
+      });
+
+      res.json({ message: 'Sync completed successfully' });
+    } catch (error) {
+      console.error('QuickBooks sync error:', error);
+      res.status(500).json({ message: 'Failed to sync with QuickBooks' });
+    }
+  });
+
+  // Sample data import route (for development)
+  app.post('/api/import-sample-data', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await importAllData(userId);
+      
+      res.json({ message: 'Sample data imported successfully' });
+    } catch (error) {
+      console.error('Sample data import error:', error);
+      res.status(500).json({ message: 'Failed to import sample data' });
     }
   });
 

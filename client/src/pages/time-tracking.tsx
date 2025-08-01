@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUpload } from "@/components/ui/file-upload";
+import { CustomerAutocomplete } from "@/components/ui/customer-autocomplete";
 
 import { Clock, Play, Square, Plus, Trash2, Calendar, Camera, Upload } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -26,8 +27,8 @@ const clockEntrySchema = z.object({
 
 // Time entry form schema
 const timeEntrySchema = z.object({
-  customerId: z.string().optional(),
-  customerName: z.string().min(1, "Customer name is required"),
+  customerId: z.string().min(1, "Customer is required"),
+  customerName: z.string().optional(),
   projectName: z.string().optional(),
   description: z.string().min(1, "Description is required"),
   startTime: z.string().min(1, "Start time is required"),
@@ -309,22 +310,22 @@ export default function TimeTracking() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={timeEntryForm.control}
-                          name="customerName"
+                          name="customerId"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Customer</FormLabel>
                               <FormControl>
-                                <Input 
-                                  placeholder="Enter customer name"
-                                  {...field}
-                                  list="customers"
+                                <CustomerAutocomplete
+                                  value={field.value}
+                                  onValueChange={(customerId, customer) => {
+                                    field.onChange(customerId);
+                                    if (customer) {
+                                      timeEntryForm.setValue("customerName", customer.name);
+                                    }
+                                  }}
+                                  placeholder="Select customer..."
                                 />
                               </FormControl>
-                              <datalist id="customers">
-                                {customers.map((customer: any) => (
-                                  <option key={customer.id} value={customer.name} />
-                                ))}
-                              </datalist>
                               <FormMessage />
                             </FormItem>
                           )}

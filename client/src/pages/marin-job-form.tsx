@@ -15,6 +15,7 @@ import { Camera, FileText, DollarSign, Clock, MapPin, User, Wrench } from "lucid
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { CustomerAutocompleteInput } from "@/components/ui/customer-autocomplete";
 
 const marinJobFormSchema = z.object({
   // Customer Information
@@ -194,6 +195,29 @@ export default function MarinJobForm() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Customer Search - Use existing customer */}
+                  <div className="mb-4">
+                    <label className="text-gray-200 text-sm font-medium mb-2 block">
+                      Search Existing Customers (Optional)
+                    </label>
+                    <CustomerAutocompleteInput
+                      value=""
+                      onValueChange={(customerId, customer) => {
+                        if (customer) {
+                          // Pre-fill form with customer data
+                          const nameParts = customer.name.split(' ');
+                          form.setValue("customerFirstName", nameParts[0] || '');
+                          form.setValue("customerLastName", nameParts.slice(1).join(' ') || '');
+                          form.setValue("customerEmail", customer.email || '');
+                        }
+                      }}
+                      placeholder="Type customer name to search..."
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Start typing to search existing customers and auto-fill the form
+                    </p>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}

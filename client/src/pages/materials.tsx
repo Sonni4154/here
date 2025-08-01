@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { insertMaterialEntrySchema, type InsertMaterialEntry } from "@shared/schema";
+import { CustomerAutocomplete } from "@/components/ui/customer-autocomplete";
 import { format } from "date-fns";
 
 export default function Materials() {
@@ -133,20 +134,15 @@ export default function Materials() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Customer</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select customer" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {customers.map((customer: any) => (
-                              <SelectItem key={customer.id} value={customer.id}>
-                                {customer.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <CustomerAutocomplete
+                            value={field.value}
+                            onValueChange={(customerId, customer) => {
+                              field.onChange(customerId);
+                            }}
+                            placeholder="Select customer..."
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

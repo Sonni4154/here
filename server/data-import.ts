@@ -1,118 +1,179 @@
-import fs from 'fs';
-import path from 'path';
-import { parse } from 'csv-parse/sync';
+import { parse } from 'csv-parse';
+import { readFileSync } from 'fs';
 import { storage } from './storage';
+import path from 'path';
 
-// Import actual business data from CSV files
-export async function importBusinessData() {
+interface CustomerCSVRow {
+  'Customer Name': string;
+  'Email': string;
+  'Phone': string;
+  'Address': string;
+  'City': string;
+  'State': string;
+  'ZIP': string;
+  'Company': string;
+}
+
+interface ProductCSVRow {
+  'Product/Service Name': string;
+  'Description': string;
+  'Unit Price': string;
+  'Type': string;
+  'Category': string;
+}
+
+// Sample user ID for testing (replace with actual user ID in production)
+const SAMPLE_USER_ID = 'sample-user-001';
+
+export async function importCustomersFromCSV(userId: string = SAMPLE_USER_ID): Promise<void> {
   try {
-    // Import customers from CSV
-    const customersPath = path.join(process.cwd(), 'attached_assets', 'customers_1754017513117.csv');
-    const customersData = fs.readFileSync(customersPath, 'utf8');
-    const customerRows = parse(customersData, {
-      columns: true,
-      skip_empty_lines: true,
-    });
-
-    console.log(`Importing ${customerRows.length} customers...`);
+    const csvPath = path.join(process.cwd(), 'attached_assets', 'customers_1754017513117.csv');
+    const csvContent = readFileSync(csvPath, 'utf-8');
     
-    for (const row of customerRows.slice(0, 50)) { // Import first 50 customers
-      try {
-        const customer = {
-          name: row['Customer full name'] || `${row['First Name']} ${row['Last Name']}`,
-          email: row['Email'] || '',
-          phone: row['Phone'] || '',
-          address: row['Street Address'] || '',
-          city: row['City'] || '',
-          state: row['State'] || 'CA',
-          zipCode: row['ZIP Code'] || '',
-          country: row['Country'] || 'USA',
-        };
-
-        if (customer.name && customer.name.trim() !== '') {
-          await storage.createCustomer(customer);
-        }
-      } catch (error) {
-        console.log(`Skipping customer ${row['Customer full name']}: ${error}`);
-      }
-    }
-
-    // Import products/services from CSV
-    const productsPath = path.join(process.cwd(), 'attached_assets', 'products_1754017513117.csv');
-    const productsData = fs.readFileSync(productsPath, 'utf8');
-    const productRows = parse(productsData, {
-      columns: true,
-      skip_empty_lines: true,
+    const records: CustomerCSVRow[] = await new Promise((resolve, reject) => {
+      parse(csvContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      }, (err, records) => {
+        if (err) reject(err);
+        else resolve(records);
+      });
     });
 
-    console.log(`Importing ${productRows.length} products/services...`);
-    
-    for (const row of productRows) {
-      try {
-        const product = {
-          name: row['Product'],
-          type: row['Type'] || 'Service',
-          description: row['Description'] || '',
-          price: parseFloat(row['Price']) || 0,
-        };
+    console.log(`Importing ${records.length} customers...`);
 
-        if (product.name && product.name.trim() !== '') {
-          await storage.createProduct(product);
-        }
-      } catch (error) {
-        console.log(`Skipping product ${row['Product']}: ${error}`);
-      }
-    }
+    for (const record of records) {
+      if (record['Customer Name']?.trim()) {
+        const address = [
+          record['Address']?.trim(),
+          record['City']?.trim(), 
+          record['State']?.trim(),
+          record['ZIP']?.trim()
+        ].filter(Boolean).join(', ');
 
-    // Create sample employees based on technician names from hours/materials data
-    const hoursPath = path.join(process.cwd(), 'attached_assets', 'hoursmats_1754017513116.csv');
-    const hoursData = fs.readFileSync(hoursPath, 'utf8');
-    const hoursRows = parse(hoursData, {
-      columns: true,
-      skip_empty_lines: true,
-    });
-
-    const technicianNames = new Set();
-    hoursRows.slice(0, 100).forEach(row => {
-      const techName = row['Technician Name'];
-      if (techName) technicianNames.add(techName);
-      
-      const otherTechs = row['Other Techs On Jobsite'];
-      if (otherTechs) {
-        otherTechs.split(',').forEach(name => {
-          const trimmed = name.trim();
-          if (trimmed) technicianNames.add(trimmed);
+        await storage.createCustomer({
+          userId,
+          name: record['Customer Name'].trim(),
+          companyName: record['Company']?.trim() || null,
+          email: record['Email']?.trim() || null,
+          phone: record['Phone']?.trim() || null,
+          address: address || null,
+          state: record['State']?.trim() || null,
+          zipCode: record['ZIP']?.trim() || null,
+          city: record['City']?.trim() || null
         });
       }
-    });
-
-    console.log(`Creating ${technicianNames.size} employee records...`);
-    
-    const employees = [
-      { name: 'Spencer Reiser', email: 'marinpestcontrol@gmail.com', role: 'Lead Technician' },
-      { name: 'Boden Haines', email: 'boden@marinpestcontrol.com', role: 'Senior Technician' },
-      { name: 'Jorge Sisneros', email: 'jorge@marinpestcontrol.com', role: 'Technician' },
-      { name: 'Tristan Ford', email: 'tristan@marinpestcontrol.com', role: 'Technician' },
-    ];
-
-    for (const emp of employees) {
-      try {
-        await storage.createEmployee({
-          name: emp.name,
-          email: emp.email,
-          phone: '',
-          role: emp.role,
-          department: 'Field Operations',
-          hireDate: new Date('2024-01-01'),
-        });
-      } catch (error) {
-        console.log(`Skipping employee ${emp.name}: ${error}`);
-      }
     }
 
-    console.log('Business data import completed successfully!');
-    
+    console.log(`Successfully imported ${records.length} customers`);
   } catch (error) {
-    console.error('Error importing business data:', error);
+    console.error('Error importing customers:', error);
+    throw error;
   }
+}
+
+export async function importProductsFromCSV(userId: string = SAMPLE_USER_ID): Promise<void> {
+  try {
+    const csvPath = path.join(process.cwd(), 'attached_assets', 'products_1754017513117.csv');
+    const csvContent = readFileSync(csvPath, 'utf-8');
+    
+    const records: ProductCSVRow[] = await new Promise((resolve, reject) => {
+      parse(csvContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      }, (err, records) => {
+        if (err) reject(err);
+        else resolve(records);
+      });
+    });
+
+    console.log(`Importing ${records.length} products...`);
+
+    for (const record of records) {
+      if (record['Product/Service Name']?.trim()) {
+        const unitPrice = record['Unit Price']?.replace(/[$,]/g, '') || '0.00';
+        const type = record['Type']?.toLowerCase().includes('service') ? 'service' : 'product';
+
+        await storage.createProduct({
+          userId,
+          name: record['Product/Service Name'].trim(),
+          description: record['Description']?.trim() || null,
+          unitPrice: parseFloat(unitPrice).toFixed(2),
+          type,
+          category: record['Category']?.trim() || null
+        });
+      }
+    }
+
+    console.log(`Successfully imported ${records.length} products`);
+  } catch (error) {
+    console.error('Error importing products:', error);
+    throw error;
+  }
+}
+
+export async function importHoursMatFromCSV(userId: string = SAMPLE_USER_ID): Promise<void> {
+  try {
+    const csvPath = path.join(process.cwd(), 'attached_assets', 'hoursmats_1754017513116.csv');
+    const csvContent = readFileSync(csvPath, 'utf-8');
+    
+    const records: any[] = await new Promise((resolve, reject) => {
+      parse(csvContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      }, (err, records) => {
+        if (err) reject(err);
+        else resolve(records);
+      });
+    });
+
+    console.log(`Processing ${records.length} hours/materials entries...`);
+
+    // This would typically create time entries and material entries
+    // For now, we'll log the data structure
+    if (records.length > 0) {
+      console.log('Sample hours/materials record:', records[0]);
+    }
+
+    console.log(`Processed ${records.length} hours/materials entries`);
+  } catch (error) {
+    console.error('Error importing hours/materials:', error);
+    throw error;
+  }
+}
+
+export async function importAllData(userId?: string): Promise<void> {
+  const targetUserId = userId || SAMPLE_USER_ID;
+  
+  console.log('Starting data import...');
+  
+  try {
+    await importCustomersFromCSV(targetUserId);
+    await importProductsFromCSV(targetUserId);
+    await importHoursMatFromCSV(targetUserId);
+    
+    // Log import completion
+    await storage.createActivityLog({
+      userId: targetUserId,
+      type: 'data_import',
+      description: 'Imported sample data from CSV files',
+      metadata: { 
+        source: 'csv_files',
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    console.log('Data import completed successfully');
+  } catch (error) {
+    console.error('Data import failed:', error);
+    throw error;
+  }
+}
+
+// Auto-run import if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  importAllData().catch(console.error);
 }

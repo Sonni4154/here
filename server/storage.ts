@@ -50,6 +50,7 @@ export interface IStorage {
   
   // Customer operations
   getCustomers(userId: string): Promise<Customer[]>;
+  searchCustomers(userId: string, query: string): Promise<Customer[]>;
   getCustomer(id: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer>;
@@ -173,6 +174,20 @@ export class DatabaseStorage implements IStorage {
   // Customer operations
   async getCustomers(userId: string): Promise<Customer[]> {
     return await db.select().from(customers).where(eq(customers.userId, userId)).orderBy(desc(customers.createdAt));
+  }
+
+  async searchCustomers(userId: string, query: string): Promise<Customer[]> {
+    const { ilike } = await import("drizzle-orm");
+    return await db
+      .select()
+      .from(customers)
+      .where(
+        and(
+          eq(customers.userId, userId),
+          ilike(customers.name, `%${query}%`)
+        )
+      )
+      .limit(10);
   }
 
   async getCustomer(id: string): Promise<Customer | undefined> {
