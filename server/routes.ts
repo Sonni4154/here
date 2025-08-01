@@ -60,6 +60,247 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Employee schedule routes
+  app.get('/api/schedules', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const userRole = req.user!.claims.role;
+      
+      // Admin/managers can see all schedules, employees see only their own
+      const schedules = userRole === 'admin' || userRole === 'manager' 
+        ? await storage.getEmployeeSchedules()
+        : await storage.getEmployeeSchedules(userId);
+      
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching schedules:", error);
+      res.status(500).json({ message: "Failed to fetch schedules" });
+    }
+  });
+
+  app.post('/api/schedules', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { employeeId, title, description, startTime, endTime, location, customerId, projectName } = req.body;
+
+      const schedule = await storage.createEmployeeSchedule({
+        employeeId,
+        title,
+        description,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        location,
+        customerId,
+        projectName,
+        createdBy: userId,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId,
+        type: 'schedule_created',
+        description: `Created schedule: ${title}`,
+        metadata: { scheduleId: schedule.id },
+      });
+
+      res.json(schedule);
+    } catch (error) {
+      console.error("Error creating schedule:", error);
+      res.status(500).json({ message: "Failed to create schedule" });
+    }
+  });
+
+  // Task assignment routes
+  app.get('/api/tasks', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const userRole = req.user!.claims.role;
+      
+      // Admin/managers can see all tasks, employees see only their own
+      const tasks = userRole === 'admin' || userRole === 'manager' 
+        ? await storage.getTaskAssignments()
+        : await storage.getTaskAssignments(userId);
+      
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post('/api/tasks', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { assignedTo, customerId, title, description, priority, dueDate, estimatedHours, scheduleId } = req.body;
+
+      const task = await storage.createTaskAssignment({
+        assignedTo,
+        assignedBy: userId,
+        customerId,
+        title,
+        description,
+        priority,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        estimatedHours,
+        scheduleId,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId,
+        type: 'task_assigned',
+        description: `Assigned task: ${title}`,
+        metadata: { taskId: task.id, assignedTo },
+      });
+
+      res.json(task);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  // Employee routes
+  app.get('/api/employees', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const employees = await storage.getEmployees();
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  // Password authentication routes
+  app.post('/api/auth/login', async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      const { passwordAuthService } = await import('./auth/password');
+      const user = await passwordAuthService.authenticateUser({ email, password });
+      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Create session manually for password auth
+      req.session.user = {
+        claims: {
+          sub: user.id,
+          email: user.email,
+          first_name: user.firstName,
+          last_name: user.lastName,
+          role: user.role,
+          profile_image_url: user.profileImageUrl,
+        },
+      };
+
+      // Remove password hash from response
+      const { passwordHash, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error("Password login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post('/api/auth/register', async (req: Request, res: Response) => {
+    try {
+      const { email, password, firstName, lastName, phone, address, role, department, employeeId } = req.body;
+      
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: "Required fields missing" });
+      }
+
+      const { passwordAuthService } = await import('./auth/password');
+      const user = await passwordAuthService.registerEmployee({
+        email,
+        password,
+        firstName,
+        lastName,
+        phone,
+        address,
+        role,
+        department,
+        employeeId,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId: user.id,
+        type: 'user_registered',
+        description: `New employee registered: ${firstName} ${lastName}`,
+      });
+
+      // Remove password hash from response
+      const { passwordHash, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error("Registration error:", error);
+      if (error instanceof Error && error.message.includes('already exists')) {
+        res.status(409).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Registration failed" });
+      }
+    }
+  });
+
+  app.post('/api/auth/password/change', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current and new passwords are required" });
+      }
+
+      const { passwordAuthService } = await import('./auth/password');
+      await passwordAuthService.updateUserPassword(userId, currentPassword, newPassword);
+      
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      if (error instanceof Error && error.message.includes('incorrect')) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Password change failed" });
+      }
+    }
+  });
+
+  // Google Calendar sync routes
+  app.post('/api/sync/google-calendar', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Import Google Calendar service here to avoid circular dependencies
+      const { createGoogleCalendarService } = await import('./services/google-calendar');
+      const calendarService = await createGoogleCalendarService(userId);
+      
+      if (!calendarService) {
+        return res.status(400).json({ message: "Google Calendar integration not configured" });
+      }
+
+      await calendarService.syncEmployeeSchedules();
+      
+      // Log sync activity
+      await storage.createActivityLog({
+        userId,
+        type: 'calendar_sync',
+        description: 'Synchronized with Google Calendar',
+      });
+
+      res.json({ message: "Google Calendar sync completed successfully" });
+    } catch (error) {
+      console.error("Error syncing with Google Calendar:", error);
+      res.status(500).json({ message: "Failed to sync with Google Calendar" });
+    }
+  });
+
   // Customer notes routes
   app.get('/api/customers/:customerId/notes', isAuthenticated, async (req: Request, res: Response) => {
     try {

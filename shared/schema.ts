@@ -34,6 +34,53 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  phone: varchar("phone"),
+  address: text("address"),
+  role: varchar("role").default('employee'), // 'admin', 'manager', 'employee'
+  employeeId: varchar("employee_id"),
+  department: varchar("department"),
+  hireDate: timestamp("hire_date"),
+  isActive: boolean("is_active").default(true),
+  passwordHash: varchar("password_hash"), // For password login
+  googleCalendarId: varchar("google_calendar_id"), // For calendar sync
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Employee schedules table
+export const employeeSchedules = pgTable("employee_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  location: varchar("location"),
+  customerId: varchar("customer_id").references(() => customers.id),
+  projectName: varchar("project_name"),
+  status: varchar("status").default('scheduled'), // 'scheduled', 'in_progress', 'completed', 'cancelled'
+  googleEventId: varchar("google_event_id"), // For Google Calendar sync
+  syncStatus: varchar("sync_status").default('pending'),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Task assignments table
+export const taskAssignments = pgTable("task_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  assignedTo: varchar("assigned_to").notNull().references(() => users.id),
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  priority: varchar("priority").default('medium'), // 'low', 'medium', 'high', 'urgent'
+  status: varchar("status").default('assigned'), // 'assigned', 'in_progress', 'completed', 'cancelled'
+  dueDate: timestamp("due_date"),
+  estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
+  actualHours: decimal("actual_hours", { precision: 5, scale: 2 }),
+  scheduleId: varchar("schedule_id").references(() => employeeSchedules.id),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -425,3 +472,11 @@ export type ExternalMapping = typeof externalMappings.$inferSelect;
 // Customer notes types
 export type InsertCustomerNote = typeof customerNotes.$inferInsert;
 export type CustomerNote = typeof customerNotes.$inferSelect;
+
+// Employee schedule types
+export type InsertEmployeeSchedule = typeof employeeSchedules.$inferInsert;
+export type EmployeeSchedule = typeof employeeSchedules.$inferSelect;
+
+// Task assignment types
+export type InsertTaskAssignment = typeof taskAssignments.$inferInsert;
+export type TaskAssignment = typeof taskAssignments.$inferSelect;

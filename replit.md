@@ -2,9 +2,9 @@
 
 ## Overview
 
-TimeSync Pro is a full-stack web application designed as an internal employee dashboard for time tracking, material submission, and customer/invoice management. The application provides employees and managers with tools to clock hours, submit timesheets, log materials and expenses, and search customer and invoice information while integrating with QuickBooks for seamless billing and payroll synchronization.
+TimeSync Pro is a comprehensive internal employee dashboard for Marin Pest Control featuring time tracking with clock in/out functionality, customer management with search and notes, QuickBooks 2-way synchronization, Google Calendar integration for employee scheduling and task assignment, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management and persistent sync tracking across all integrations.
 
-The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use rather than sales-focused CRM functionality.
+The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use with advanced scheduling and task management capabilities.
 
 ## User Preferences
 

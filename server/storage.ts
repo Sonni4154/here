@@ -123,6 +123,21 @@ export interface IStorage {
   getCustomerNotes(customerId: string): Promise<CustomerNote[]>;
   createCustomerNote(note: InsertCustomerNote): Promise<CustomerNote>;
   updateCustomerNote(id: string, note: Partial<InsertCustomerNote>): Promise<CustomerNote>;
+
+  // Employee schedule operations
+  getEmployeeSchedules(userId?: string): Promise<EmployeeSchedule[]>;
+  getEmployeeSchedule(id: string): Promise<EmployeeSchedule | undefined>;
+  createEmployeeSchedule(schedule: InsertEmployeeSchedule): Promise<EmployeeSchedule>;
+  updateEmployeeSchedule(id: string, schedule: Partial<InsertEmployeeSchedule>): Promise<EmployeeSchedule>;
+  deleteEmployeeSchedule(id: string): Promise<void>;
+
+  // Task assignment operations
+  getTaskAssignments(userId?: string): Promise<TaskAssignment[]>;
+  createTaskAssignment(task: InsertTaskAssignment): Promise<TaskAssignment>;
+  updateTaskAssignment(id: string, task: Partial<InsertTaskAssignment>): Promise<TaskAssignment>;
+
+  // Employee operations
+  getEmployees(): Promise<User[]>;
   
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
@@ -506,6 +521,80 @@ export class DatabaseStorage implements IStorage {
       .where(eq(customerNotes.id, id))
       .returning();
     return updatedNote;
+  }
+
+  // Employee schedule operations
+  async getEmployeeSchedules(userId?: string): Promise<EmployeeSchedule[]> {
+    const query = db.select().from(employeeSchedules).orderBy(desc(employeeSchedules.startTime));
+    if (userId) {
+      return await query.where(eq(employeeSchedules.employeeId, userId));
+    }
+    return await query;
+  }
+
+  async getEmployeeSchedule(id: string): Promise<EmployeeSchedule | undefined> {
+    const [schedule] = await db.select().from(employeeSchedules).where(eq(employeeSchedules.id, id));
+    return schedule;
+  }
+
+  async createEmployeeSchedule(schedule: InsertEmployeeSchedule): Promise<EmployeeSchedule> {
+    const [newSchedule] = await db.insert(employeeSchedules).values(schedule).returning();
+    return newSchedule;
+  }
+
+  async updateEmployeeSchedule(id: string, schedule: Partial<InsertEmployeeSchedule>): Promise<EmployeeSchedule> {
+    const [updatedSchedule] = await db
+      .update(employeeSchedules)
+      .set(schedule)
+      .where(eq(employeeSchedules.id, id))
+      .returning();
+    return updatedSchedule;
+  }
+
+  async deleteEmployeeSchedule(id: string): Promise<void> {
+    await db.delete(employeeSchedules).where(eq(employeeSchedules.id, id));
+  }
+
+  // Task assignment operations
+  async getTaskAssignments(userId?: string): Promise<TaskAssignment[]> {
+    const query = db.select().from(taskAssignments).orderBy(desc(taskAssignments.createdAt));
+    if (userId) {
+      return await query.where(eq(taskAssignments.assignedTo, userId));
+    }
+    return await query;
+  }
+
+  async createTaskAssignment(task: InsertTaskAssignment): Promise<TaskAssignment> {
+    const [newTask] = await db.insert(taskAssignments).values(task).returning();
+    return newTask;
+  }
+
+  async updateTaskAssignment(id: string, task: Partial<InsertTaskAssignment>): Promise<TaskAssignment> {
+    const [updatedTask] = await db
+      .update(taskAssignments)
+      .set(task)
+      .where(eq(taskAssignments.id, id))
+      .returning();
+    return updatedTask;
+  }
+
+  // Employee operations
+  async getEmployees(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.isActive, true)).orderBy(users.firstName);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<UpsertUser>): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
   }
 }
 
