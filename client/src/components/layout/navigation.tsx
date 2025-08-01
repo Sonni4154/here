@@ -10,7 +10,8 @@ import {
   ShoppingCart, 
   BarChart3, 
   Settings,
-  LogOut
+  LogOut,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ const navigationItems = [
   { path: "/products", label: "Products", icon: ShoppingCart },
   { path: "/reports", label: "Reports", icon: BarChart3 },
   { path: "/integrations", label: "Integrations", icon: Settings },
+  { path: "/workflows", label: "Workflows", icon: Zap },
 ];
 
 export default function Navigation() {

@@ -14,6 +14,8 @@ import {
 import { QuickBooksService } from "./services/quickbooks";
 import { JotFormService } from "./services/jotform";
 import { GoogleService } from "./services/google";
+import { workflowEngine } from "./services/workflow-engine";
+import { workflowTriggerService } from "./services/workflow-triggers";
 
 declare global {
   namespace Express {
@@ -686,6 +688,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const entry = await storage.createTimeEntry(entryData);
       
+      // Trigger workflow automation for time entry creation
+      await workflowTriggerService.triggerFormSubmission('time_entry', entry, userId);
+      
       await storage.createActivityLog({
         userId,
         type: 'time_entry_created',
@@ -709,6 +714,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'submitted',
         submittedAt: new Date(),
       });
+
+      // Trigger workflow automation for time entry submission
+      await workflowTriggerService.triggerStatusChange('time_entry', 'submitted', entry, userId);
 
       await storage.createActivityLog({
         userId,
@@ -742,6 +750,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const entryData = { ...req.body, userId };
       
       const entry = await storage.createMaterialEntry(entryData);
+      
+      // Trigger workflow automation for material entry creation
+      await workflowTriggerService.triggerFormSubmission('material_form', entry, userId);
       
       await storage.createActivityLog({
         userId,
@@ -927,6 +938,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const entryData = { ...req.body, userId };
       const entry = await storage.createClockEntry(entryData);
       
+      // Trigger workflow automation for clock in
+      await workflowTriggerService.triggerTimeTracking('clock_in', entry, userId);
+      
       await storage.createActivityLog({
         userId,
         type: 'clock_in',
@@ -958,6 +972,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalHours: totalHours.toFixed(2),
       });
 
+      // Trigger workflow automation for clock out
+      await workflowTriggerService.triggerTimeTracking('clock_out', { ...entry, totalHours }, userId);
+
       await storage.createActivityLog({
         userId,
         type: 'clock_out',
@@ -969,6 +986,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error clocking out:", error);
       res.status(500).json({ message: "Failed to clock out" });
+    }
+  });
+
+  // Workflow management routes
+  app.get('/api/workflows/triggers', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const triggers = await workflowEngine.getTriggers();
+      res.json(triggers);
+    } catch (error) {
+      console.error("Error fetching workflow triggers:", error);
+      res.status(500).json({ message: "Failed to fetch workflow triggers" });
+    }
+  });
+
+  app.post('/api/workflows/triggers', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const triggerData = { ...req.body, createdBy: userId };
+      
+      const trigger = await workflowEngine.createTrigger(triggerData);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'workflow_trigger_created',
+        description: `Created workflow trigger: ${trigger.name}`,
+        metadata: { triggerId: trigger.id },
+      });
+
+      res.json(trigger);
+    } catch (error) {
+      console.error("Error creating workflow trigger:", error);
+      res.status(500).json({ message: "Failed to create workflow trigger" });
+    }
+  });
+
+  app.get('/api/workflows/executions', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { triggerId } = req.query;
+      const executions = await workflowEngine.getExecutions(triggerId as string);
+      res.json(executions);
+    } catch (error) {
+      console.error("Error fetching workflow executions:", error);
+      res.status(500).json({ message: "Failed to fetch workflow executions" });
+    }
+  });
+
+  app.get('/api/workflows/action-templates', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const templates = await workflowEngine.getActionTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching action templates:", error);
+      res.status(500).json({ message: "Failed to fetch action templates" });
+    }
+  });
+
+  app.post('/api/workflows/initialize-defaults', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await workflowTriggerService.initializeDefaultTriggers(userId);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'workflow_initialization',
+        description: 'Initialized default workflow triggers',
+      });
+
+      res.json({ message: "Default workflow triggers initialized successfully" });
+    } catch (error) {
+      console.error("Error initializing default triggers:", error);
+      res.status(500).json({ message: "Failed to initialize default triggers" });
+    }
+  });
+
+  app.post('/api/workflows/trigger-manual', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { event, data, metadata } = req.body;
+      
+      await workflowEngine.trigger(event, data, userId, metadata);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'workflow_manual_trigger',
+        description: `Manually triggered workflow event: ${event}`,
+        metadata: { event, triggeredAt: new Date().toISOString() },
+      });
+
+      res.json({ message: "Workflow triggered successfully" });
+    } catch (error) {
+      console.error("Error triggering workflow:", error);
+      res.status(500).json({ message: "Failed to trigger workflow" });
     }
   });
 

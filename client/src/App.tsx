@@ -18,6 +18,7 @@ import EmployeeSchedule from "@/pages/employee-schedule";
 import Products from "@/pages/products";
 import Reports from "@/pages/reports";
 import Integrations from "@/pages/integrations";
+import Workflows from "@/pages/workflows";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -40,6 +41,7 @@ function Router() {
             <Route path="/products" component={Products} />
             <Route path="/reports" component={Reports} />
             <Route path="/integrations" component={Integrations} />
+            <Route path="/workflows" component={Workflows} />
             <Route component={NotFound} />
           </Switch>
         </Layout>

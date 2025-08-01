@@ -289,6 +289,52 @@ export const activityLogs = pgTable("activity_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Workflow triggers table
+export const workflowTriggers = pgTable("workflow_triggers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  triggerType: varchar("trigger_type").notNull(), // 'form_submission', 'time_entry', 'status_change', 'schedule_event'
+  triggerEvent: varchar("trigger_event").notNull(), // 'job_form_submit', 'material_submit', 'clock_in', 'clock_out', etc.
+  conditions: jsonb("conditions"), // Conditions that must be met
+  actions: jsonb("actions").notNull(), // Actions to execute
+  priority: integer("priority").default(100), // Lower numbers = higher priority
+  retryCount: integer("retry_count").default(3),
+  isTemplate: boolean("is_template").default(false), // For creating reusable templates
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Workflow executions table
+export const workflowExecutions = pgTable("workflow_executions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  triggerId: varchar("trigger_id").notNull().references(() => workflowTriggers.id),
+  status: varchar("status").default('pending'), // 'pending', 'running', 'completed', 'failed', 'retrying'
+  triggerData: jsonb("trigger_data").notNull(), // Data that triggered the workflow
+  executionResults: jsonb("execution_results"), // Results of each action
+  errorMessage: text("error_message"),
+  attemptNumber: integer("attempt_number").default(1),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Workflow action templates table
+export const workflowActionTemplates = pgTable("workflow_action_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  category: varchar("category").notNull(), // 'notification', 'integration', 'data_processing', 'scheduling'
+  actionType: varchar("action_type").notNull(), // 'send_email', 'create_schedule', 'sync_quickbooks', etc.
+  description: text("description"),
+  configSchema: jsonb("config_schema").notNull(), // JSON schema for configuration
+  defaultConfig: jsonb("default_config"), // Default configuration values
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   customers: many(customers),
@@ -390,6 +436,21 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const workflowTriggersRelations = relations(workflowTriggers, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [workflowTriggers.createdBy],
+    references: [users.id],
+  }),
+  executions: many(workflowExecutions),
+}));
+
+export const workflowExecutionsRelations = relations(workflowExecutions, ({ one }) => ({
+  trigger: one(workflowTriggers, {
+    fields: [workflowExecutions.triggerId],
+    references: [workflowTriggers.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
@@ -437,6 +498,23 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   createdAt: true,
 });
 
+export const insertWorkflowTriggerSchema = createInsertSchema(workflowTriggers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkflowExecutionSchema = createInsertSchema(workflowExecutions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWorkflowActionTemplateSchema = createInsertSchema(workflowActionTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -480,6 +558,14 @@ export type EmployeeSchedule = typeof employeeSchedules.$inferSelect;
 // Task assignment types
 export type InsertTaskAssignment = typeof taskAssignments.$inferInsert;
 export type TaskAssignment = typeof taskAssignments.$inferSelect;
+
+// Workflow types
+export type InsertWorkflowTrigger = z.infer<typeof insertWorkflowTriggerSchema>;
+export type WorkflowTrigger = typeof workflowTriggers.$inferSelect;
+export type InsertWorkflowExecution = z.infer<typeof insertWorkflowExecutionSchema>;
+export type WorkflowExecution = typeof workflowExecutions.$inferSelect;
+export type InsertWorkflowActionTemplate = z.infer<typeof insertWorkflowActionTemplateSchema>;
+export type WorkflowActionTemplate = typeof workflowActionTemplates.$inferSelect;
 
 // Job photos table
 export const jobPhotos = pgTable("job_photos", {

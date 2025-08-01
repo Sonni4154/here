@@ -2,7 +2,7 @@
 
 ## Overview
 
-TimeSync Pro is a comprehensive internal employee dashboard for Marin Pest Control featuring time tracking with clock in/out functionality, customer management with search and notes, QuickBooks 2-way synchronization, Google Calendar integration for employee scheduling and task assignment, photo upload capability for before/after job photos, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management and persistent sync tracking across all integrations.
+TimeSync Pro is a comprehensive internal employee dashboard for Marin Pest Control featuring time tracking with clock in/out functionality, customer management with search and notes, QuickBooks 2-way synchronization, Google Calendar integration for employee scheduling and task assignment, photo upload capability for before/after job photos, automated workflow triggers based on form submissions, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management, persistent sync tracking across all integrations, and intelligent automation that processes business events in real-time.
 
 The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use with advanced scheduling and task management capabilities.
 
@@ -40,6 +40,7 @@ Authentication: Dual system supporting both password login and Google OAuth for 
   - Customers, Products, Invoices, InvoiceItems
   - Integrations (third-party service connections)
   - ActivityLogs (audit trail)
+  - WorkflowTriggers, WorkflowExecutions, WorkflowActionTemplates (automation engine)
 
 ### Authentication & Authorization
 - **Provider**: Replit OpenID Connect authentication
@@ -74,6 +75,14 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Business Form**: Comprehensive job entry form matching actual business operations and JotForm structure
 - **Service Types**: Full range of services including Insect Spraying, Wasp/Hornet Removal, Exclusion, Remediation, Trapping
 - **Materials Tracking**: Hardware cloth, silicone, traps, disinfectants, and specialized pest control materials
+
+### Automated Workflow System
+- **Workflow Engine**: Event-driven automation that responds to form submissions, time tracking, and status changes
+- **Default Triggers**: Pre-configured workflows for job processing, material approval, clock events, and QuickBooks sync
+- **Action Types**: Notifications, integrations, data processing, scheduling, and analytics updates
+- **Execution Tracking**: Complete audit trail of workflow runs with success/failure tracking and retry logic
+- **Smart Conditions**: Time windows, data validation, and user-specific trigger conditions
+- **Real-time Processing**: Immediate workflow execution on business events with comprehensive error handling
 
 ## External Dependencies
 
