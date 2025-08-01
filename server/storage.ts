@@ -6,6 +6,8 @@ import {
   invoiceItems,
   integrations,
   activityLogs,
+  timeEntries,
+  materialEntries,
   type User,
   type UpsertUser,
   type Customer,
@@ -20,6 +22,10 @@ import {
   type InsertIntegration,
   type ActivityLog,
   type InsertActivityLog,
+  type TimeEntry,
+  type InsertTimeEntry,
+  type MaterialEntry,
+  type InsertMaterialEntry,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -65,6 +71,32 @@ export interface IStorage {
   // Activity log operations
   getActivityLogs(userId: string, limit?: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  
+  // Time entry operations
+  getTimeEntries(userId: string): Promise<TimeEntry[]>;
+  getTimeEntry(id: string): Promise<TimeEntry | undefined>;
+  createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
+  updateTimeEntry(id: string, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry>;
+  deleteTimeEntry(id: string): Promise<void>;
+
+  // Material entry operations
+  getMaterialEntries(userId: string): Promise<MaterialEntry[]>;
+  getMaterialEntry(id: string): Promise<MaterialEntry | undefined>;
+  createMaterialEntry(materialEntry: InsertMaterialEntry): Promise<MaterialEntry>;
+  updateMaterialEntry(id: string, materialEntry: Partial<InsertMaterialEntry>): Promise<MaterialEntry>;
+  deleteMaterialEntry(id: string): Promise<void>;
+  getTimeEntries(userId: string): Promise<TimeEntry[]>;
+  getTimeEntry(id: string): Promise<TimeEntry | undefined>;
+  createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry>;
+  updateTimeEntry(id: string, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry>;
+  deleteTimeEntry(id: string): Promise<void>;
+  
+  // Material entry operations
+  getMaterialEntries(userId: string): Promise<MaterialEntry[]>;
+  getMaterialEntry(id: string): Promise<MaterialEntry | undefined>;
+  createMaterialEntry(materialEntry: InsertMaterialEntry): Promise<MaterialEntry>;
+  updateMaterialEntry(id: string, materialEntry: Partial<InsertMaterialEntry>): Promise<MaterialEntry>;
+  deleteMaterialEntry(id: string): Promise<void>;
   
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
@@ -293,6 +325,62 @@ export class DatabaseStorage implements IStorage {
       pendingInvoices,
       lastSyncAt,
     };
+  }
+
+  // Time entry operations
+  async getTimeEntries(userId: string): Promise<TimeEntry[]> {
+    return await db.select().from(timeEntries).where(eq(timeEntries.userId, userId)).orderBy(desc(timeEntries.createdAt));
+  }
+
+  async getTimeEntry(id: string): Promise<TimeEntry | undefined> {
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id));
+    return entry;
+  }
+
+  async createTimeEntry(timeEntry: InsertTimeEntry): Promise<TimeEntry> {
+    const [newEntry] = await db.insert(timeEntries).values(timeEntry).returning();
+    return newEntry;
+  }
+
+  async updateTimeEntry(id: string, timeEntry: Partial<InsertTimeEntry>): Promise<TimeEntry> {
+    const [updatedEntry] = await db
+      .update(timeEntries)
+      .set({ ...timeEntry, updatedAt: new Date() })
+      .where(eq(timeEntries.id, id))
+      .returning();
+    return updatedEntry;
+  }
+
+  async deleteTimeEntry(id: string): Promise<void> {
+    await db.delete(timeEntries).where(eq(timeEntries.id, id));
+  }
+
+  // Material entry operations
+  async getMaterialEntries(userId: string): Promise<MaterialEntry[]> {
+    return await db.select().from(materialEntries).where(eq(materialEntries.userId, userId)).orderBy(desc(materialEntries.createdAt));
+  }
+
+  async getMaterialEntry(id: string): Promise<MaterialEntry | undefined> {
+    const [entry] = await db.select().from(materialEntries).where(eq(materialEntries.id, id));
+    return entry;
+  }
+
+  async createMaterialEntry(materialEntry: InsertMaterialEntry): Promise<MaterialEntry> {
+    const [newEntry] = await db.insert(materialEntries).values(materialEntry).returning();
+    return newEntry;
+  }
+
+  async updateMaterialEntry(id: string, materialEntry: Partial<InsertMaterialEntry>): Promise<MaterialEntry> {
+    const [updatedEntry] = await db
+      .update(materialEntries)
+      .set({ ...materialEntry, updatedAt: new Date() })
+      .where(eq(materialEntries.id, id))
+      .returning();
+    return updatedEntry;
+  }
+
+  async deleteMaterialEntry(id: string): Promise<void> {
+    await db.delete(materialEntries).where(eq(materialEntries.id, id));
   }
 }
 

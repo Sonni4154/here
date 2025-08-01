@@ -1,10 +1,10 @@
-# BusinessSync Pro - CRM Integration Platform
+# TimeSync Pro - Employee Time & Material Tracking System
 
 ## Overview
 
-BusinessSync Pro is a full-stack web application that serves as a centralized business management platform integrating QuickBooks, JotForm, and Google Workspace services. The application provides a unified dashboard for managing customers, products, invoices, and business analytics while synchronizing data across multiple third-party platforms.
+TimeSync Pro is a full-stack web application designed as an internal employee dashboard for time tracking, material submission, and customer/invoice management. The application provides employees and managers with tools to clock hours, submit timesheets, log materials and expenses, and search customer and invoice information while integrating with QuickBooks for seamless billing and payroll synchronization.
 
-The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, designed to streamline business operations through seamless API integrations and real-time data synchronization.
+The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use rather than sales-focused CRM functionality.
 
 ## User Preferences
 

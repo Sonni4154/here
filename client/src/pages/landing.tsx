@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderSync, DollarSign, Users, FileText, BarChart3, Shield } from "lucide-react";
+import { Clock, FileText, Users, Search, Calculator, Shield } from "lucide-react";
 
 export default function Landing() {
   const handleLogin = () => {
@@ -10,37 +10,37 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <header className="p-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <header className="p-6 border-b border-slate-200 bg-white">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <FolderSync className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
+              <Clock className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-semibold text-slate-900">BusinessSync Pro</span>
+            <span className="text-xl font-semibold text-slate-900">TimeSync Pro</span>
           </div>
-          <Button onClick={handleLogin} className="bg-primary hover:bg-blue-600">
-            Sign In
+          <Button onClick={handleLogin} className="bg-slate-800 hover:bg-slate-700">
+            Employee Login
           </Button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-6">
+      <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-slate-900 mb-6">
-            Streamline Your Business with
-            <span className="text-primary"> Integrated CRM</span>
+          <h1 className="text-4xl font-bold text-slate-900 mb-6">
+            Employee Time & Material
+            <span className="text-slate-600"> Tracking System</span>
           </h1>
-          <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
-            Connect QuickBooks, JotForm, and Google Workspace in one powerful dashboard. 
-            Manage customers, create invoices, and sync data seamlessly.
+          <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
+            Clock your hours, submit time sheets, manage materials, and track project expenses. 
+            All integrated with QuickBooks for seamless invoicing.
           </p>
           <Button 
             onClick={handleLogin}
             size="lg"
-            className="bg-primary hover:bg-blue-600 text-lg px-8 py-3"
+            className="bg-slate-800 hover:bg-slate-700 text-lg px-8 py-3"
           >
-            Get Started Free
+            Access Dashboard
           </Button>
         </div>
       </section>
@@ -49,78 +49,78 @@ export default function Landing() {
       <section className="py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
-            Everything you need to manage your business
+            Employee Tools & Features
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="text-center">
+            <Card className="text-center border-slate-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <FolderSync className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-6 h-6 text-slate-700" />
                 </div>
-                <CardTitle>QuickBooks Integration</CardTitle>
+                <CardTitle>Time Tracking</CardTitle>
                 <CardDescription>
-                  Two-way sync with QuickBooks for customers, invoices, and products
+                  Clock in/out, track hours by project, and submit timesheets for approval
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center border-slate-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-6 h-6 text-slate-700" />
                 </div>
-                <CardTitle>Customer Management</CardTitle>
+                <CardTitle>Material Tracking</CardTitle>
                 <CardDescription>
-                  Comprehensive CRM with customer profiles and interaction history
+                  Log materials, receipts, and expenses for accurate project billing
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center border-slate-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-6 h-6 text-slate-700" />
                 </div>
-                <CardTitle>Invoice Creation</CardTitle>
+                <CardTitle>Customer Lookup</CardTitle>
                 <CardDescription>
-                  Create professional invoices that sync automatically with QuickBooks
+                  Search and view customer information and project history
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center border-slate-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-6 h-6 text-orange-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-6 h-6 text-slate-700" />
                 </div>
-                <CardTitle>Reporting & Analytics</CardTitle>
+                <CardTitle>Invoice Search</CardTitle>
                 <CardDescription>
-                  Real-time insights and reports from your QuickBooks data
+                  Find and review invoices, payments, and billing status
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center border-slate-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="w-6 h-6 text-amber-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Calculator className="w-6 h-6 text-slate-700" />
                 </div>
-                <CardTitle>JotForm Integration</CardTitle>
+                <CardTitle>QuickBooks Sync</CardTitle>
                 <CardDescription>
-                  Convert form submissions into invoices and customers automatically
+                  Automatic synchronization with QuickBooks for billing and payroll
                 </CardDescription>
               </CardHeader>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center border-slate-200">
               <CardHeader>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-6 h-6 text-slate-700" />
                 </div>
-                <CardTitle>Secure & Reliable</CardTitle>
+                <CardTitle>Secure Access</CardTitle>
                 <CardDescription>
-                  Enterprise-grade security with OAuth authentication and data encryption
+                  Role-based access with secure authentication for employee data
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -129,21 +129,21 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-6 bg-primary">
+      <section className="py-16 px-6 bg-slate-800">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white mb-6">
-            Ready to streamline your business operations?
+            Ready to track your time and materials?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Join thousands of businesses already using BusinessSync Pro
+          <p className="text-xl text-slate-300 mb-8">
+            Start logging hours and expenses today
           </p>
           <Button 
             onClick={handleLogin}
             size="lg"
             variant="secondary"
-            className="bg-white text-primary hover:bg-slate-100 text-lg px-8 py-3"
+            className="bg-white text-slate-800 hover:bg-slate-100 text-lg px-8 py-3"
           >
-            Start Your Free Trial
+            Access Your Dashboard
           </Button>
         </div>
       </section>
@@ -152,13 +152,13 @@ export default function Landing() {
       <footer className="py-8 px-6 bg-slate-900">
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-              <FolderSync className="w-4 h-4 text-white" />
+            <div className="w-6 h-6 bg-slate-700 rounded flex items-center justify-center">
+              <Clock className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-semibold text-white">BusinessSync Pro</span>
+            <span className="text-lg font-semibold text-white">TimeSync Pro</span>
           </div>
           <p className="text-slate-400">
-            © 2024 BusinessSync Pro. All rights reserved.
+            © 2024 TimeSync Pro. All rights reserved.
           </p>
         </div>
       </footer>

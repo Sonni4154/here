@@ -119,11 +119,50 @@ export const integrations = pgTable("integrations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Time entries table
+export const timeEntries = pgTable("time_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  projectName: varchar("project_name"),
+  description: text("description").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  hours: decimal("hours", { precision: 5, scale: 2 }),
+  hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+  status: varchar("status").notNull().default('draft'), // 'draft', 'submitted', 'approved', 'invoiced'
+  submittedAt: timestamp("submitted_at"),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Material entries table  
+export const materialEntries = pgTable("material_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  projectName: varchar("project_name"),
+  itemName: varchar("item_name").notNull(),
+  description: text("description"),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  supplier: varchar("supplier"),
+  receiptNumber: varchar("receipt_number"),
+  purchaseDate: timestamp("purchase_date"),
+  status: varchar("status").notNull().default('draft'), // 'draft', 'submitted', 'approved', 'invoiced'
+  submittedAt: timestamp("submitted_at"),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Activity log table
 export const activityLogs = pgTable("activity_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  type: varchar("type").notNull(), // 'invoice_created', 'sync_completed', etc.
+  type: varchar("type").notNull(), // 'time_submitted', 'material_submitted', 'invoice_created', etc.
   description: text("description").notNull(),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -136,6 +175,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   invoices: many(invoices),
   integrations: many(integrations),
   activityLogs: many(activityLogs),
+  timeEntries: many(timeEntries),
+  materialEntries: many(materialEntries),
 }));
 
 export const customersRelations = relations(customers, ({ one, many }) => ({
@@ -184,6 +225,28 @@ export const integrationsRelations = relations(integrations, ({ one }) => ({
   }),
 }));
 
+export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [timeEntries.userId],
+    references: [users.id],
+  }),
+  customer: one(customers, {
+    fields: [timeEntries.customerId],
+    references: [customers.id],
+  }),
+}));
+
+export const materialEntriesRelations = relations(materialEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [materialEntries.userId],
+    references: [users.id],
+  }),
+  customer: one(customers, {
+    fields: [materialEntries.customerId],
+    references: [customers.id],
+  }),
+}));
+
 export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   user: one(users, {
     fields: [activityLogs.userId],
@@ -221,6 +284,18 @@ export const insertIntegrationSchema = createInsertSchema(integrations).omit({
   updatedAt: true,
 });
 
+export const insertTimeEntrySchema = createInsertSchema(timeEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMaterialEntrySchema = createInsertSchema(materialEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
   createdAt: true,
@@ -239,5 +314,9 @@ export type InsertInvoiceItem = z.infer<typeof insertInvoiceItemSchema>;
 export type InvoiceItem = typeof invoiceItems.$inferSelect;
 export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
 export type Integration = typeof integrations.$inferSelect;
+export type InsertTimeEntry = z.infer<typeof insertTimeEntrySchema>;
+export type TimeEntry = typeof timeEntries.$inferSelect;
+export type InsertMaterialEntry = z.infer<typeof insertMaterialEntrySchema>;
+export type MaterialEntry = typeof materialEntries.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;

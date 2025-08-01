@@ -1,19 +1,13 @@
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import { Clock, Package, Users, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Clock, Package, Users, FileText, Play, CheckCircle, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 
-export default function Dashboard() {
-  const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
-
+export default function EmployeeDashboard() {
   const { data: timeEntries = [] } = useQuery({
     queryKey: ["/api/time-entries"],
   });
@@ -25,32 +19,6 @@ export default function Dashboard() {
   const { data: activityLogs = [] } = useQuery({
     queryKey: ["/api/activity"],
   });
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  if (isLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   const recentTimeEntries = timeEntries.slice(0, 5);
   const recentMaterialEntries = materialEntries.slice(0, 5);

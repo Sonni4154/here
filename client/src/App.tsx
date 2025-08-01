@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
+import TimeTracking from "@/pages/time-tracking";
+import Materials from "@/pages/materials";
 import Invoices from "@/pages/invoices";
 import Customers from "@/pages/customers";
 import Products from "@/pages/products";
@@ -23,6 +25,8 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/time" component={TimeTracking} />
+          <Route path="/materials" component={Materials} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/customers" component={Customers} />
           <Route path="/products" component={Products} />

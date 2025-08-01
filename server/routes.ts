@@ -372,6 +372,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Time entry routes
+  app.get('/api/time-entries', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entries = await storage.getTimeEntries(userId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching time entries:", error);
+      res.status(500).json({ message: "Failed to fetch time entries" });
+    }
+  });
+
+  app.post('/api/time-entries', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entryData = { ...req.body, userId };
+      
+      const entry = await storage.createTimeEntry(entryData);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'time_entry_created',
+        description: `Time entry created: ${entry.description}`,
+        metadata: { timeEntryId: entry.id },
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating time entry:", error);
+      res.status(500).json({ message: "Failed to create time entry" });
+    }
+  });
+
+  app.post('/api/time-entries/:id/submit', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { id } = req.params;
+      
+      const entry = await storage.updateTimeEntry(id, {
+        status: 'submitted',
+        submittedAt: new Date(),
+      });
+
+      await storage.createActivityLog({
+        userId,
+        type: 'time_entry_submitted',
+        description: `Time entry submitted: ${entry.description}`,
+        metadata: { timeEntryId: entry.id },
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error submitting time entry:", error);
+      res.status(500).json({ message: "Failed to submit time entry" });
+    }
+  });
+
+  // Material entry routes
+  app.get('/api/material-entries', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entries = await storage.getMaterialEntries(userId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching material entries:", error);
+      res.status(500).json({ message: "Failed to fetch material entries" });
+    }
+  });
+
+  app.post('/api/material-entries', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const entryData = { ...req.body, userId };
+      
+      const entry = await storage.createMaterialEntry(entryData);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'material_entry_created',
+        description: `Material entry created: ${entry.itemName}`,
+        metadata: { materialEntryId: entry.id },
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating material entry:", error);
+      res.status(500).json({ message: "Failed to create material entry" });
+    }
+  });
+
+  app.post('/api/material-entries/:id/submit', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { id } = req.params;
+      
+      const entry = await storage.updateMaterialEntry(id, {
+        status: 'submitted',
+        submittedAt: new Date(),
+      });
+
+      await storage.createActivityLog({
+        userId,
+        type: 'material_entry_submitted',
+        description: `Material entry submitted: ${entry.itemName}`,
+        metadata: { materialEntryId: entry.id },
+      });
+
+      res.json(entry);
+    } catch (error) {
+      console.error("Error submitting material entry:", error);
+      res.status(500).json({ message: "Failed to submit material entry" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
