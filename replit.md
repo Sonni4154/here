@@ -84,6 +84,21 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Smart Conditions**: Time windows, data validation, and user-specific trigger conditions
 - **Real-time Processing**: Immediate workflow execution on business events with comprehensive error handling
 
+## Production Configuration
+
+### Domain Setup
+- **Production Domain**: www.wemakemarin.com
+- **QuickBooks Callback URL**: https://www.wemakemarin.com/quickbooks/callback
+- **Environment Detection**: Automatic production/development URL switching
+- **SSL Configuration**: HTTPS enforced for production QuickBooks integration
+
+### QuickBooks Integration Settings
+- **Production Client ID**: ABcxWWL62bJFQd43vWFkko728BJLReocAxJKfeeemZtXfVAO1S
+- **Development Client ID**: ABHA55nxxxAxGrLFLqQ9eQ1jwZOQi3Bkef7tLKOUEHfDQepUqi
+- **Callback Route**: `/quickbooks/callback` (production) and `/api/integrations/quickbooks/callback` (development)
+- **OAuth Scope**: com.intuit.quickbooks.accounting
+- **Integration Features**: Customer sync, product catalog, invoice management
+
 ## External Dependencies
 
 ### Database & Storage
