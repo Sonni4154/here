@@ -14,8 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUpload } from "@/components/ui/file-upload";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+
 import { Clock, Play, Square, Plus, Trash2, Calendar, Camera, Upload } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -211,16 +210,11 @@ export default function TimeTracking() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">
-          <div className="container mx-auto px-6 py-8">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-900">Time Tracking</h1>
-              <p className="text-slate-600 mt-1">Clock in/out and manage your time entries</p>
-            </div>
+    <div className="container mx-auto px-6 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900">Time Tracking</h1>
+        <p className="text-slate-600 mt-1">Clock in/out and manage your time entries</p>
+      </div>
 
             {/* Clock In/Out Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -569,9 +563,8 @@ export default function TimeTracking() {
                   </div>
                 )}
               </CardContent>
-            </Card>
-          </div>
-        </main>
+          </Card>
+        </div>
       </div>
     </div>
   );
