@@ -47,61 +47,58 @@ export default function Navigation() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-64 bg-card border-r border-border flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-border">
-          <div className="flex items-center space-x-3">
-            <img 
-              src={marinLogo} 
-              alt="Marin Pest Control" 
-              className="w-12 h-12 rounded-lg object-cover"
-            />
-            <div>
-              <h1 className="text-lg font-bold text-foreground">TimeSync Pro</h1>
-              <p className="text-sm text-muted-foreground">Marin Pest Control</p>
-            </div>
+    <div className="w-64 bg-card border-r border-border flex flex-col">
+      {/* Logo */}
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center space-x-3">
+          <img 
+            src={marinLogo} 
+            alt="Marin Pest Control" 
+            className="w-12 h-12 rounded-lg object-cover"
+          />
+          <div>
+            <h1 className="text-lg font-bold text-foreground">TimeSync Pro</h1>
+            <p className="text-sm text-muted-foreground">Marin Pest Control</p>
           </div>
         </div>
+      </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.path || 
-              (item.path !== "/" && location.startsWith(item.path));
-            
-            return (
-              <Link key={item.path} href={item.path}>
-                <Button
-                  variant={isActive ? "default" : "ghost"}
-                  className={cn(
-                    "w-full justify-start space-x-3",
-                    isActive 
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </Button>
-              </Link>
-            );
-          })}
-        </nav>
+      {/* Navigation Items */}
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        {navigationItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location === item.path || 
+            (item.path !== "/" && location.startsWith(item.path));
+          
+          return (
+            <Link key={item.path} href={item.path}>
+              <Button
+                variant={isActive ? "default" : "ghost"}
+                className={cn(
+                  "w-full justify-start space-x-3",
+                  isActive 
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </Button>
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-border">
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="w-full justify-start space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Logout</span>
-          </Button>
-        </div>
+      {/* Logout Button */}
+      <div className="p-4 border-t border-border">
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start space-x-3 text-muted-foreground hover:text-foreground hover:bg-accent"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </Button>
       </div>
     </div>
   );

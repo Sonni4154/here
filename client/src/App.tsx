@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import TimeTracking from "@/pages/time-tracking";
+import MarinJobForm from "@/pages/marin-job-form";
 import Materials from "@/pages/materials";
 import Invoices from "@/pages/invoices";
 import Customers from "@/pages/customers";
@@ -29,12 +30,13 @@ function Router() {
         <Layout>
           <Switch>
             <Route path="/" component={Dashboard} />
-            <Route path="/time" component={TimeTracking} />
+            <Route path="/time-tracking" component={TimeTracking} />
+            <Route path="/marin-job-form" component={MarinJobForm} />
             <Route path="/materials" component={Materials} />
             <Route path="/invoices" component={Invoices} />
             <Route path="/customers" component={Customers} />
             <Route path="/customer-search" component={CustomerSearch} />
-            <Route path="/schedule" component={EmployeeSchedule} />
+            <Route path="/employee-schedule" component={EmployeeSchedule} />
             <Route path="/products" component={Products} />
             <Route path="/reports" component={Reports} />
             <Route path="/integrations" component={Integrations} />
