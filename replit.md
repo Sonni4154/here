@@ -2,7 +2,7 @@
 
 ## Overview
 
-TimeSync Pro is a comprehensive internal employee dashboard for Marin Pest Control featuring time tracking with clock in/out functionality, customer management with search and notes, QuickBooks 2-way synchronization, Google Calendar integration for employee scheduling and task assignment, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management and persistent sync tracking across all integrations.
+TimeSync Pro is a comprehensive internal employee dashboard for Marin Pest Control featuring time tracking with clock in/out functionality, customer management with search and notes, QuickBooks 2-way synchronization, Google Calendar integration for employee scheduling and task assignment, photo upload capability for before/after job photos, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management and persistent sync tracking across all integrations.
 
 The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use with advanced scheduling and task management capabilities.
 
@@ -59,6 +59,13 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Logo**: Marin Pest Control logo integrated throughout the application
 - **Brand Colors**: Red (#FF6B6B), Blue (#74C0FC), Cream (#F5F3E0) from company logo
 - **Layout**: Sidebar navigation with company branding and comprehensive menu structure
+
+### Photo Upload System
+- **Job Photos**: Before, after, and material/receipt photo uploads
+- **Integration**: Photos linked to time entries, material entries, and clock entries
+- **Metadata**: GPS coordinates, descriptions, and file metadata tracking
+- **UI**: Tabbed interface in time tracking with drag-and-drop file upload
+- **Storage**: Database schema ready for cloud storage integration (AWS S3, Google Cloud Storage)
 
 ## External Dependencies
 

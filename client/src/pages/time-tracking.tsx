@@ -12,9 +12,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileUpload } from "@/components/ui/file-upload";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import { Clock, Play, Square, Plus, Trash2, Calendar } from "lucide-react";
+import { Clock, Play, Square, Plus, Trash2, Calendar, Camera, Upload } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -56,6 +58,9 @@ export default function TimeTracking() {
   const [isClockDialogOpen, setIsClockDialogOpen] = useState(false);
   const [isTimeEntryDialogOpen, setIsTimeEntryDialogOpen] = useState(false);
   const [lineItems, setLineItems] = useState<LineItemFormData[]>([]);
+  const [beforePhotos, setBeforePhotos] = useState<File[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<File[]>([]);
+  const [materialPhotos, setMaterialPhotos] = useState<File[]>([]);
 
   // Real-time clock update
   useEffect(() => {

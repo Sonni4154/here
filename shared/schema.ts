@@ -480,3 +480,28 @@ export type EmployeeSchedule = typeof employeeSchedules.$inferSelect;
 // Task assignment types
 export type InsertTaskAssignment = typeof taskAssignments.$inferInsert;
 export type TaskAssignment = typeof taskAssignments.$inferSelect;
+
+// Job photos table
+export const jobPhotos = pgTable("job_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  timeEntryId: varchar("time_entry_id").references(() => timeEntries.id),
+  materialEntryId: varchar("material_entry_id").references(() => materialEntries.id),
+  clockEntryId: varchar("clock_entry_id").references(() => clockEntries.id),
+  scheduleId: varchar("schedule_id").references(() => employeeSchedules.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  filename: varchar("filename").notNull(),
+  originalName: varchar("original_name").notNull(),
+  fileSize: integer("file_size").notNull(),
+  mimeType: varchar("mime_type").notNull(),
+  photoType: varchar("photo_type").notNull(), // 'before', 'after', 'progress', 'completed', 'materials'
+  description: text("description"),
+  location: varchar("location"),
+  gpsCoordinates: varchar("gps_coordinates"), // lat,lng format
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Job photo types
+export type InsertJobPhoto = typeof jobPhotos.$inferInsert;
+export type JobPhoto = typeof jobPhotos.$inferSelect;
