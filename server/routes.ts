@@ -60,6 +60,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer notes routes
+  app.get('/api/customers/:customerId/notes', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { customerId } = req.params;
+
+      // Verify customer belongs to user
+      const customer = await storage.getCustomer(customerId);
+      if (!customer || customer.userId !== userId) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      const notes = await storage.getCustomerNotes(customerId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching customer notes:", error);
+      res.status(500).json({ message: "Failed to fetch customer notes" });
+    }
+  });
+
+  app.post('/api/customers/:customerId/notes', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { customerId } = req.params;
+      const { content, isPrivate } = req.body;
+
+      // Verify customer belongs to user
+      const customer = await storage.getCustomer(customerId);
+      if (!customer || customer.userId !== userId) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      const note = await storage.createCustomerNote({
+        customerId,
+        userId,
+        content,
+        isPrivate: isPrivate || false,
+      });
+
+      // Log activity
+      await storage.createActivityLog({
+        userId,
+        type: 'customer_note_created',
+        description: `Added ${isPrivate ? 'private' : 'public'} note to customer: ${customer.name}`,
+        metadata: { customerId, noteId: note.id },
+      });
+
+      res.json(note);
+    } catch (error) {
+      console.error("Error creating customer note:", error);
+      res.status(500).json({ message: "Failed to create customer note" });
+    }
+  });
+
   // Customer routes
   app.get('/api/customers', isAuthenticated, async (req: Request, res: Response) => {
     try {

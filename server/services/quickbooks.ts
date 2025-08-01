@@ -97,6 +97,9 @@ export class QuickBooksService {
               email: qbCustomer.PrimaryEmailAddr?.Address || '',
               phone: qbCustomer.PrimaryPhone?.FreeFormNumber || '',
               address: this.formatAddress(qbCustomer.BillAddr),
+              companyName: qbCustomer.CompanyName || qbCustomer.Name,
+              website: qbCustomer.WebAddr?.URI || '',
+              notes: qbCustomer.Notes || '',
               quickbooksId: qbCustomer.Id,
               syncStatus: 'synced',
             };
@@ -145,10 +148,12 @@ export class QuickBooksService {
       try {
         const qbCustomerData = {
           Name: customer.name,
-          CompanyName: customer.name,
+          CompanyName: customer.companyName || customer.name,
           PrimaryEmailAddr: customer.email ? { Address: customer.email } : undefined,
           PrimaryPhone: customer.phone ? { FreeFormNumber: customer.phone } : undefined,
+          WebAddr: customer.website ? { URI: customer.website } : undefined,
           BillAddr: this.parseAddress(customer.address),
+          Notes: customer.notes || '',
         };
 
         if (customer.quickbooksId) {
@@ -394,6 +399,9 @@ export class QuickBooksService {
             email: customer.PrimaryEmailAddr?.Address || '',
             phone: customer.PrimaryPhone?.FreeFormNumber || '',
             address: this.formatAddress(customer.BillAddr),
+            companyName: customer.CompanyName || customer.Name,
+            website: customer.WebAddr?.URI || '',
+            notes: customer.Notes || '',
             quickbooksId: customer.Id,
             syncStatus: 'synced',
           };

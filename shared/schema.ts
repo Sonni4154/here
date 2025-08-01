@@ -52,6 +52,25 @@ export const customers = pgTable("customers", {
   zipCode: varchar("zip_code"),
   country: varchar("country"),
   companyName: varchar("company_name"),
+  website: varchar("website"),
+  taxId: varchar("tax_id"),
+  notes: text("notes"), // General notes synced with QuickBooks
+  isActive: boolean("is_active").default(true),
+  syncStatus: varchar("sync_status").default('pending'), // 'pending', 'synced', 'error'
+  syncError: text("sync_error"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Customer notes table for detailed note history
+export const customerNotes = pgTable("customer_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  isPrivate: boolean("is_private").default(false), // Private notes don't sync to QB
+  quickbooksNoteId: varchar("quickbooks_note_id"), // For QB sync tracking
+  syncStatus: varchar("sync_status").default('pending'),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -402,3 +421,7 @@ export type InsertSyncLog = typeof syncLogs.$inferInsert;
 export type SyncLog = typeof syncLogs.$inferSelect;
 export type InsertExternalMapping = typeof externalMappings.$inferInsert;
 export type ExternalMapping = typeof externalMappings.$inferSelect;
+
+// Customer notes types
+export type InsertCustomerNote = typeof customerNotes.$inferInsert;
+export type CustomerNote = typeof customerNotes.$inferSelect;

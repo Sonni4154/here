@@ -118,6 +118,11 @@ export interface IStorage {
   getExternalMapping(userId: string, provider: string, entityType: string, externalId: string): Promise<ExternalMapping | undefined>;
   createExternalMapping(mapping: InsertExternalMapping): Promise<ExternalMapping>;
   updateExternalMapping(id: string, mapping: Partial<InsertExternalMapping>): Promise<ExternalMapping>;
+
+  // Customer notes operations
+  getCustomerNotes(customerId: string): Promise<CustomerNote[]>;
+  createCustomerNote(note: InsertCustomerNote): Promise<CustomerNote>;
+  updateCustomerNote(id: string, note: Partial<InsertCustomerNote>): Promise<CustomerNote>;
   
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
@@ -482,6 +487,25 @@ export class DatabaseStorage implements IStorage {
       .where(eq(externalMappings.id, id))
       .returning();
     return updatedMapping;
+  }
+
+  // Customer notes operations
+  async getCustomerNotes(customerId: string): Promise<CustomerNote[]> {
+    return await db.select().from(customerNotes).where(eq(customerNotes.customerId, customerId)).orderBy(desc(customerNotes.createdAt));
+  }
+
+  async createCustomerNote(note: InsertCustomerNote): Promise<CustomerNote> {
+    const [newNote] = await db.insert(customerNotes).values(note).returning();
+    return newNote;
+  }
+
+  async updateCustomerNote(id: string, note: Partial<InsertCustomerNote>): Promise<CustomerNote> {
+    const [updatedNote] = await db
+      .update(customerNotes)
+      .set(note)
+      .where(eq(customerNotes.id, id))
+      .returning();
+    return updatedNote;
   }
 }
 

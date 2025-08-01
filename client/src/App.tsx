@@ -11,6 +11,7 @@ import TimeTracking from "@/pages/time-tracking";
 import Materials from "@/pages/materials";
 import Invoices from "@/pages/invoices";
 import Customers from "@/pages/customers";
+import CustomerSearch from "@/pages/customer-search";
 import Products from "@/pages/products";
 import Reports from "@/pages/reports";
 import Integrations from "@/pages/integrations";
@@ -29,6 +30,7 @@ function Router() {
           <Route path="/materials" component={Materials} />
           <Route path="/invoices" component={Invoices} />
           <Route path="/customers" component={Customers} />
+          <Route path="/customer-search" component={CustomerSearch} />
           <Route path="/products" component={Products} />
           <Route path="/reports" component={Reports} />
           <Route path="/integrations" component={Integrations} />
