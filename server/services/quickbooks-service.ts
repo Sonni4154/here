@@ -1,4 +1,7 @@
 import axios from 'axios';
+import OAuthClient from 'intuit-oauth';
+import QuickBooks from 'node-quickbooks';
+import crypto from 'crypto';
 import { storage } from '../storage';
 
 interface QuickBooksTokens {
@@ -43,11 +46,14 @@ export class QuickBooksService {
   private baseUrl: string;
   private clientId: string;
   private clientSecret: string;
-  private discoveryDocument: any;
+  private oauthClient: OAuthClient;
+  private environment: string;
+  private webhookVerifierToken: string;
 
   constructor() {
     // Production vs Development URLs
     const isProduction = process.env.NODE_ENV === 'production';
+    this.environment = isProduction ? 'production' : 'sandbox';
     this.baseUrl = isProduction 
       ? 'https://quickbooks.api.intuit.com' 
       : (process.env.QUICKBOOKS_SANDBOX_BASE_URL || 'https://sandbox-quickbooks.api.intuit.com');
@@ -58,82 +64,99 @@ export class QuickBooksService {
       : (process.env.QUICKBOOKS_CLIENT_ID || 'ABHA55nxxxAxGrLFLqQ9eQ1jwZOQi3Bkef7tLKOUEHfDQepUqi');
     
     this.clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET || 'JqcQnXW0NC6BVb9FPAv8NG8eZR2UXjQHxvnDd08D';
+    this.webhookVerifierToken = process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN || 'default-webhook-token';
     
-    // Production vs Development discovery document
-    this.discoveryDocument = {
-      "issuer": "https://oauth.platform.intuit.com/op/v1",
-      "authorization_endpoint": "https://appcenter.intuit.com/connect/oauth2",
-      "token_endpoint": "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
-      "userinfo_endpoint": isProduction 
-        ? "https://accounts.platform.intuit.com/v1/openid_connect/userinfo"
-        : "https://sandbox-accounts.platform.intuit.com/v1/openid_connect/userinfo",
-      "revocation_endpoint": "https://developer.api.intuit.com/v2/oauth2/tokens/revoke"
-    };
+    // Initialize Intuit OAuth Client
+    this.oauthClient = new OAuthClient({
+      clientId: this.clientId,
+      clientSecret: this.clientSecret,
+      environment: this.environment,
+      redirectUri: isProduction 
+        ? 'https://www.wemakemarin.com/quickbooks/callback'
+        : 'http://localhost:5000/api/integrations/quickbooks/callback'
+    });
   }
 
-  // Generate OAuth authorization URL
+  // Generate OAuth authorization URL using Intuit OAuth Client
   getAuthorizationUrl(userId: string, redirectUri: string): string {
-    const scope = 'com.intuit.quickbooks.accounting';
-    const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
+    const scope = [OAuthClient.scopes.Accounting];
+    const state = Buffer.from(JSON.stringify({ userId, timestamp: Date.now() })).toString('base64');
     
-    const params = new URLSearchParams({
-      client_id: this.clientId,
+    return this.oauthClient.authorizeUri({
       scope,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      access_type: 'offline',
       state
     });
-
-    return `${this.discoveryDocument.authorization_endpoint}?${params.toString()}`;
   }
 
-  // Exchange authorization code for tokens
+  // Exchange authorization code for tokens using Intuit OAuth Client
   async exchangeCodeForTokens(code: string, redirectUri: string, realmId: string): Promise<QuickBooksTokens> {
     try {
-      const response = await axios.post(this.discoveryDocument.token_endpoint, {
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: redirectUri,
-        client_id: this.clientId,
-        client_secret: this.clientSecret
-      }, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
-        }
-      });
+      const authResponse = await this.oauthClient.createToken(code);
+      
+      if (!authResponse.token) {
+        throw new Error('No token received from QuickBooks');
+      }
 
       return {
-        ...response.data,
+        access_token: authResponse.token.access_token,
+        refresh_token: authResponse.token.refresh_token,
+        token_type: authResponse.token.token_type || 'Bearer',
+        expires_in: authResponse.token.expires_in || 3600,
+        scope: authResponse.token.scope || 'com.intuit.quickbooks.accounting',
         realmId
       };
     } catch (error: any) {
-      console.error('Error exchanging code for tokens:', error.response?.data || error.message);
+      console.error('Error exchanging code for tokens:', error.authResponse || error.message);
       throw new Error('Failed to exchange authorization code for tokens');
     }
   }
 
-  // Refresh access token
+  // Refresh access token using Intuit OAuth Client
   async refreshAccessToken(refreshToken: string): Promise<QuickBooksTokens> {
     try {
-      const response = await axios.post(this.discoveryDocument.token_endpoint, {
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: this.clientId,
-        client_secret: this.clientSecret
-      }, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
-        }
+      this.oauthClient.setToken({
+        refresh_token: refreshToken
       });
+      
+      const authResponse = await this.oauthClient.refresh();
+      
+      if (!authResponse.token) {
+        throw new Error('No refreshed token received from QuickBooks');
+      }
 
-      return response.data;
+      return {
+        access_token: authResponse.token.access_token,
+        refresh_token: authResponse.token.refresh_token,
+        token_type: authResponse.token.token_type || 'Bearer',
+        expires_in: authResponse.token.expires_in || 3600,
+        scope: authResponse.token.scope || 'com.intuit.quickbooks.accounting',
+        realmId: authResponse.token.realmId || ''
+      };
     } catch (error: any) {
-      console.error('Error refreshing token:', error.response?.data || error.message);
+      console.error('Error refreshing token:', error.authResponse || error.message);
       throw new Error('Failed to refresh access token');
     }
+  }
+
+  // Create QuickBooks client instance with proper authentication
+  private async createQuickBooksClient(userId: string): Promise<any> {
+    const integration = await storage.getIntegration(userId, 'quickbooks');
+    if (!integration || !integration.isActive) {
+      throw new Error('QuickBooks integration not found or inactive');
+    }
+
+    const accessToken = await this.getValidAccessToken(userId);
+    
+    return new QuickBooks(
+      this.clientId,
+      this.clientSecret,
+      accessToken,
+      false, // No token secret needed for OAuth 2.0
+      integration.realmId,
+      this.environment === 'sandbox',
+      true, // Enable debugging
+      4 // Minor version
+    );
   }
 
   // Get valid access token (refresh if needed)
@@ -311,6 +334,252 @@ export class QuickBooksService {
     } catch (error) {
       console.error('Full sync failed:', error);
       throw error;
+    }
+  }
+
+  // Webhook signature verification
+  verifyWebhookSignature(payload: string, intuitSignature: string): boolean {
+    try {
+      const hash = crypto
+        .createHmac('sha256', this.webhookVerifierToken)
+        .update(payload)
+        .digest('base64');
+      
+      return hash === intuitSignature;
+    } catch (error) {
+      console.error('Error verifying webhook signature:', error);
+      return false;
+    }
+  }
+
+  // Process webhook notifications
+  async processWebhook(webhookPayload: any): Promise<void> {
+    try {
+      const events = webhookPayload.eventNotifications || [];
+      
+      for (const event of events) {
+        const { realmId, dataChangeEvent } = event;
+        
+        // Find integration by realmId
+        const integration = await storage.getIntegrationByRealmId(realmId);
+        if (!integration || !integration.isActive) {
+          console.log(`No active integration found for realm ${realmId}`);
+          continue;
+        }
+
+        // Process data change events
+        for (const change of dataChangeEvent.entities) {
+          await this.processWebhookEntity(integration.userId, change);
+        }
+
+        // Update last sync time
+        await storage.upsertIntegration({
+          ...integration,
+          lastSyncAt: new Date()
+        });
+
+        // Log webhook processing
+        await storage.createActivityLog({
+          userId: integration.userId,
+          type: 'webhook_processed',
+          description: `Processed QuickBooks webhook for ${dataChangeEvent.entities.length} entities`,
+          metadata: { 
+            realmId, 
+            entityCount: dataChangeEvent.entities.length,
+            operation: dataChangeEvent.entities[0]?.operation || 'unknown'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error processing webhook:', error);
+      throw error;
+    }
+  }
+
+  // Process individual webhook entity changes
+  private async processWebhookEntity(userId: string, entity: any): Promise<void> {
+    const { name: entityType, id: entityId, operation } = entity;
+    
+    try {
+      switch (entityType.toLowerCase()) {
+        case 'customer':
+          if (operation === 'Create' || operation === 'Update') {
+            await this.syncSpecificCustomer(userId, entityId);
+          } else if (operation === 'Delete') {
+            await this.handleCustomerDeletion(userId, entityId);
+          }
+          break;
+          
+        case 'item':
+          if (operation === 'Create' || operation === 'Update') {
+            await this.syncSpecificItem(userId, entityId);
+          } else if (operation === 'Delete') {
+            await this.handleItemDeletion(userId, entityId);
+          }
+          break;
+          
+        case 'invoice':
+          if (operation === 'Create' || operation === 'Update') {
+            await this.syncSpecificInvoice(userId, entityId);
+          } else if (operation === 'Delete') {
+            await this.handleInvoiceDeletion(userId, entityId);
+          }
+          break;
+          
+        default:
+          console.log(`Unhandled entity type: ${entityType}`);
+      }
+    } catch (error) {
+      console.error(`Error processing ${entityType} ${operation}:`, error);
+    }
+  }
+
+  // Sync specific customer by ID
+  private async syncSpecificCustomer(userId: string, customerId: string): Promise<void> {
+    const qb = await this.createQuickBooksClient(userId);
+    
+    return new Promise((resolve, reject) => {
+      qb.getCustomer(customerId, (err: any, customer: QuickBooksCustomer) => {
+        if (err) {
+          console.error('Error fetching customer:', err);
+          return reject(err);
+        }
+        
+        // Upsert customer in our database
+        storage.createCustomer({
+          userId,
+          name: customer.Name,
+          companyName: customer.CompanyName || null,
+          email: customer.PrimaryEmailAddr?.Address || null,
+          phone: customer.PrimaryPhone?.FreeFormNumber || null,
+          address: customer.BillAddr ? 
+            [customer.BillAddr.Line1, customer.BillAddr.City, customer.BillAddr.CountrySubDivisionCode, customer.BillAddr.PostalCode]
+              .filter(Boolean).join(', ') : null,
+          quickbooksId: customer.Id
+        }).then(() => resolve()).catch(reject);
+      });
+    });
+  }
+
+  // Sync specific item by ID
+  private async syncSpecificItem(userId: string, itemId: string): Promise<void> {
+    const qb = await this.createQuickBooksClient(userId);
+    
+    return new Promise((resolve, reject) => {
+      qb.getItem(itemId, (err: any, item: QuickBooksItem) => {
+        if (err) {
+          console.error('Error fetching item:', err);
+          return reject(err);
+        }
+        
+        // Upsert product in our database
+        storage.createProduct({
+          userId,
+          name: item.Name,
+          description: item.Description || null,
+          price: item.UnitPrice?.toString() || '0',
+          category: item.Type || 'Service',
+          quickbooksId: item.Id
+        }).then(() => resolve()).catch(reject);
+      });
+    });
+  }
+
+  // Sync specific invoice by ID
+  private async syncSpecificInvoice(userId: string, invoiceId: string): Promise<void> {
+    const qb = await this.createQuickBooksClient(userId);
+    
+    return new Promise((resolve, reject) => {
+      qb.getInvoice(invoiceId, (err: any, invoice: any) => {
+        if (err) {
+          console.error('Error fetching invoice:', err);
+          return reject(err);
+        }
+        
+        // Process invoice data
+        this.processInvoiceFromQuickBooks(userId, invoice)
+          .then(() => resolve())
+          .catch(reject);
+      });
+    });
+  }
+
+  // Handle entity deletions
+  private async handleCustomerDeletion(userId: string, customerId: string): Promise<void> {
+    // Mark customer as inactive rather than deleting
+    const customers = await storage.getCustomers(userId);
+    const customer = customers.find(c => c.quickbooksId === customerId);
+    if (customer) {
+      // We don't have an updateCustomer method, so we'll log this for now
+      await storage.createActivityLog({
+        userId,
+        type: 'customer_deleted_qb',
+        description: `Customer ${customer.name} was deleted in QuickBooks`,
+        metadata: { customerId, quickbooksId: customerId }
+      });
+    }
+  }
+
+  private async handleItemDeletion(userId: string, itemId: string): Promise<void> {
+    const products = await storage.getProducts(userId);
+    const product = products.find(p => p.quickbooksId === itemId);
+    if (product) {
+      await storage.createActivityLog({
+        userId,
+        type: 'product_deleted_qb',
+        description: `Product ${product.name} was deleted in QuickBooks`,
+        metadata: { productId: product.id, quickbooksId: itemId }
+      });
+    }
+  }
+
+  private async handleInvoiceDeletion(userId: string, invoiceId: string): Promise<void> {
+    const invoices = await storage.getInvoices(userId);
+    const invoice = invoices.find(i => i.quickbooksId === invoiceId);
+    if (invoice) {
+      await storage.createActivityLog({
+        userId,
+        type: 'invoice_deleted_qb',
+        description: `Invoice ${invoice.invoiceNumber} was deleted in QuickBooks`,
+        metadata: { invoiceId: invoice.id, quickbooksId: invoiceId }
+      });
+    }
+  }
+
+  // Revoke QuickBooks integration
+  async revokeIntegration(userId: string): Promise<void> {
+    try {
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      if (!integration) {
+        throw new Error('QuickBooks integration not found');
+      }
+
+      // Revoke tokens with QuickBooks
+      this.oauthClient.setToken({
+        access_token: integration.accessToken,
+        refresh_token: integration.refreshToken
+      });
+
+      await this.oauthClient.revoke();
+
+      // Deactivate integration in our database
+      await storage.upsertIntegration({
+        ...integration,
+        isActive: false,
+        accessToken: '',
+        refreshToken: ''
+      });
+
+      await storage.createActivityLog({
+        userId,
+        type: 'integration_revoked',
+        description: 'QuickBooks integration was revoked',
+        metadata: { provider: 'quickbooks' }
+      });
+
+    } catch (error: any) {
+      console.error('Error revoking QuickBooks integration:', error);
+      throw new Error('Failed to revoke QuickBooks integration');
     }
   }
 }

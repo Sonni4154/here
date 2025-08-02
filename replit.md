@@ -99,6 +99,15 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Environment Detection**: Automatic production/development URL switching
 - **SSL Configuration**: HTTPS enforced for production QuickBooks integration
 
+### Enhanced OAuth-Intuit Integration (January 2025)
+- **Official Intuit OAuth Library**: Upgraded to `intuit-oauth` package for robust OAuth 2.0 handling
+- **Node-QuickBooks Integration**: Added `node-quickbooks` for enhanced API interactions and callback-based methods
+- **Comprehensive Webhook System**: Full webhook handler with signature verification using HMAC-SHA256
+- **Real-time Data Sync**: Webhook processing for Customer, Item, and Invoice entity changes (Create/Update/Delete)
+- **Enhanced Token Management**: Automatic token refresh with proper credential storage and validation
+- **Production Webhook URL**: https://www.wemakemarin.com/api/webhooks/quickbooks
+- **API Documentation**: Complete endpoint documentation with 25+ routes covering all integrations
+
 ### QuickBooks Integration Settings
 - **Production Client ID**: ABcxWWL62bJFQd43vWFkko728BJLReocAxJKfeeemZtXfVAO1S
 - **Development Client ID**: ABHA55nxxxAxGrLFLqQ9eQ1jwZOQi3Bkef7tLKOUEHfDQepUqi

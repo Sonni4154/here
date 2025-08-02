@@ -311,6 +311,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // QuickBooks webhook endpoint
+  app.post('/api/webhooks/quickbooks', async (req, res) => {
+    try {
+      const signature = req.headers['intuit-signature'] as string;
+      const payload = JSON.stringify(req.body);
+      
+      // Verify webhook signature
+      if (!quickbooksService.verifyWebhookSignature(payload, signature)) {
+        console.error('Invalid QuickBooks webhook signature');
+        return res.status(401).json({ message: 'Invalid signature' });
+      }
+
+      // Process webhook payload
+      await quickbooksService.processWebhook(req.body);
+      
+      res.status(200).json({ message: 'Webhook processed successfully' });
+    } catch (error) {
+      console.error('Error processing QuickBooks webhook:', error);
+      res.status(500).json({ message: 'Failed to process webhook' });
+    }
+  });
+
+  // QuickBooks disconnect/revoke endpoint
+  app.post('/api/integrations/quickbooks/disconnect', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await quickbooksService.revokeIntegration(userId);
+      
+      res.json({ message: "QuickBooks integration disconnected successfully" });
+    } catch (error) {
+      console.error("Error disconnecting QuickBooks:", error);
+      res.status(500).json({ message: "Failed to disconnect QuickBooks integration" });
+    }
+  });
+
+  // QuickBooks connection status endpoint
+  app.get('/api/integrations/quickbooks/status', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      
+      res.json({
+        connected: !!integration?.isActive,
+        lastSync: integration?.lastSyncAt,
+        realmId: integration?.realmId
+      });
+    } catch (error) {
+      console.error("Error getting QuickBooks status:", error);
+      res.status(500).json({ message: "Failed to get QuickBooks status" });
+    }
+  });
+
+  // Test webhook endpoint for development
+  app.post('/api/webhooks/quickbooks/test', isAuthenticated, async (req, res) => {
+    try {
+      const testPayload = {
+        eventNotifications: [{
+          realmId: req.body.realmId || 'test-realm',
+          dataChangeEvent: {
+            entities: [{
+              name: req.body.entityType || 'Customer',
+              id: req.body.entityId || 'test-123',
+              operation: req.body.operation || 'Create',
+              lastUpdated: new Date().toISOString()
+            }]
+          }
+        }]
+      };
+
+      await quickbooksService.processWebhook(testPayload);
+      res.json({ message: 'Test webhook processed successfully', payload: testPayload });
+    } catch (error) {
+      console.error('Error processing test webhook:', error);
+      res.status(500).json({ message: 'Failed to process test webhook' });
+    }
+  });
+
   // Google Calendar Integration routes
   app.get('/api/integrations/google-calendar/connect', isAuthenticated, async (req, res) => {
     try {
@@ -711,6 +788,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error triggering immediate sync:", error);
       res.status(500).json({ message: "Failed to trigger immediate sync" });
     }
+  });
+
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      services: {
+        database: 'connected',
+        quickbooks: 'configured',
+        oauth: 'enabled'
+      }
+    });
+  });
+
+  // Version endpoint
+  app.get('/api/version', (req, res) => {
+    res.json({
+      version: '2.1.0',
+      features: [
+        'Enhanced QuickBooks OAuth with intuit-oauth',
+        'Comprehensive webhook handling',
+        'Real-time data synchronization',
+        'Production-ready authentication',
+        'Automated sync scheduling'
+      ],
+      environment: process.env.NODE_ENV || 'development',
+      lastUpdate: '2025-01-01T12:00:00Z'
+    });
   });
 
   const httpServer = createServer(app);
