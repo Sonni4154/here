@@ -454,6 +454,11 @@ export class DatabaseStorage implements IStorage {
     return entry;
   }
 
+  async getClockEntry(id: string): Promise<ClockEntry | undefined> {
+    const [entry] = await db.select().from(clockEntries).where(eq(clockEntries.id, id));
+    return entry;
+  }
+
   async createClockEntry(clockEntry: InsertClockEntry): Promise<ClockEntry> {
     const [newEntry] = await db.insert(clockEntries).values(clockEntry).returning();
     return newEntry;
@@ -466,6 +471,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clockEntries.id, id))
       .returning();
     return updatedEntry;
+  }
+
+  // Get upcoming schedules for calendar sync
+  async getUpcomingSchedules(): Promise<any[]> {
+    // This would be implemented based on your scheduling system
+    // For now, return empty array as placeholder
+    return [];
   }
 
   // Timesheet line item operations

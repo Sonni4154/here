@@ -51,7 +51,7 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 ### Third-Party Integrations
 - **QuickBooks**: OAuth 2.0 integration for accounting data synchronization
 - **JotForm**: API integration for form submission processing
-- **Google Calendar**: OAuth 2.0 for employee scheduling and task management with two-way sync
+- **Google Calendar**: OAuth 2.0 for employee scheduling and task management with two-way sync, automatic clock in/out calendar events
 - **Google Workspace**: OAuth 2.0 for Sheets, Docs, and Drive access
 - **Sync Strategy**: Manual and automated data synchronization with conflict resolution
 
@@ -105,6 +105,14 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Environment Management**: Comprehensive .env configuration with examples
 - **Production Ready**: PM2 process management, Nginx configuration, SSL setup
 - **Documentation**: Complete README.md with setup instructions and API documentation
+
+### Google Calendar Integration
+- **Clock Events**: Automatic calendar event creation for employee clock in/out activities
+- **Company Calendar**: Centralized calendar for all employee time tracking events
+- **Real-time Updates**: Calendar events updated when employees clock out with actual duration
+- **Event Details**: Events include employee name, customer information, location, and notes
+- **Color Coding**: Green for clock in, red for clock out, blue for scheduled events
+- **OAuth Integration**: Secure Google OAuth 2.0 authentication for calendar access
 
 ## External Dependencies
 

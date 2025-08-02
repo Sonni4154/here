@@ -252,14 +252,18 @@ export const materialEntries = pgTable("material_entries", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Clock entries for simple clock in/out functionality
+// Clock entries for simple clock in/out functionality with calendar integration
 export const clockEntries = pgTable("clock_entries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  clockInTime: timestamp("clock_in_time").notNull(),
-  clockOutTime: timestamp("clock_out_time"),
+  customerId: varchar("customer_id").references(() => customers.id),
+  clockIn: timestamp("clock_in").notNull(),
+  clockOut: timestamp("clock_out"),
   totalHours: decimal("total_hours", { precision: 5, scale: 2 }),
   status: varchar("status", { length: 20 }).default("active"), // active, completed
+  location: varchar("location"), // JSON string for GPS coordinates
+  notes: text("notes"),
+  calendarEventId: varchar("calendar_event_id"), // Google Calendar event ID
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import TimeTracking from "@/pages/time-tracking";
 import MarinJobForm from "@/pages/marin-job-form";
 import Materials from "@/pages/materials";
+import Clock from "@/pages/clock";
 import Invoices from "@/pages/invoices";
 import Customers from "@/pages/customers";
 import CustomerSearch from "@/pages/customer-search";
@@ -34,6 +35,7 @@ function Router() {
             <Route path="/time-tracking" component={TimeTracking} />
             <Route path="/marin-job-form" component={MarinJobForm} />
             <Route path="/materials" component={Materials} />
+            <Route path="/clock" component={Clock} />
             <Route path="/invoices" component={Invoices} />
             <Route path="/customers" component={Customers} />
             <Route path="/customer-search" component={CustomerSearch} />

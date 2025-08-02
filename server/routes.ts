@@ -277,6 +277,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google Calendar Integration routes
+  app.get('/api/integrations/google-calendar/connect', isAuthenticated, async (req, res) => {
+    try {
+      const { GoogleCalendarService } = await import('./services/google-calendar-service');
+      const calendarService = new GoogleCalendarService();
+      
+      const userId = req.user!.claims.sub;
+      const authUrl = calendarService.getAuthorizationUrl(userId);
+      
+      res.redirect(authUrl);
+    } catch (error) {
+      console.error("Error connecting to Google Calendar:", error);
+      res.status(500).json({ message: "Failed to connect to Google Calendar" });
+    }
+  });
+
+  app.get('/api/integrations/google/callback', isAuthenticated, async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code || !state) {
+        return res.redirect('/integrations?error=missing_params');
+      }
+
+      const { GoogleCalendarService } = await import('./services/google-calendar-service');
+      const calendarService = new GoogleCalendarService();
+      
+      const { userId } = JSON.parse(Buffer.from(state as string, 'base64').toString());
+      const tokens = await calendarService.exchangeCodeForTokens(code as string);
+
+      // Store integration
+      await storage.upsertIntegration({
+        userId,
+        provider: 'google_calendar',
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        isActive: true,
+        lastSyncAt: new Date()
+      });
+
+      await storage.createActivityLog({
+        userId,
+        type: 'integration_connected',
+        description: 'Google Calendar integration connected successfully',
+        metadata: { provider: 'google_calendar' }
+      });
+
+      res.redirect('/integrations?success=google_calendar');
+    } catch (error) {
+      console.error('Google Calendar callback error:', error);
+      res.redirect('/integrations?error=google_calendar');
+    }
+  });
+
+  app.post('/api/integrations/google-calendar/sync', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { GoogleCalendarService } = await import('./services/google-calendar-service');
+      const calendarService = new GoogleCalendarService();
+      
+      await calendarService.syncEmployeeSchedules(userId);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'manual_sync',
+        description: 'Manual Google Calendar sync completed',
+        metadata: { timestamp: new Date() }
+      });
+
+      res.json({ message: "Google Calendar sync completed successfully" });
+    } catch (error) {
+      console.error("Error syncing with Google Calendar:", error);
+      res.status(500).json({ message: "Failed to sync with Google Calendar" });
+    }
+  });
+
+  // Clock in/out with calendar integration
+  app.post('/api/clock/in', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { customerId, location, notes } = req.body;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Create clock entry
+      const clockEntry = await storage.createClockEntry({
+        userId,
+        customerId,
+        clockIn: new Date(),
+        location: location ? JSON.stringify(location) : undefined,
+        notes,
+      });
+
+      // Create calendar event
+      try {
+        const { GoogleCalendarService } = await import('./services/google-calendar-service');
+        const calendarService = new GoogleCalendarService();
+        
+        if (await calendarService.setCredentials(userId)) {
+          const customer = customerId ? await storage.getCustomer(customerId) : null;
+          
+          const calendarEventId = await calendarService.createClockEvent({
+            employeeId: userId,
+            employeeName: `${user.firstName} ${user.lastName}`,
+            employeeEmail: user.email || '',
+            customerId,
+            customerName: customer?.name,
+            action: 'clock_in',
+            timestamp: clockEntry.clockIn!,
+            location,
+            notes,
+          });
+
+          // Store calendar event ID for later updates
+          if (calendarEventId) {
+            await storage.updateClockEntry(clockEntry.id, {
+              calendarEventId,
+            });
+          }
+        }
+      } catch (calendarError) {
+        console.error('Calendar integration error (non-blocking):', calendarError);
+      }
+
+      await storage.createActivityLog({
+        userId,
+        type: 'clock_in',
+        description: `Clocked in${customerId ? ` for customer work` : ''}`,
+        metadata: { clockEntryId: clockEntry.id, customerId },
+      });
+
+      res.json(clockEntry);
+    } catch (error) {
+      console.error("Error clocking in:", error);
+      res.status(500).json({ message: "Failed to clock in" });
+    }
+  });
+
+  app.post('/api/clock/out', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { clockEntryId, notes } = req.body;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Get clock entry
+      const clockEntry = await storage.getClockEntry(clockEntryId);
+      if (!clockEntry || clockEntry.userId !== userId) {
+        return res.status(404).json({ message: "Clock entry not found" });
+      }
+
+      if (clockEntry.clockOut) {
+        return res.status(400).json({ message: "Already clocked out" });
+      }
+
+      // Update clock entry
+      const updatedEntry = await storage.updateClockEntry(clockEntryId, {
+        clockOut: new Date(),
+        notes: notes || clockEntry.notes,
+      });
+
+      // Update calendar event
+      try {
+        const { GoogleCalendarService } = await import('./services/google-calendar-service');
+        const calendarService = new GoogleCalendarService();
+        
+        if (await calendarService.setCredentials(userId) && clockEntry.calendarEventId) {
+          const customer = clockEntry.customerId ? await storage.getCustomer(clockEntry.customerId) : null;
+          
+          await calendarService.updateClockEvent(clockEntry.calendarEventId, {
+            employeeId: userId,
+            employeeName: `${user.firstName} ${user.lastName}`,
+            employeeEmail: user.email || '',
+            customerId: clockEntry.customerId,
+            customerName: customer?.name,
+            action: 'clock_out',
+            timestamp: updatedEntry.clockOut!,
+            notes: updatedEntry.notes,
+          });
+        }
+      } catch (calendarError) {
+        console.error('Calendar integration error (non-blocking):', calendarError);
+      }
+
+      await storage.createActivityLog({
+        userId,
+        type: 'clock_out',
+        description: 'Clocked out',
+        metadata: { clockEntryId: clockEntry.id },
+      });
+
+      res.json(updatedEntry);
+    } catch (error) {
+      console.error("Error clocking out:", error);
+      res.status(500).json({ message: "Failed to clock out" });
+    }
+  });
+
+  // Get current clock status
+  app.get('/api/clock/status', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const activeClockEntry = await storage.getActiveClockEntry(userId);
+      
+      res.json({
+        isClockedIn: !!activeClockEntry,
+        clockEntry: activeClockEntry,
+      });
+    } catch (error) {
+      console.error("Error getting clock status:", error);
+      res.status(500).json({ message: "Failed to get clock status" });
+    }
+  });
+
   // Sync status route
   app.get('/api/sync/status', isAuthenticated, async (req, res) => {
     try {
