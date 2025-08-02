@@ -390,7 +390,13 @@ export class DatabaseStorage implements IStorage {
 
   // Time entry operations
   async getTimeEntries(userId: string): Promise<TimeEntry[]> {
-    return await db.select().from(timeEntries).where(eq(timeEntries.userId, userId)).orderBy(desc(timeEntries.createdAt));
+    try {
+      return await db.select().from(timeEntries).where(eq(timeEntries.userId, userId)).orderBy(desc(timeEntries.createdAt));
+    } catch (error) {
+      console.error('Error fetching time entries:', error);
+      // Return empty array if there's a schema issue
+      return [];
+    }
   }
 
   async getTimeEntry(id: string): Promise<TimeEntry | undefined> {

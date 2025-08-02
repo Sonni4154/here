@@ -176,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = req.user!.claims.sub;
-      const redirectUri = 'https://chat-enhance-spencermreiser.replit.app/quickbooks/callback';
+      const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
       
       const tokens = await quickbooksService.exchangeCodeForTokens(
         code as string, 
