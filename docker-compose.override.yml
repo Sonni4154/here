@@ -1,0 +1,39 @@
+
+# Development overrides for Docker Compose
+version: '3.8'
+
+services:
+  app:
+    build:
+      target: builder
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "5000:5000"
+    develop:
+      watch:
+        - action: sync
+          path: ./server
+          target: /app/server
+        - action: sync
+          path: ./client
+          target: /app/client
+        - action: sync
+          path: ./shared
+          target: /app/shared
+        - action: rebuild
+          path: package*.json
+
+  db:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=timesync_pro_dev
+
+  nginx:
+    profiles:
+      - production

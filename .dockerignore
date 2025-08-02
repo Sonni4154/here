@@ -1,0 +1,63 @@
+
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build outputs
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Development files
+.replit
+replit.nix
+.config/
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+timesync-pro-backup.zip
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Database
+migrations/
+
+# Uploads (will be mounted as volume)
+uploads/
+attached_assets/
