@@ -340,15 +340,6 @@ export class DatabaseStorage implements IStorage {
     return newLog;
   }
 
-  async getActivityLogs(userId: string, limit: number = 50): Promise<ActivityLog[]> {
-    return await db
-      .select()
-      .from(activityLogs)
-      .where(eq(activityLogs.userId, userId))
-      .orderBy(desc(activityLogs.createdAt))
-      .limit(limit);
-  }
-
   // Dashboard stats
   async getDashboardStats(userId: string): Promise<{
     totalRevenue: number;
