@@ -84,6 +84,13 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Smart Conditions**: Time windows, data validation, and user-specific trigger conditions
 - **Real-time Processing**: Immediate workflow execution on business events with comprehensive error handling
 
+### Automated Data Synchronization
+- **Scheduled QuickBooks Sync**: Automated hourly sync of customers, products, and invoices
+- **Initial Data Pull**: One-click import of existing QuickBooks data for immediate content population
+- **Background Processing**: Non-blocking sync operations with detailed logging and error handling
+- **Sync Status Monitoring**: Real-time sync status display with manual trigger capabilities
+- **User-Controlled Automation**: Enable/disable automated sync with one-click toggle controls
+
 ## Production Configuration
 
 ### Domain Setup

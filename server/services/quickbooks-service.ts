@@ -243,9 +243,64 @@ export class QuickBooksService {
   }
 
   // Full sync (customers and items)
+  // Sync recent invoices (last N days)
+  async syncRecentInvoices(userId: string, days: number = 30): Promise<{ count: number }> {
+    const integration = await storage.getIntegration(userId, 'quickbooks');
+    if (!integration || !integration.isActive) {
+      throw new Error('QuickBooks integration not found or inactive');
+    }
+
+    await this.setCredentials(integration);
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    try {
+      const response = await this.makeRequest(
+        `/v3/companyinfo/${integration.realmId}/query?query=SELECT * FROM Invoice WHERE TxnDate >= '${cutoffDate.toISOString().split('T')[0]}' MAXRESULTS 1000`,
+        'GET'
+      );
+
+      const invoices = response.QueryResponse?.Invoice || [];
+      let syncCount = 0;
+
+      for (const qbInvoice of invoices) {
+        await this.processInvoice(qbInvoice, userId);
+        syncCount++;
+      }
+
+      console.log(`Synced ${syncCount} recent invoices`);
+      return { count: syncCount };
+    } catch (error) {
+      console.error('Error syncing recent invoices:', error);
+      throw error;
+    }
+  }
+
   async fullSync(userId: string): Promise<void> {
-    await this.syncCustomers(userId);
-    await this.syncItems(userId);
+    console.log(`Starting full QuickBooks sync for user ${userId}`);
+    
+    const startTime = Date.now();
+    
+    try {
+      await this.syncCustomers(userId);
+      await this.syncItems(userId);
+      await this.syncInvoices(userId);
+      
+      const duration = Date.now() - startTime;
+      console.log(`Full sync completed in ${Math.round(duration / 1000)}s`);
+      
+      // Update last sync time
+      await storage.upsertIntegration({
+        userId,
+        provider: 'quickbooks',
+        lastSyncAt: new Date()
+      } as any);
+      
+    } catch (error) {
+      console.error('Full sync failed:', error);
+      throw error;
+    }
   }
 }
 

@@ -65,7 +65,18 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
+    
+    // Initialize automated sync after server starts
+    setTimeout(async () => {
+      try {
+        const { initializeScheduledSync } = await import('./services/sync-scheduler');
+        await initializeScheduledSync();
+        log('Automated QuickBooks sync initialized');
+      } catch (error) {
+        log(`Failed to initialize automated sync: ${error.message}`);
+      }
+    }, 5000); // Wait 5 seconds for server to be ready
   });
 })();

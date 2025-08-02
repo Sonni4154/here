@@ -340,6 +340,15 @@ export class DatabaseStorage implements IStorage {
     return newLog;
   }
 
+  async getActivityLogs(userId: string, limit: number = 50): Promise<ActivityLog[]> {
+    return await db
+      .select()
+      .from(activityLogs)
+      .where(eq(activityLogs.userId, userId))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(limit);
+  }
+
   // Dashboard stats
   async getDashboardStats(userId: string): Promise<{
     totalRevenue: number;
@@ -478,6 +487,14 @@ export class DatabaseStorage implements IStorage {
     // This would be implemented based on your scheduling system
     // For now, return empty array as placeholder
     return [];
+  }
+
+  // Get active integrations by provider
+  async getActiveIntegrations(provider: string): Promise<Integration[]> {
+    return await db
+      .select()
+      .from(integrations)
+      .where(and(eq(integrations.provider, provider), eq(integrations.isActive, true)));
   }
 
   // Timesheet line item operations

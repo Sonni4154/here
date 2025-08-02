@@ -38,6 +38,48 @@ export default function Integrations() {
     }
   });
 
+  const initialDataPull = useMutation({
+    mutationFn: () => apiRequest("/api/integrations/quickbooks/initial-sync", "POST"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      toast({ title: "Initial QuickBooks data pull completed", description: "Customers, products, and invoices imported" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Data pull failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const toggleAutomatedSync = useMutation({
+    mutationFn: (enable: boolean) => {
+      const endpoint = enable ? "/api/sync/start-automated" : "/api/sync/stop-automated";
+      return apiRequest(endpoint, "POST", enable ? { intervalMinutes: 60 } : {});
+    },
+    onSuccess: (_, enable) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sync/status"] });
+      toast({ 
+        title: enable ? "Automated sync enabled" : "Automated sync disabled",
+        description: enable ? "QuickBooks will sync every hour" : "Manual sync only"
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to toggle automated sync", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const triggerImmediateSync = useMutation({
+    mutationFn: () => apiRequest("/api/sync/trigger-immediate", "POST"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sync/status"] });
+      toast({ title: "Immediate sync completed" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Immediate sync failed", description: error.message, variant: "destructive" });
+    }
+  });
+
   const importSampleData = useMutation({
     mutationFn: () => apiRequest("/api/import-sample-data", "POST"),
     onSuccess: () => {
@@ -145,14 +187,26 @@ export default function Integrations() {
                 
                 <div className="flex space-x-2">
                   {quickbooksIntegration?.isActive ? (
-                    <Button
-                      onClick={() => syncQuickBooks.mutate()}
-                      disabled={syncQuickBooks.isPending}
-                      variant="outline"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Sync Now
-                    </Button>
+                    <>
+                      <Button
+                        onClick={() => initialDataPull.mutate()}
+                        disabled={initialDataPull.isPending}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Database className="w-4 h-4 mr-2" />
+                        {initialDataPull.isPending ? "Pulling Data..." : "Pull Data"}
+                      </Button>
+                      <Button
+                        onClick={() => syncQuickBooks.mutate()}
+                        disabled={syncQuickBooks.isPending}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        {syncQuickBooks.isPending ? "Syncing..." : "Sync Now"}
+                      </Button>
+                    </>
                   ) : (
                     <Button onClick={() => window.location.href = '/api/integrations/quickbooks/connect'}>
                       <ExternalLink className="w-4 h-4 mr-2" />
@@ -166,6 +220,46 @@ export default function Integrations() {
                 <p className="text-sm text-muted-foreground">
                   {getLastSyncText(quickbooksIntegration.lastSyncAt)}
                 </p>
+              )}
+
+              {/* Automated Sync Controls */}
+              {quickbooksIntegration?.isActive && (
+                <div className="border-t pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="automated-sync" className="text-sm font-medium">
+                        Automated Sync
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically sync QuickBooks data every hour
+                      </p>
+                    </div>
+                    <Switch
+                      id="automated-sync"
+                      checked={syncStatus?.syncStatus?.isActive || false}
+                      onCheckedChange={(checked) => toggleAutomatedSync.mutate(checked)}
+                      disabled={toggleAutomatedSync.isPending}
+                    />
+                  </div>
+                  
+                  {syncStatus?.syncStatus?.isActive && (
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="bg-green-50">
+                        <Play className="w-3 h-3 mr-1" />
+                        Auto-sync Active
+                      </Badge>
+                      <Button
+                        onClick={() => triggerImmediateSync.mutate()}
+                        disabled={triggerImmediateSync.isPending}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        {triggerImmediateSync.isPending ? "Syncing..." : "Sync Now"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>

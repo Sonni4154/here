@@ -258,6 +258,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initial data pull from QuickBooks
+  app.post('/api/integrations/quickbooks/initial-sync', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      // Pull customers
+      console.log('Pulling QuickBooks customers...');
+      await quickbooksService.syncCustomers(userId);
+      
+      // Pull products/services
+      console.log('Pulling QuickBooks items...');
+      await quickbooksService.syncItems(userId);
+      
+      // Pull recent invoices
+      console.log('Pulling QuickBooks invoices...');
+      await quickbooksService.syncInvoices(userId);
+      
+      await storage.createActivityLog({
+        userId,
+        type: 'initial_sync',
+        description: 'Initial QuickBooks data pull completed - customers, items, and invoices',
+        metadata: { timestamp: new Date() }
+      });
+
+      res.json({ message: "Initial QuickBooks data pull completed successfully" });
+    } catch (error) {
+      console.error("Error pulling initial QuickBooks data:", error);
+      res.status(500).json({ 
+        message: "Failed to pull initial QuickBooks data", 
+        error: error.message 
+      });
+    }
+  });
+
   app.post('/api/integrations/quickbooks/sync', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.claims.sub;
@@ -610,6 +644,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.clearCookie('connect.sid');
       res.json({ message: 'Logged out successfully' });
     });
+  });
+
+  // Sync scheduler routes
+  app.get('/api/sync/status', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { syncScheduler } = await import('./services/sync-scheduler');
+      
+      const syncStatus = syncScheduler.getSyncStatus(userId);
+      const recentLogs = await storage.getActivityLogs(userId, 10);
+      
+      res.json({
+        syncStatus,
+        recentLogs: recentLogs.filter(log => 
+          log.type?.includes('sync') || log.type?.includes('integration')
+        )
+      });
+    } catch (error) {
+      console.error("Error getting sync status:", error);
+      res.status(500).json({ message: "Failed to get sync status" });
+    }
+  });
+
+  app.post('/api/sync/start-automated', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { intervalMinutes = 60 } = req.body;
+      const { syncScheduler } = await import('./services/sync-scheduler');
+      
+      await syncScheduler.startAutomatedSync(userId, intervalMinutes);
+      
+      res.json({ 
+        message: `Automated sync started (every ${intervalMinutes} minutes)`,
+        intervalMinutes 
+      });
+    } catch (error) {
+      console.error("Error starting automated sync:", error);
+      res.status(500).json({ message: "Failed to start automated sync" });
+    }
+  });
+
+  app.post('/api/sync/stop-automated', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { syncScheduler } = await import('./services/sync-scheduler');
+      
+      syncScheduler.stopAutomatedSync(userId);
+      
+      res.json({ message: "Automated sync stopped" });
+    } catch (error) {
+      console.error("Error stopping automated sync:", error);
+      res.status(500).json({ message: "Failed to stop automated sync" });
+    }
+  });
+
+  app.post('/api/sync/trigger-immediate', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const { syncScheduler } = await import('./services/sync-scheduler');
+      
+      await syncScheduler.triggerImmediateSync(userId);
+      
+      res.json({ message: "Immediate sync completed" });
+    } catch (error) {
+      console.error("Error triggering immediate sync:", error);
+      res.status(500).json({ message: "Failed to trigger immediate sync" });
+    }
   });
 
   const httpServer = createServer(app);
