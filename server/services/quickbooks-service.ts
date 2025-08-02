@@ -46,16 +46,27 @@ export class QuickBooksService {
   private discoveryDocument: any;
 
   constructor() {
-    this.baseUrl = process.env.QUICKBOOKS_SANDBOX_BASE_URL || 'https://sandbox-quickbooks.api.intuit.com';
-    this.clientId = process.env.QUICKBOOKS_CLIENT_ID || 'ABHA55nxxxAxGrLFLqQ9eQ1jwZOQi3Bkef7tLKOUEHfDQepUqi';
+    // Production vs Development URLs
+    const isProduction = process.env.NODE_ENV === 'production';
+    this.baseUrl = isProduction 
+      ? 'https://quickbooks.api.intuit.com' 
+      : (process.env.QUICKBOOKS_SANDBOX_BASE_URL || 'https://sandbox-quickbooks.api.intuit.com');
+    
+    // Production vs Development Client IDs
+    this.clientId = isProduction 
+      ? (process.env.QUICKBOOKS_CLIENT_ID || 'ABcxWWL62bJFQd43vWFkko728BJLReocAxJKfeeemZtXfVAO1S')
+      : (process.env.QUICKBOOKS_CLIENT_ID || 'ABHA55nxxxAxGrLFLqQ9eQ1jwZOQi3Bkef7tLKOUEHfDQepUqi');
+    
     this.clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET || 'JqcQnXW0NC6BVb9FPAv8NG8eZR2UXjQHxvnDd08D';
     
-    // Use the sandbox discovery document from the attached file
+    // Production vs Development discovery document
     this.discoveryDocument = {
       "issuer": "https://oauth.platform.intuit.com/op/v1",
       "authorization_endpoint": "https://appcenter.intuit.com/connect/oauth2",
       "token_endpoint": "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
-      "userinfo_endpoint": "https://sandbox-accounts.platform.intuit.com/v1/openid_connect/userinfo",
+      "userinfo_endpoint": isProduction 
+        ? "https://accounts.platform.intuit.com/v1/openid_connect/userinfo"
+        : "https://sandbox-accounts.platform.intuit.com/v1/openid_connect/userinfo",
       "revocation_endpoint": "https://developer.api.intuit.com/v2/oauth2/tokens/revoke"
     };
   }

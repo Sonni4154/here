@@ -105,6 +105,8 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Callback Route**: `/quickbooks/callback` (production) and `/api/integrations/quickbooks/callback` (development)
 - **OAuth Scope**: com.intuit.quickbooks.accounting
 - **Integration Features**: Customer sync, product catalog, invoice management
+- **Environment Detection**: Automatic production/development mode switching based on NODE_ENV
+- **API URLs**: Production (https://quickbooks.api.intuit.com) vs Sandbox (https://sandbox-quickbooks.api.intuit.com)
 
 ### GitHub Integration Preparation
 - **Repository Structure**: Complete project organization for version control
