@@ -27,7 +27,7 @@ export default function Integrations() {
 
   // Mutations
   const syncQuickBooks = useMutation({
-    mutationFn: () => apiRequest("/api/integrations/quickbooks/sync", "POST"),
+    mutationFn: () => apiRequest("/api/integrations/quickbooks/sync", { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sync/status"] });
@@ -39,7 +39,7 @@ export default function Integrations() {
   });
 
   const initialDataPull = useMutation({
-    mutationFn: () => apiRequest("/api/integrations/quickbooks/initial-sync", "POST"),
+    mutationFn: () => apiRequest("/api/integrations/quickbooks/initial-sync", { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
@@ -55,7 +55,10 @@ export default function Integrations() {
   const toggleAutomatedSync = useMutation({
     mutationFn: (enable: boolean) => {
       const endpoint = enable ? "/api/sync/start-automated" : "/api/sync/stop-automated";
-      return apiRequest(endpoint, "POST", enable ? { intervalMinutes: 60 } : {});
+      return apiRequest(endpoint, { 
+        method: "POST", 
+        body: enable ? { intervalMinutes: 60 } : {} 
+      });
     },
     onSuccess: (_, enable) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sync/status"] });
@@ -70,7 +73,7 @@ export default function Integrations() {
   });
 
   const triggerImmediateSync = useMutation({
-    mutationFn: () => apiRequest("/api/sync/trigger-immediate", "POST"),
+    mutationFn: () => apiRequest("/api/sync/trigger-immediate", { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sync/status"] });
       toast({ title: "Immediate sync completed" });
