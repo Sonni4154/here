@@ -311,6 +311,95 @@ export class QuickBooksService {
     }
   }
 
+  // Add missing methods for production readiness
+  private async setCredentials(integration: any): Promise<void> {
+    this.oauthClient.setToken({
+      access_token: integration.accessToken,
+      refresh_token: integration.refreshToken
+    });
+  }
+
+  private async makeRequest(endpoint: string, method: string = 'GET', data?: any): Promise<any> {
+    const integration = await storage.getIntegration('current-user-id', 'quickbooks');
+    if (!integration) {
+      throw new Error('QuickBooks integration not found');
+    }
+
+    const url = `${this.baseUrl}${endpoint}`;
+    const headers = {
+      'Authorization': `Bearer ${integration.accessToken}`,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    };
+
+    const response = await axios({ method, url, headers, data });
+    return response.data;
+  }
+
+  private async processInvoice(qbInvoice: any, userId: string): Promise<void> {
+    try {
+      const invoice = await storage.createInvoice({
+        userId,
+        customerId: qbInvoice.CustomerRef?.value || '',
+        quickbooksId: qbInvoice.Id,
+        invoiceNumber: qbInvoice.DocNumber || 'QB-' + qbInvoice.Id,
+        invoiceDate: new Date(qbInvoice.TxnDate || Date.now()),
+        dueDate: qbInvoice.DueDate ? new Date(qbInvoice.DueDate) : null,
+        status: qbInvoice.Balance > 0 ? 'sent' : 'paid',
+        subtotal: qbInvoice.TotalAmt?.toString() || '0',
+        taxAmount: qbInvoice.TxnTaxDetail?.TotalTax?.toString() || '0',
+        totalAmount: qbInvoice.TotalAmt?.toString() || '0',
+        notes: qbInvoice.CustomerMemo?.value || null
+      });
+
+      // Process invoice line items if present
+      if (qbInvoice.Line && Array.isArray(qbInvoice.Line)) {
+        for (const line of qbInvoice.Line) {
+          if (line.DetailType === 'SalesItemLineDetail' && line.SalesItemLineDetail) {
+            await storage.createInvoiceItem({
+              invoiceId: invoice.id,
+              productId: line.SalesItemLineDetail.ItemRef?.value || null,
+              description: line.Description || 'QuickBooks Item',
+              quantity: line.SalesItemLineDetail.Qty?.toString() || '1',
+              unitPrice: line.SalesItemLineDetail.UnitPrice?.toString() || '0',
+              amount: line.Amount?.toString() || '0'
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error processing invoice:', error);
+      throw error;
+    }
+  }
+
+  async syncInvoices(userId: string): Promise<void> {
+    const integration = await storage.getIntegration(userId, 'quickbooks');
+    if (!integration) {
+      throw new Error('QuickBooks integration not found');
+    }
+
+    await this.setCredentials(integration);
+    
+    try {
+      const response = await this.makeRequest(
+        `/v3/company/${integration.realmId}/query?query=SELECT * FROM Invoice MAXRESULTS 1000`,
+        'GET'
+      );
+
+      const invoices = response.QueryResponse?.Invoice || [];
+      
+      for (const qbInvoice of invoices) {
+        await this.processInvoice(qbInvoice, userId);
+      }
+
+      console.log(`Synced ${invoices.length} invoices`);
+    } catch (error) {
+      console.error('Error syncing invoices:', error);
+      throw error;
+    }
+  }
+
   async fullSync(userId: string): Promise<void> {
     console.log(`Starting full QuickBooks sync for user ${userId}`);
     
@@ -325,11 +414,20 @@ export class QuickBooksService {
       console.log(`Full sync completed in ${Math.round(duration / 1000)}s`);
       
       // Update last sync time
-      await storage.upsertIntegration({
-        userId,
-        provider: 'quickbooks',
-        lastSyncAt: new Date()
-      } as any);
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      if (integration) {
+        await storage.upsertIntegration({
+          userId,
+          provider: 'quickbooks',
+          isActive: integration.isActive,
+          accessToken: integration.accessToken,
+          refreshToken: integration.refreshToken,
+          companyId: integration.companyId,
+          realmId: integration.realmId,
+          settings: integration.settings as any,
+          lastSyncAt: new Date()
+        });
+      }
       
     } catch (error) {
       console.error('Full sync failed:', error);
@@ -374,7 +472,14 @@ export class QuickBooksService {
 
         // Update last sync time
         await storage.upsertIntegration({
-          ...integration,
+          userId: integration.userId,
+          provider: integration.provider,
+          isActive: integration.isActive,
+          accessToken: integration.accessToken,
+          refreshToken: integration.refreshToken,
+          companyId: integration.companyId,
+          realmId: integration.realmId,
+          settings: integration.settings as any,
           lastSyncAt: new Date()
         });
 
@@ -477,8 +582,8 @@ export class QuickBooksService {
           userId,
           name: item.Name,
           description: item.Description || null,
-          price: item.UnitPrice?.toString() || '0',
-          category: item.Type || 'Service',
+          unitPrice: item.UnitPrice?.toString() || '0',
+          type: item.Type || 'service',
           quickbooksId: item.Id
         }).then(() => resolve()).catch(reject);
       });
@@ -497,7 +602,7 @@ export class QuickBooksService {
         }
         
         // Process invoice data
-        this.processInvoiceFromQuickBooks(userId, invoice)
+        this.processInvoice(invoice, userId)
           .then(() => resolve())
           .catch(reject);
       });
@@ -564,10 +669,15 @@ export class QuickBooksService {
 
       // Deactivate integration in our database
       await storage.upsertIntegration({
-        ...integration,
+        userId: integration.userId,
+        provider: integration.provider,
         isActive: false,
         accessToken: '',
-        refreshToken: ''
+        refreshToken: '',
+        companyId: integration.companyId,
+        realmId: integration.realmId,
+        settings: integration.settings as any,
+        lastSyncAt: integration.lastSyncAt
       });
 
       await storage.createActivityLog({
