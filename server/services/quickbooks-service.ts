@@ -53,18 +53,15 @@ export class QuickBooksService {
   constructor() {
     // Production vs Development URLs
     const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Use new QBO_ environment variables or fallback to old ones
+    this.clientId = process.env.QBO_CLIENT_ID || process.env.QUICKBOOKS_CLIENT_ID!;
+    this.clientSecret = process.env.QBO_CLIENT_SECRET || process.env.QUICKBOOKS_CLIENT_SECRET!;
+    this.webhookVerifierToken = process.env.QBO_WEBHOOK_VERIFIER || process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN!;
     this.environment = isProduction ? 'production' : 'sandbox';
-    this.baseUrl = isProduction 
+    this.baseUrl = process.env.QB_BASE_URL || (isProduction 
       ? 'https://quickbooks.api.intuit.com' 
-      : (process.env.QUICKBOOKS_SANDBOX_BASE_URL || 'https://sandbox-quickbooks.api.intuit.com');
-    
-    // Production vs Development Client IDs
-    this.clientId = isProduction 
-      ? (process.env.QUICKBOOKS_CLIENT_ID || 'ABcxWWL62bJFQd43vWFkko728BJLReocAxJKfeeemZtXfVAO1S')
-      : (process.env.QUICKBOOKS_CLIENT_ID || 'ABHA55nxxxAxGrLFLqQ9eQ1jwZOQi3Bkef7tLKOUEHfDQepUqi');
-    
-    this.clientSecret = process.env.QUICKBOOKS_CLIENT_SECRET || 'JqcQnXW0NC6BVb9FPAv8NG8eZR2UXjQHxvnDd08D';
-    this.webhookVerifierToken = process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN || 'default-webhook-token';
+      : 'https://sandbox-quickbooks.api.intuit.com');
     
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({
