@@ -51,3 +51,6 @@ args = "npm run build"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run start"
+
+[agent]
+integrations = ["javascript_log_in_with_replit==1.0.0", "javascript_database==1.0.0"]
