@@ -157,6 +157,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // QuickBooks Integration routes
+  // Production QuickBooks connect endpoint
+  app.get('/quickbooks/connect', isAuthenticated, (req, res) => {
+    const userId = req.user!.claims.sub;
+    const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
+    const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
+    res.redirect(authUrl);
+  });
+
+  // Development QuickBooks connect endpoint (keep for dev)
   app.get('/api/integrations/quickbooks/connect', isAuthenticated, (req, res) => {
     const userId = req.user!.claims.sub;
     const redirectUri = process.env.NODE_ENV === 'production' 
@@ -311,7 +320,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // QuickBooks webhook endpoint
+  // Production QuickBooks webhook endpoint  
+  app.post('/quickbooks/webhook', async (req, res) => {
+    try {
+      const signature = req.headers['intuit-signature'] as string;
+      const payload = JSON.stringify(req.body);
+      
+      // Verify webhook signature
+      if (!quickbooksService.verifyWebhookSignature(payload, signature)) {
+        console.error('Invalid QuickBooks webhook signature');
+        return res.status(401).json({ message: 'Invalid signature' });
+      }
+
+      // Process webhook payload
+      await quickbooksService.processWebhook(req.body);
+      
+      res.status(200).json({ message: 'Webhook processed successfully' });
+    } catch (error) {
+      console.error('Error processing QuickBooks webhook:', error);
+      res.status(500).json({ message: 'Failed to process webhook' });
+    }
+  });
+
+  // Development QuickBooks webhook endpoint (keep for dev)
   app.post('/api/webhooks/quickbooks', async (req, res) => {
     try {
       const signature = req.headers['intuit-signature'] as string;
@@ -333,7 +364,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // QuickBooks disconnect/revoke endpoint
+  // Production QuickBooks disconnect endpoint
+  app.post('/quickbooks/disconnect', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      await quickbooksService.revokeIntegration(userId);
+      
+      res.json({ message: "QuickBooks integration disconnected successfully" });
+    } catch (error) {
+      console.error("Error disconnecting QuickBooks:", error);
+      res.status(500).json({ message: "Failed to disconnect QuickBooks integration" });
+    }
+  });
+
+  // Development QuickBooks disconnect endpoint (keep for dev)
   app.post('/api/integrations/quickbooks/disconnect', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.claims.sub;
