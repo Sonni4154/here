@@ -15,6 +15,7 @@ import {
   taskAssignments,
   employeeSchedules,
   customerNotes,
+  databaseConnections,
   type User,
   type UpsertUser,
   type Customer,
@@ -47,6 +48,8 @@ import {
   type InsertEmployeeSchedule,
   type CustomerNote,
   type InsertCustomerNote,
+  type DatabaseConnection,
+  type InsertDatabaseConnection,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -156,6 +159,13 @@ export interface IStorage {
     pendingInvoices: number;
     lastSyncAt: Date | null;
   }>;
+
+  // Database Connection operations
+  getDatabaseConnections(userId: string): Promise<DatabaseConnection[]>;
+  getDatabaseConnection(id: string): Promise<DatabaseConnection | undefined>;
+  createDatabaseConnection(connection: InsertDatabaseConnection): Promise<DatabaseConnection>;
+  updateDatabaseConnection(id: string, connection: Partial<InsertDatabaseConnection>): Promise<DatabaseConnection>;
+  deleteDatabaseConnection(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -645,6 +655,41 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+
+  // Database Connection operations
+  async getDatabaseConnections(userId: string): Promise<DatabaseConnection[]> {
+    return await db.select()
+      .from(databaseConnections)
+      .where(eq(databaseConnections.userId, userId))
+      .orderBy(desc(databaseConnections.createdAt));
+  }
+
+  async getDatabaseConnection(id: string): Promise<DatabaseConnection | undefined> {
+    const [connection] = await db.select()
+      .from(databaseConnections)
+      .where(eq(databaseConnections.id, id));
+    return connection;
+  }
+
+  async createDatabaseConnection(connection: InsertDatabaseConnection): Promise<DatabaseConnection> {
+    const [newConnection] = await db.insert(databaseConnections)
+      .values(connection)
+      .returning();
+    return newConnection;
+  }
+
+  async updateDatabaseConnection(id: string, connection: Partial<InsertDatabaseConnection>): Promise<DatabaseConnection> {
+    const [updatedConnection] = await db.update(databaseConnections)
+      .set({ ...connection, updatedAt: new Date() })
+      .where(eq(databaseConnections.id, id))
+      .returning();
+    return updatedConnection;
+  }
+
+  async deleteDatabaseConnection(id: string): Promise<void> {
+    await db.delete(databaseConnections)
+      .where(eq(databaseConnections.id, id));
   }
 }
 

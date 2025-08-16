@@ -18,7 +18,7 @@ import CustomerSearch from "@/pages/customer-search";
 import EmployeeSchedule from "@/pages/employee-schedule";
 import Products from "@/pages/products";
 import Reports from "@/pages/reports";
-import Integrations from "@/pages/integrations";
+import Settings from "@/pages/settings";
 import Workflows from "@/pages/workflows";
 
 function Router() {
@@ -42,7 +42,7 @@ function Router() {
             <Route path="/employee-schedule" component={EmployeeSchedule} />
             <Route path="/products" component={Products} />
             <Route path="/reports" component={Reports} />
-            <Route path="/integrations" component={Integrations} />
+            <Route path="/settings" component={Settings} />
             <Route path="/workflows" component={Workflows} />
             <Route component={NotFound} />
           </Switch>

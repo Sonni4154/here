@@ -173,7 +173,7 @@ export const invoiceItems = pgTable("invoice_items", {
 export const integrations = pgTable("integrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  provider: varchar("provider").notNull(), // 'quickbooks', 'jotform', 'google'
+  provider: varchar("provider").notNull(), // 'quickbooks', 'jotform', 'google', 'postgresql'
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   companyId: varchar("company_id"), // For QuickBooks
@@ -181,6 +181,27 @@ export const integrations = pgTable("integrations", {
   settings: jsonb("settings"),
   isActive: boolean("is_active").default(true),
   lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Database connections table for external PostgreSQL databases
+export const databaseConnections = pgTable("database_connections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  host: varchar("host").notNull(),
+  port: integer("port").notNull().default(5432),
+  database: varchar("database").notNull(),
+  username: varchar("username").notNull(),
+  password: text("password").notNull(), // Encrypted in production
+  ssl: boolean("ssl").default(false),
+  isActive: boolean("is_active").default(true),
+  syncInterval: integer("sync_interval"), // minutes (null = manual only)
+  autoSync: boolean("auto_sync").default(false),
+  lastSyncAt: timestamp("last_sync_at"),
+  lastSyncStatus: varchar("last_sync_status"), // 'success', 'error', 'in_progress'
+  lastSyncError: text("last_sync_error"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -553,6 +574,10 @@ export type ExternalMapping = typeof externalMappings.$inferSelect;
 
 // Customer notes types
 export type InsertCustomerNote = typeof customerNotes.$inferInsert;
+
+// Database connection types
+export type DatabaseConnection = typeof databaseConnections.$inferSelect;
+export type InsertDatabaseConnection = typeof databaseConnections.$inferInsert;
 export type CustomerNote = typeof customerNotes.$inferSelect;
 
 // Employee schedule types

@@ -28,7 +28,7 @@ const navigationItems = [
   { path: "/customer-search", label: "Customer Search", icon: Search },
   { path: "/products", label: "Products", icon: ShoppingCart },
   { path: "/reports", label: "Reports", icon: BarChart3 },
-  { path: "/integrations", label: "Integrations", icon: Settings },
+  { path: "/settings", label: "Settings", icon: Settings },
   { path: "/workflows", label: "Workflows", icon: Zap },
 ];
 

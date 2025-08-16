@@ -5,24 +5,66 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
-import { RefreshCw, Settings, ExternalLink, Database, FileSpreadsheet, Calendar, AlertCircle, CheckCircle } from "lucide-react";
-import { SiQuickbooks, SiGoogle, SiMicrosoft } from "react-icons/si";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RefreshCw, Settings as SettingsIcon, ExternalLink, Database, FileSpreadsheet, Calendar, AlertCircle, CheckCircle } from "lucide-react";
+import { SiQuickbooks, SiGoogle, SiMicrosoft, SiPostgresql } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-export default function Integrations() {
+// PostgreSQL Connection Form Schema
+const postgresqlFormSchema = z.object({
+  name: z.string().min(1, "Connection name is required"),
+  host: z.string().min(1, "Host is required"),
+  port: z.coerce.number().min(1).max(65535, "Port must be between 1 and 65535").default(5432),
+  database: z.string().min(1, "Database name is required"),
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+  ssl: z.boolean().default(false),
+  autoSync: z.boolean().default(false),
+  syncInterval: z.coerce.number().min(5).max(1440).optional(), // 5 minutes to 24 hours
+});
+
+export default function Settings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showAddDatabase, setShowAddDatabase] = useState(false);
 
   // Queries
   const { data: integrations = [], isLoading } = useQuery({
     queryKey: ["/api/integrations"]
   });
 
+  const { data: databaseConnections = [], isLoading: dbLoading } = useQuery({
+    queryKey: ["/api/database-connections"]
+  });
+
   const { data: syncStatus } = useQuery({
     queryKey: ["/api/sync/status"],
     refetchInterval: 30000 // Refresh every 30 seconds
+  });
+
+  // PostgreSQL Form
+  const postgresqlForm = useForm({
+    resolver: zodResolver(postgresqlFormSchema),
+    defaultValues: {
+      name: "",
+      host: "",
+      port: 5432,
+      database: "",
+      username: "",
+      password: "",
+      ssl: false,
+      autoSync: false,
+      syncInterval: 60
+    }
   });
 
   // Mutations
@@ -82,6 +124,66 @@ export default function Integrations() {
       toast({ title: "Immediate sync failed", description: error.message, variant: "destructive" });
     }
   });
+
+  // PostgreSQL Database Mutations
+  const addDatabaseConnection = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/database-connections", { method: "POST", body: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/database-connections"] });
+      postgresqlForm.reset();
+      setShowAddDatabase(false);
+      toast({ title: "Database connection added successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to add database connection", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const testDatabaseConnection = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/database-connections/test", { method: "POST", body: data }),
+    onSuccess: () => {
+      toast({ title: "Database connection successful", description: "Connection test passed" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Connection test failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const syncDatabase = useMutation({
+    mutationFn: (connectionId: string) => apiRequest(`/api/database-connections/${connectionId}/sync`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/database-connections"] });
+      toast({ title: "Database sync completed successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Database sync failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const toggleDatabaseAutoSync = useMutation({
+    mutationFn: ({ connectionId, autoSync, syncInterval }: { connectionId: string, autoSync: boolean, syncInterval?: number }) => 
+      apiRequest(`/api/database-connections/${connectionId}/auto-sync`, { 
+        method: "POST", 
+        body: { autoSync, syncInterval } 
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/database-connections"] });
+      toast({ title: "Auto-sync settings updated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update auto-sync", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Form handlers
+  const onSubmitPostgreSQL = (data: any) => {
+    addDatabaseConnection.mutate(data);
+  };
+
+  const onTestConnection = () => {
+    const data = postgresqlForm.getValues();
+    testDatabaseConnection.mutate(data);
+  };
 
   const importSampleData = useMutation({
     mutationFn: () => apiRequest("/api/import-sample-data", "POST"),

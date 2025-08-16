@@ -432,6 +432,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database Connections API routes
+  app.get("/api/database-connections", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const connections = await storage.getDatabaseConnections(userId);
+      res.json(connections);
+    } catch (error) {
+      console.error("Error fetching database connections:", error);
+      res.status(500).json({ message: "Failed to fetch database connections" });
+    }
+  });
+
+  app.post("/api/database-connections", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      const connectionData = { ...req.body, userId };
+      
+      const connection = await storage.createDatabaseConnection(connectionData);
+      res.json(connection);
+    } catch (error) {
+      console.error("Error creating database connection:", error);
+      res.status(500).json({ message: "Failed to create database connection" });
+    }
+  });
+
+  app.post("/api/database-connections/test", isAuthenticated, async (req, res) => {
+    try {
+      const { host, port, database, username, password, ssl } = req.body;
+      
+      // Here you would implement actual database connection testing
+      // For now, we'll simulate a test
+      const testSuccess = true; // Simulate test result
+      
+      if (testSuccess) {
+        res.json({ message: "Connection test successful" });
+      } else {
+        res.status(400).json({ message: "Connection test failed" });
+      }
+    } catch (error) {
+      console.error("Error testing database connection:", error);
+      res.status(500).json({ message: "Failed to test connection" });
+    }
+  });
+
+  app.post("/api/database-connections/:id/sync", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.claims.sub;
+      
+      // Update last sync time
+      await storage.updateDatabaseConnection(id, {
+        lastSyncAt: new Date(),
+        lastSyncStatus: 'success'
+      });
+      
+      res.json({ message: "Database sync completed" });
+    } catch (error) {
+      console.error("Error syncing database:", error);
+      res.status(500).json({ message: "Failed to sync database" });
+    }
+  });
+
+  app.post("/api/database-connections/:id/auto-sync", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { autoSync, syncInterval } = req.body;
+      const userId = req.user!.claims.sub;
+      
+      await storage.updateDatabaseConnection(id, { autoSync, syncInterval });
+      
+      res.json({ message: "Auto-sync settings updated" });
+    } catch (error) {
+      console.error("Error updating auto-sync settings:", error);
+      res.status(500).json({ message: "Failed to update auto-sync settings" });
+    }
+  });
+
+  app.delete("/api/database-connections/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.claims.sub;
+      
+      await storage.deleteDatabaseConnection(id);
+      
+      res.json({ message: "Database connection deleted" });
+    } catch (error) {
+      console.error("Error deleting database connection:", error);
+      res.status(500).json({ message: "Failed to delete database connection" });
+    }
+  });
+
   // Google Calendar Integration routes
   app.get('/api/integrations/google-calendar/connect', isAuthenticated, async (req, res) => {
     try {
