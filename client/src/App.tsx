@@ -20,6 +20,8 @@ import Products from "@/pages/products";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Workflows from "@/pages/workflows";
+import EmployeeDashboard from "@/pages/employee-dashboard";
+import Employees from "@/pages/employees";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -44,6 +46,9 @@ function Router() {
             <Route path="/reports" component={Reports} />
             <Route path="/settings" component={Settings} />
             <Route path="/workflows" component={Workflows} />
+            <Route path="/employee-dashboard" component={EmployeeDashboard} />
+            <Route path="/employees" component={Employees} />
+            <Route path="/clock" component={Clock} />
             <Route component={NotFound} />
           </Switch>
         </Layout>

@@ -925,6 +925,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Employee management routes
+  app.get('/api/employees', isAuthenticated, async (req, res) => {
+    try {
+      const employees = await storage.getEmployees();
+      res.json(employees);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.get('/api/employees/stats/:id', isAuthenticated, async (req, res) => {
+    try {
+      const stats = await storage.getEmployeeStats?.(req.params.id) || {};
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching employee stats:", error);
+      res.status(500).json({ message: "Failed to fetch employee stats" });
+    }
+  });
+
+  app.get('/api/employees/:id/notes', isAuthenticated, async (req, res) => {
+    try {
+      const notes = await storage.getEmployeeNotes?.(req.params.id) || [];
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching employee notes:", error);
+      res.status(500).json({ message: "Failed to fetch employee notes" });
+    }
+  });
+
+  app.post('/api/employees/:id/notes', isAuthenticated, async (req: any, res) => {
+    try {
+      const noteData = {
+        ...req.body,
+        employeeId: req.params.id,
+        createdBy: req.user.claims.sub
+      };
+      const note = await storage.createEmployeeNote?.(noteData) || {};
+      res.json(note);
+    } catch (error) {
+      console.error("Error creating employee note:", error);
+      res.status(500).json({ message: "Failed to create employee note" });
+    }
+  });
+
+  // Enhanced clock routes for specific users
+  app.get('/api/clock/active/:userId', isAuthenticated, async (req, res) => {
+    try {
+      const activeEntry = await storage.getActiveClockEntry(req.params.userId);
+      res.json(activeEntry);
+    } catch (error) {
+      console.error("Error fetching active clock entry:", error);
+      res.status(500).json({ message: "Failed to fetch active clock entry" });
+    }
+  });
+
+  app.get('/api/clock/entries/:period/:userId', isAuthenticated, async (req, res) => {
+    try {
+      const { period, userId } = req.params;
+      const entries = await storage.getClockEntries?.(userId, period) || [];
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching clock entries:", error);
+      res.status(500).json({ message: "Failed to fetch clock entries" });
+    }
+  });
+
+  // Trapping program routes
+  app.get('/api/trapping-programs', isAuthenticated, async (req, res) => {
+    try {
+      const programs = await storage.getTrappingPrograms?.() || [];
+      res.json(programs);
+    } catch (error) {
+      console.error("Error fetching trapping programs:", error);
+      res.status(500).json({ message: "Failed to fetch trapping programs" });
+    }
+  });
+
+  app.get('/api/trap-checks/needed', isAuthenticated, async (req, res) => {
+    try {
+      const trapChecks = await storage.getNeededTrapChecks?.() || [];
+      res.json(trapChecks);
+    } catch (error) {
+      console.error("Error fetching needed trap checks:", error);
+      res.status(500).json({ message: "Failed to fetch needed trap checks" });
+    }
+  });
+
+  app.post('/api/trapping-programs', isAuthenticated, async (req, res) => {
+    try {
+      const program = await storage.createTrappingProgram?.(req.body) || {};
+      res.json(program);
+    } catch (error) {
+      console.error("Error creating trapping program:", error);
+      res.status(500).json({ message: "Failed to create trapping program" });
+    }
+  });
+
+  // Weekly summary routes
+  app.get('/api/weekly-summary/:userId', isAuthenticated, async (req, res) => {
+    try {
+      const summary = await storage.getWeeklySummary?.(req.params.userId) || {};
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching weekly summary:", error);
+      res.status(500).json({ message: "Failed to fetch weekly summary" });
+    }
+  });
+
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ 

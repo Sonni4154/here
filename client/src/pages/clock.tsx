@@ -1,390 +1,303 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Clock as ClockIcon, Timer, DollarSign, Calendar, MapPin, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, MapPin, Calendar, Users, Timer } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, differenceInMinutes } from "date-fns";
 
-export default function ClockPage() {
+export default function Clock() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedCustomer, setSelectedCustomer] = useState<string>("");
-  const [notes, setNotes] = useState("");
-  const [location, setLocation] = useState<{ lat: number; lng: number; address?: string } | null>(null);
 
-  // Real-time clock update
-  useEffect(() => {
+  // TODO: Get current user from auth context
+  const currentUser = {
+    id: "employee-123",
+    firstName: "John",
+    lastName: "Doe",
+    payRate: 25.00
+  };
+
+  // Update time every second
+  useState(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.warn("Location access denied:", error);
-        }
-      );
-    }
-  }, []);
+  });
 
   // Queries
-  const { data: clockStatus } = useQuery({
-    queryKey: ["/api/clock/status"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+  const { data: activeClockEntry } = useQuery({
+    queryKey: ["/api/clock/active", currentUser.id]
   });
 
-  const { data: customers = [] } = useQuery({
-    queryKey: ["/api/customers"],
+  const { data: weeklyEntries = [] } = useQuery({
+    queryKey: ["/api/clock/entries", "week", currentUser.id]
   });
 
-  const { data: clockEntries = [] } = useQuery({
-    queryKey: ["/api/clock-entries"],
+  const { data: monthlyEntries = [] } = useQuery({
+    queryKey: ["/api/clock/entries", "month", currentUser.id]
   });
 
   // Mutations
-  const clockInMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest('/api/clock/in', {
-        method: 'POST',
-        body: {
-          customerId: selectedCustomer || undefined,
-          location,
-          notes: notes || undefined,
-        },
-      });
-    },
+  const clockIn = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/clock/in", { method: "POST", body: data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clock/status"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/clock-entries"] });
-      setSelectedCustomer("");
-      setNotes("");
-      toast({
-        title: "Clocked In Successfully",
-        description: "Your work session has started and been added to the company calendar.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/clock/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clock/entries"] });
+      toast({ title: "Clocked in successfully" });
     },
-    onError: (error) => {
-      toast({
-        title: "Clock In Failed",
-        description: error.message || "Failed to clock in. Please try again.",
-        variant: "destructive",
-      });
-    },
+    onError: (error: any) => {
+      toast({ title: "Clock in failed", description: error.message, variant: "destructive" });
+    }
   });
 
-  const clockOutMutation = useMutation({
-    mutationFn: async () => {
-      const activeEntry = clockStatus?.clockEntry;
-      if (!activeEntry) throw new Error("No active clock entry found");
-      
-      return await apiRequest('/api/clock/out', {
-        method: 'POST',
-        body: {
-          clockEntryId: activeEntry.id,
-          notes: notes || undefined,
-        },
-      });
-    },
+  const clockOut = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/clock/out", { method: "POST", body: data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clock/status"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/clock-entries"] });
-      setNotes("");
-      toast({
-        title: "Clocked Out Successfully",
-        description: "Your work session has ended and the calendar has been updated.",
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/clock/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clock/entries"] });
+      toast({ title: "Clocked out successfully" });
     },
-    onError: (error) => {
-      toast({
-        title: "Clock Out Failed",
-        description: error.message || "Failed to clock out. Please try again.",
-        variant: "destructive",
-      });
-    },
+    onError: (error: any) => {
+      toast({ title: "Clock out failed", description: error.message, variant: "destructive" });
+    }
   });
 
-  const isClockedIn = clockStatus?.isClockedIn;
-  const activeEntry = clockStatus?.clockEntry;
+  // Calculate stats
+  const weeklyHours = weeklyEntries.reduce((sum: number, entry: any) => sum + (entry.hours || 0), 0);
+  const monthlyHours = monthlyEntries.reduce((sum: number, entry: any) => sum + (entry.hours || 0), 0);
+  const weeklyEarnings = weeklyHours * currentUser.payRate;
+  const monthlyEarnings = monthlyHours * currentUser.payRate;
 
-  // Calculate elapsed time for active session
-  const getElapsedTime = () => {
-    if (!activeEntry?.clockIn) return "00:00:00";
-    
-    const startTime = new Date(activeEntry.clockIn);
-    const elapsed = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
-    
-    const hours = Math.floor(elapsed / 3600);
-    const minutes = Math.floor((elapsed % 3600) / 60);
-    const seconds = elapsed % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  // Get customer name
-  const getCustomerName = (customerId: string) => {
-    const customer = customers.find((c: any) => c.id === customerId);
-    return customer?.name || "General Work";
-  };
-
-  const formatTime = (date: string | Date) => {
-    return new Date(date).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
+  const handleClockIn = () => {
+    clockIn.mutate({
+      userId: currentUser.id,
+      location: "Office", // Could be made dynamic
+      notes: ""
     });
   };
 
-  const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
+  const handleClockOut = () => {
+    if (!activeClockEntry) return;
+    
+    clockOut.mutate({
+      clockEntryId: activeClockEntry.id,
+      notes: ""
     });
   };
+
+  const getCurrentShiftDuration = () => {
+    if (!activeClockEntry?.clockInTime) return 0;
+    return differenceInMinutes(currentTime, new Date(activeClockEntry.clockInTime)) / 60;
+  };
+
+  const getCurrentShiftEarnings = () => {
+    return getCurrentShiftDuration() * currentUser.payRate;
+  };
+
+  const isOnShift = !!activeClockEntry;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Current Time & Status Header */}
-      <div className="text-center space-y-2">
-        <div className="text-4xl font-mono font-bold">
-          {currentTime.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
-          })}
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Punch Clock</h1>
+        <div className="text-2xl font-mono text-muted-foreground">
+          {format(currentTime, 'PPP')}
         </div>
-        <div className="text-lg text-muted-foreground">
-          {currentTime.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
+        <div className="text-4xl font-mono font-bold text-foreground">
+          {format(currentTime, 'h:mm:ss a')}
         </div>
       </div>
 
-      {/* Clock Status Card */}
-      <Card className="mx-auto max-w-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2">
-            <Timer className="h-6 w-6" />
-            Time Clock
+      {/* Clock In/Out Section */}
+      <Card className="text-center">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-center space-x-2">
+            <User className="w-5 h-5" />
+            <span>{currentUser.firstName} {currentUser.lastName}</span>
           </CardTitle>
           <CardDescription>
-            {isClockedIn
-              ? "You are currently clocked in. Clock out when you finish work."
-              : "Click the button below to start tracking your work time."
-            }
+            {isOnShift ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-600 font-medium">Currently on shift</span>
+                </div>
+                <div className="text-sm">
+                  Started at {format(new Date(activeClockEntry.clockInTime), 'h:mm a')}
+                </div>
+              </div>
+            ) : (
+              "Ready to clock in"
+            )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Active Session Display */}
-          {isClockedIn && activeEntry && (
-            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Active Session</span>
-                <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  In Progress
-                </Badge>
+        <CardContent className="space-y-4">
+          {isOnShift && (
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{getCurrentShiftDuration().toFixed(1)}h</div>
+                <div className="text-sm text-muted-foreground">Current Shift</div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <Label className="text-muted-foreground">Started At</Label>
-                  <div className="font-mono">{formatTime(activeEntry.clockIn)}</div>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Elapsed Time</Label>
-                  <div className="font-mono text-lg font-bold text-green-600 dark:text-green-400">
-                    {getElapsedTime()}
-                  </div>
-                </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">${getCurrentShiftEarnings().toFixed(2)}</div>
+                <div className="text-sm text-muted-foreground">Earnings So Far</div>
               </div>
-
-              {activeEntry.customerId && (
-                <div>
-                  <Label className="text-muted-foreground">Customer</Label>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    {getCustomerName(activeEntry.customerId)}
-                  </div>
-                </div>
-              )}
-
-              {location && (
-                <div>
-                  <Label className="text-muted-foreground">Location</Label>
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-4 w-4" />
-                    {location.address || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}
-                  </div>
-                </div>
-              )}
             </div>
           )}
-
-          {/* Clock In/Out Controls */}
-          <div className="space-y-4">
-            {!isClockedIn ? (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="w-full h-16 text-lg">
-                    <Clock className="mr-2 h-6 w-6" />
-                    Clock In
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Clock In</DialogTitle>
-                    <DialogDescription>
-                      Start tracking your work time. This will create a calendar event.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="customer">Customer (Optional)</Label>
-                      <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a customer or leave blank for general work" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">General Work</SelectItem>
-                          {customers.map((customer: any) => (
-                            <SelectItem key={customer.id} value={customer.id}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="notes">Notes (Optional)</Label>
-                      <Textarea
-                        id="notes"
-                        placeholder="Add any notes about this work session..."
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-
-                    {location && (
-                      <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        Location will be recorded automatically
-                      </div>
-                    )}
-
-                    <Button 
-                      onClick={() => clockInMutation.mutate()} 
-                      disabled={clockInMutation.isPending}
-                      className="w-full"
-                    >
-                      {clockInMutation.isPending ? "Clocking In..." : "Start Work Session"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+          
+          <div className="flex justify-center space-x-4">
+            {!isOnShift ? (
+              <Button
+                onClick={handleClockIn}
+                disabled={clockIn.isPending}
+                size="lg"
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Timer className="w-5 h-5 mr-2" />
+                {clockIn.isPending ? "Clocking In..." : "Clock In"}
+              </Button>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="clockOutNotes">Clock Out Notes (Optional)</Label>
-                  <Textarea
-                    id="clockOutNotes"
-                    placeholder="Add any final notes about this work session..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-                
-                <Button 
-                  onClick={() => clockOutMutation.mutate()} 
-                  disabled={clockOutMutation.isPending}
-                  variant="destructive" 
-                  size="lg" 
-                  className="w-full h-16 text-lg"
-                >
-                  <Clock className="mr-2 h-6 w-6" />
-                  {clockOutMutation.isPending ? "Clocking Out..." : "Clock Out"}
-                </Button>
-              </div>
+              <Button
+                onClick={handleClockOut}
+                disabled={clockOut.isPending}
+                size="lg"
+                variant="destructive"
+              >
+                <ClockIcon className="w-5 h-5 mr-2" />
+                {clockOut.isPending ? "Clocking Out..." : "Clock Out"}
+              </Button>
             )}
           </div>
         </CardContent>
       </Card>
 
+      {/* Weekly & Monthly Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="w-5 h-5" />
+              <span>This Week</span>
+            </CardTitle>
+            <CardDescription>
+              {format(startOfWeek(new Date()), 'MMM dd')} - {format(endOfWeek(new Date()), 'MMM dd')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Hours Worked</span>
+                <span className="text-xl font-bold">{weeklyHours.toFixed(1)}h</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Pay Rate</span>
+                <span className="font-medium">${currentUser.payRate}/hour</span>
+              </div>
+              <div className="flex justify-between items-center border-t pt-3">
+                <span className="font-medium">Total Earnings</span>
+                <span className="text-xl font-bold text-green-600">${weeklyEarnings.toFixed(2)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <DollarSign className="w-5 h-5" />
+              <span>This Month</span>
+            </CardTitle>
+            <CardDescription>
+              {format(startOfMonth(new Date()), 'MMM dd')} - {format(endOfMonth(new Date()), 'MMM dd')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Hours Worked</span>
+                <span className="text-xl font-bold">{monthlyHours.toFixed(1)}h</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Average Hours/Week</span>
+                <span className="font-medium">{(monthlyHours / 4).toFixed(1)}h</span>
+              </div>
+              <div className="flex justify-between items-center border-t pt-3">
+                <span className="font-medium">Total Earnings</span>
+                <span className="text-xl font-bold text-green-600">${monthlyEarnings.toFixed(2)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Recent Clock Entries */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Recent Clock Entries
-          </CardTitle>
-          <CardDescription>
-            Your recent work sessions and time tracking
-          </CardDescription>
+          <CardTitle>Recent Clock Entries</CardTitle>
+          <CardDescription>Your recent punch in/out history</CardDescription>
         </CardHeader>
         <CardContent>
-          {clockEntries.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No clock entries yet. Clock in to start tracking your time.
-            </div>
+          {weeklyEntries.length === 0 ? (
+            <p className="text-center text-muted-foreground py-4">
+              No clock entries this week
+            </p>
           ) : (
             <div className="space-y-3">
-              {clockEntries.slice(0, 10).map((entry: any) => (
+              {weeklyEntries.slice(0, 10).map((entry: any) => (
                 <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={entry.status === 'active' ? 'default' : 'secondary'}>
-                        {entry.status === 'active' ? 'In Progress' : 'Completed'}
-                      </Badge>
-                      {entry.customerId && (
-                        <span className="text-sm text-muted-foreground">
-                          {getCustomerName(entry.customerId)}
+                  <div className="flex items-center space-x-3">
+                    <div className="text-center">
+                      <div className="text-sm font-medium">
+                        {format(new Date(entry.clockInTime), 'MMM dd')}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(entry.clockInTime), 'EEE')}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <Timer className="w-4 h-4 text-green-500" />
+                        <span className="text-sm font-medium">
+                          {format(new Date(entry.clockInTime), 'h:mm a')}
                         </span>
+                        {entry.clockOutTime && (
+                          <>
+                            <span className="text-muted-foreground">→</span>
+                            <ClockIcon className="w-4 h-4 text-red-500" />
+                            <span className="text-sm font-medium">
+                              {format(new Date(entry.clockOutTime), 'h:mm a')}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {entry.location && (
+                        <div className="flex items-center space-x-1 mt-1">
+                          <MapPin className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{entry.location}</span>
+                        </div>
                       )}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatDate(entry.clockIn)} • Started at {formatTime(entry.clockIn)}
-                      {entry.clockOut && (
-                        <> • Ended at {formatTime(entry.clockOut)}</>
-                      )}
-                    </div>
-                    {entry.notes && (
-                      <div className="text-sm">{entry.notes}</div>
-                    )}
                   </div>
                   <div className="text-right">
-                    {entry.totalHours ? (
-                      <div className="font-mono font-bold">
-                        {parseFloat(entry.totalHours).toFixed(2)}h
+                    <div className="font-medium">
+                      {entry.hours ? `${entry.hours.toFixed(1)}h` : "In Progress"}
+                    </div>
+                    {entry.hours && (
+                      <div className="text-sm text-green-600">
+                        ${(entry.hours * currentUser.payRate).toFixed(2)}
                       </div>
-                    ) : entry.status === 'active' ? (
-                      <div className="font-mono text-green-600 dark:text-green-400">
-                        {getElapsedTime()}
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground">-</div>
                     )}
+                    <Badge 
+                      variant={entry.clockOutTime ? "default" : "secondary"}
+                      className="mt-1"
+                    >
+                      {entry.clockOutTime ? "Complete" : "Active"}
+                    </Badge>
                   </div>
                 </div>
               ))}
@@ -392,6 +305,16 @@ export default function ClockPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Important Notice */}
+      {isOnShift && getCurrentShiftDuration() > 8 && (
+        <Alert>
+          <ClockIcon className="h-4 w-4" />
+          <AlertDescription>
+            You've been on shift for over 8 hours. Consider taking a break and review overtime policies.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

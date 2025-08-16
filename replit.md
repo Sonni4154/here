@@ -1,10 +1,10 @@
-# TimeSync Pro - Employee Time & Material Tracking System
+# Internal Dashboard - Comprehensive Business Management Platform
 
 ## Overview
 
-TimeSync Pro is a comprehensive internal employee dashboard for Marin Pest Control featuring time tracking with clock in/out functionality, customer management with search and notes, QuickBooks 2-way synchronization, Google Calendar integration for employee scheduling and task assignment, photo upload capability for before/after job photos, automated workflow triggers based on form submissions, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management, persistent sync tracking across all integrations, and intelligent automation that processes business events in real-time.
+The Internal Dashboard is a comprehensive business management platform for Marin Pest Control featuring role-based access control (admin/employee), advanced employee management, time tracking with enhanced punch clock functionality, customer management with trapping program tracking, QuickBooks 2-way synchronization with PostgreSQL database integration, Google Calendar multi-calendar integration for employee scheduling and task assignment, photo upload capability for job documentation, automated workflow triggers, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management with pay rate tracking, weekly performance summaries, rodent trapping program management, and intelligent automation that processes business events in real-time.
 
-The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use with advanced scheduling and task management capabilities.
+The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use with role-based navigation and comprehensive employee lifecycle management.
 
 ## User Preferences
 

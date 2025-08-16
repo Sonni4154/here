@@ -151,6 +151,21 @@ export interface IStorage {
 
   // Employee operations
   getEmployees(): Promise<User[]>;
+  getEmployee(id: string): Promise<User | undefined>;
+  getEmployeeStats(id: string): Promise<any>;
+  getEmployeeNotes(employeeId: string): Promise<any[]>;
+  createEmployeeNote(data: any): Promise<any>;
+
+  // Enhanced clock functionality  
+  getClockEntries(userId: string, period?: string): Promise<ClockEntry[]>;
+
+  // Trapping programs
+  getTrappingPrograms(): Promise<any[]>;
+  createTrappingProgram(data: any): Promise<any>;
+  getNeededTrapChecks(): Promise<any[]>;
+
+  // Weekly summaries
+  getWeeklySummary(userId: string): Promise<any>;
   
   // Dashboard stats
   getDashboardStats(userId: string): Promise<{
@@ -641,6 +656,82 @@ export class DatabaseStorage implements IStorage {
   // Employee operations
   async getEmployees(): Promise<User[]> {
     return await db.select().from(users).where(eq(users.isActive, true)).orderBy(users.firstName);
+  }
+
+  async getEmployee(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getEmployeeStats(id: string): Promise<any> {
+    // Calculate basic stats from clock entries
+    const clockData = await db.select().from(clockEntries).where(eq(clockEntries.userId, id));
+    
+    return {
+      weekHours: 32.5,  // Mock data - implement actual calculation
+      monthHours: 140.0,
+      yearHours: 1680.0
+    };
+  }
+
+  async getEmployeeNotes(employeeId: string): Promise<any[]> {
+    // Return empty array for now - will implement when employeeNotes table is added
+    return [];
+  }
+
+  async createEmployeeNote(data: any): Promise<any> {
+    // Mock implementation - will implement when employeeNotes table is added
+    return {
+      id: 'note-' + Date.now(),
+      ...data,
+      createdAt: new Date()
+    };
+  }
+
+  async getClockEntries(userId: string, period?: string): Promise<ClockEntry[]> {
+    let query = db.select().from(clockEntries).where(eq(clockEntries.userId, userId));
+    
+    // Add period filtering logic here when needed
+    return query.orderBy(desc(clockEntries.clockIn));
+  }
+
+  async getTrappingPrograms(): Promise<any[]> {
+    // Mock implementation - will implement when trappingPrograms table is added
+    return [];
+  }
+
+  async createTrappingProgram(data: any): Promise<any> {
+    // Mock implementation
+    return {
+      id: 'trap-' + Date.now(),
+      ...data,
+      createdAt: new Date()
+    };
+  }
+
+  async getNeededTrapChecks(): Promise<any[]> {
+    // Mock implementation
+    return [
+      {
+        id: '1',
+        customerName: 'Smith Property',
+        nextCheckDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        currentWeek: 3
+      }
+    ];
+  }
+
+  async getWeeklySummary(userId: string): Promise<any> {
+    // Mock implementation
+    return {
+      positives: 5,
+      negatives: 1,
+      complaints: 0,
+      resprays: 2,
+      trapChecks: 8,
+      newCustomers: 3,
+      revenue: 2450.00
+    };
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {

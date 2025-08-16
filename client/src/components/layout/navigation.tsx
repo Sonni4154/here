@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useState } from "react";
 import { 
   LayoutDashboard, 
   Clock, 
@@ -7,29 +8,64 @@ import {
   Users, 
   Search,
   Calendar,
+  CalendarDays,
   ShoppingCart, 
   BarChart3, 
   Settings,
   LogOut,
-  Zap
+  Zap,
+  Timer,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import marinLogo from "@assets/IMG_2539_1754017041686.jpg";
 
-const navigationItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+// Navigation items for regular employees
+const employeeNavigationItems = [
+  { path: "/employee-dashboard", label: "Weekly Summary", icon: LayoutDashboard },
   { path: "/time-tracking", label: "Time Tracking", icon: Clock },
+  { path: "/clock", label: "Punch Clock", icon: Timer },
   { path: "/marin-job-form", label: "Job Entry Form", icon: FileText },
-  { path: "/employee-schedule", label: "Schedule", icon: Calendar },
+  { path: "/employee-schedule", label: "My Schedule", icon: Calendar },
   { path: "/materials", label: "Materials", icon: Package },
-  { path: "/invoices", label: "Invoices", icon: FileText },
   { path: "/customers", label: "Customers", icon: Users },
   { path: "/customer-search", label: "Customer Search", icon: Search },
   { path: "/products", label: "Products", icon: ShoppingCart },
-  { path: "/reports", label: "Reports", icon: BarChart3 },
-  { path: "/settings", label: "Settings", icon: Settings },
-  { path: "/workflows", label: "Workflows", icon: Zap },
+];
+
+// Admin navigation with all features
+const adminNavigationItems = [
+  { 
+    label: "Core Operations", 
+    items: [
+      { path: "/", label: "Admin Dashboard", icon: LayoutDashboard },
+      { path: "/time-tracking", label: "Time Tracking", icon: Clock },
+      { path: "/marin-job-form", label: "Job Entry Form", icon: FileText },
+      { path: "/materials", label: "Materials", icon: Package },
+      { path: "/invoices", label: "Invoices", icon: FileText },
+      { path: "/customers", label: "Customers", icon: Users },
+      { path: "/customer-search", label: "Customer Search", icon: Search },
+      { path: "/products", label: "Products", icon: ShoppingCart },
+    ]
+  },
+  {
+    label: "Employee Management",
+    items: [
+      { path: "/employees", label: "Employee Directory", icon: Users },
+      { path: "/employee-schedule", label: "Employee Schedules", icon: Calendar },
+      { path: "/calendar-sync", label: "Calendar Integration", icon: CalendarDays },
+    ]
+  },
+  {
+    label: "Administration",
+    items: [
+      { path: "/reports", label: "Reports", icon: BarChart3 },
+      { path: "/settings", label: "Settings", icon: Settings },
+      { path: "/workflows", label: "Workflows", icon: Zap },
+    ]
+  }
 ];
 
 export default function Navigation() {

@@ -40,6 +40,8 @@ export const users = pgTable("users", {
   employeeId: varchar("employee_id"),
   department: varchar("department"),
   hireDate: timestamp("hire_date"),
+  payRate: decimal("pay_rate", { precision: 10, scale: 2 }),
+  disciplines: text("disciplines").array(),
   isActive: boolean("is_active").default(true),
   passwordHash: varchar("password_hash"), // For password login
   googleCalendarId: varchar("google_calendar_id"), // For calendar sync
@@ -204,6 +206,51 @@ export const databaseConnections = pgTable("database_connections", {
   lastSyncError: text("last_sync_error"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Employee notes table for date-stamped notes
+export const employeeNotes = pgTable("employee_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => users.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  category: varchar("category"), // 'performance', 'disciplinary', 'general', etc.
+  isPrivate: boolean("is_private").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Rodent trapping program tracking
+export const trappingPrograms = pgTable("trapping_programs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().references(() => customers.id),
+  programType: varchar("program_type").notNull(), // 'rodent_trapping'
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  totalWeeks: integer("total_weeks").notNull(),
+  weeksRemaining: integer("weeks_remaining").notNull(),
+  lastCheckDate: timestamp("last_check_date"),
+  nextCheckDate: timestamp("next_check_date").notNull(),
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Weekly summary tracking for dashboard
+export const weeklySummaries = pgTable("weekly_summaries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  weekStartDate: timestamp("week_start_date").notNull(),
+  weekEndDate: timestamp("week_end_date").notNull(),
+  positives: integer("positives").default(0),
+  negatives: integer("negatives").default(0),
+  complaints: integer("complaints").default(0),
+  resprays: integer("resprays").default(0),
+  trapChecks: integer("trap_checks").default(0),
+  newCustomers: integer("new_customers").default(0),
+  revenue: decimal("revenue", { precision: 10, scale: 2 }).default('0'),
+  notes: text("notes"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Sync logs table for tracking all sync operations
@@ -579,6 +626,18 @@ export type InsertCustomerNote = typeof customerNotes.$inferInsert;
 export type DatabaseConnection = typeof databaseConnections.$inferSelect;
 export type InsertDatabaseConnection = typeof databaseConnections.$inferInsert;
 export type CustomerNote = typeof customerNotes.$inferSelect;
+
+// Employee note types
+export type EmployeeNote = typeof employeeNotes.$inferSelect;
+export type InsertEmployeeNote = typeof employeeNotes.$inferInsert;
+
+// Trapping program types
+export type TrappingProgram = typeof trappingPrograms.$inferSelect;
+export type InsertTrappingProgram = typeof trappingPrograms.$inferInsert;
+
+// Weekly summary types
+export type WeeklySummary = typeof weeklySummaries.$inferSelect;
+export type InsertWeeklySummary = typeof weeklySummaries.$inferInsert;
 
 // Employee schedule types
 export type InsertEmployeeSchedule = typeof employeeSchedules.$inferInsert;

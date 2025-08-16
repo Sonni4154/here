@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import Navigation from "./navigation";
+import RoleBasedNavigation from "./role-based-navigation";
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,7 +8,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex h-screen bg-background">
-      <Navigation />
+      <RoleBasedNavigation />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
