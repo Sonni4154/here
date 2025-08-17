@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { QuickBooksService } from "./services/quickbooks-service";
 import { dataImportService } from "./services/data-import-service";
+import { syncScheduler } from "./services/sync-scheduler";
 import bcrypt from "bcrypt";
 
 // Initialize services
@@ -87,6 +88,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing all data:", error);
       res.status(500).json({ message: "Failed to import data" });
+    }
+  });
+
+  // Sync control routes
+  app.get('/api/sync/status', async (req, res) => {
+    try {
+      const status = syncScheduler.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting sync status:", error);
+      res.status(500).json({ message: "Failed to get sync status" });
+    }
+  });
+
+  app.post('/api/sync/trigger-data', isAuthenticated, async (req, res) => {
+    try {
+      await syncScheduler.triggerDataImportSync();
+      res.json({ message: "Data import sync triggered successfully" });
+    } catch (error) {
+      console.error("Error triggering data sync:", error);
+      res.status(500).json({ message: "Failed to trigger data sync" });
+    }
+  });
+
+  app.post('/api/sync/trigger-quickbooks', isAuthenticated, async (req, res) => {
+    try {
+      await syncScheduler.triggerQuickBooksSync();
+      res.json({ message: "QuickBooks sync triggered successfully" });
+    } catch (error) {
+      console.error("Error triggering QuickBooks sync:", error);
+      res.status(500).json({ message: "Failed to trigger QuickBooks sync" });
     }
   });
 

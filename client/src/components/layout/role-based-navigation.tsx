@@ -15,6 +15,7 @@ import {
   LogOut,
   Zap,
   Timer,
+  Upload,
   ChevronDown,
   ChevronRight
 } from "lucide-react";
@@ -64,6 +65,7 @@ const adminNavigationItems = [
     label: "Administration",
     items: [
       { path: "/reports", label: "Reports", icon: BarChart3 },
+      { path: "/data-import", label: "Data Import", icon: Upload },
       { path: "/settings", label: "Settings", icon: Settings },
       { path: "/workflows", label: "Workflows", icon: Zap },
     ]

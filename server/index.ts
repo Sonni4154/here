@@ -71,9 +71,9 @@ app.use((req, res, next) => {
     // Initialize automated sync after server starts
     setTimeout(async () => {
       try {
-        const { initializeScheduledSync } = await import('./services/sync-scheduler');
-        await initializeScheduledSync();
-        log('Automated QuickBooks sync initialized');
+        const { syncScheduler } = await import('./services/sync-scheduler');
+        syncScheduler.start();
+        log('Automated sync scheduler initialized');
       } catch (error) {
         log(`Failed to initialize automated sync: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }

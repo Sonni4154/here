@@ -90,7 +90,7 @@ export const taskAssignments = pgTable("task_assignments", {
 // Customers table
 export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").references(() => users.id), // Nullable for system-wide customers
   quickbooksId: varchar("quickbooks_id").unique(),
   name: text("name").notNull(),
   email: varchar("email"),
@@ -127,7 +127,7 @@ export const customerNotes = pgTable("customer_notes", {
 // Products/Services table
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").references(() => users.id), // Nullable for system-wide products
   quickbooksId: varchar("quickbooks_id").unique(),
   name: text("name").notNull(),
   description: text("description"),

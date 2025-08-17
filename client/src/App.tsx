@@ -22,6 +22,7 @@ import Settings from "@/pages/settings";
 import Workflows from "@/pages/workflows";
 import EmployeeDashboard from "@/pages/employee-dashboard";
 import Employees from "@/pages/employees";
+import DataImport from "@/pages/data-import";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
 import { RouterErrorBoundary } from "@/components/router/error-boundary";
@@ -145,6 +146,10 @@ function Router() {
         
         <Route path="/employees">
           {() => <ProtectedRoute component={Employees} />}
+        </Route>
+        
+        <Route path="/data-import">
+          {() => <ProtectedRoute component={DataImport} />}
         </Route>
 
         {/* Integration callback routes */}
