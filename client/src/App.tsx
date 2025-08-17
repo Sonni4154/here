@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -22,49 +22,155 @@ import Settings from "@/pages/settings";
 import Workflows from "@/pages/workflows";
 import EmployeeDashboard from "@/pages/employee-dashboard";
 import Employees from "@/pages/employees";
+import { Suspense } from "react";
+import { RefreshCw } from "lucide-react";
+import { RouterErrorBoundary } from "@/components/router/error-boundary";
+import RouteGuard from "@/components/router/route-guard";
 
+// Loading component
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col items-center space-y-4">
+        <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Simplified authentication wrapper
+function AuthenticatedApp() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  return <Router />;
+}
+
+// Protected route wrapper
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <Layout>
+      <Suspense fallback={<LoadingScreen />}>
+        <Component />
+      </Suspense>
+    </Layout>
+  );
+}
+
+// Enhanced router with proper route definitions
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <Layout>
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/time-tracking" component={TimeTracking} />
-            <Route path="/marin-job-form" component={MarinJobForm} />
-            <Route path="/materials" component={Materials} />
-            <Route path="/clock" component={Clock} />
-            <Route path="/invoices" component={Invoices} />
-            <Route path="/customers" component={Customers} />
-            <Route path="/customer-search" component={CustomerSearch} />
-            <Route path="/employee-schedule" component={EmployeeSchedule} />
-            <Route path="/products" component={Products} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/workflows" component={Workflows} />
-            <Route path="/employee-dashboard" component={EmployeeDashboard} />
-            <Route path="/employees" component={Employees} />
-            <Route path="/clock" component={Clock} />
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
-      )}
-    </Switch>
+    <WouterRouter>
+      <Switch>
+        {/* Public routes */}
+        <Route path="/login">
+          {() => isAuthenticated ? <Dashboard /> : <Landing />}
+        </Route>
+
+        {/* Protected routes */}
+        <Route path="/">
+          {() => <ProtectedRoute component={Dashboard} />}
+        </Route>
+        
+        <Route path="/dashboard">
+          {() => <ProtectedRoute component={Dashboard} />}
+        </Route>
+        
+        <Route path="/time-tracking">
+          {() => <ProtectedRoute component={TimeTracking} />}
+        </Route>
+        
+        <Route path="/marin-job-form">
+          {() => <ProtectedRoute component={MarinJobForm} />}
+        </Route>
+        
+        <Route path="/materials">
+          {() => <ProtectedRoute component={Materials} />}
+        </Route>
+        
+        <Route path="/clock">
+          {() => <ProtectedRoute component={Clock} />}
+        </Route>
+        
+        <Route path="/invoices">
+          {() => <ProtectedRoute component={Invoices} />}
+        </Route>
+        
+        <Route path="/customers">
+          {() => <ProtectedRoute component={Customers} />}
+        </Route>
+        
+        <Route path="/customer-search">
+          {() => <ProtectedRoute component={CustomerSearch} />}
+        </Route>
+        
+        <Route path="/employee-schedule">
+          {() => <ProtectedRoute component={EmployeeSchedule} />}
+        </Route>
+        
+        <Route path="/products">
+          {() => <ProtectedRoute component={Products} />}
+        </Route>
+        
+        <Route path="/reports">
+          {() => <ProtectedRoute component={Reports} />}
+        </Route>
+        
+        <Route path="/settings">
+          {() => <ProtectedRoute component={Settings} />}
+        </Route>
+        
+        <Route path="/workflows">
+          {() => <ProtectedRoute component={Workflows} />}
+        </Route>
+        
+        <Route path="/employee-dashboard">
+          {() => <ProtectedRoute component={EmployeeDashboard} />}
+        </Route>
+        
+        <Route path="/employees">
+          {() => <ProtectedRoute component={Employees} />}
+        </Route>
+
+        {/* Integration callback routes */}
+        <Route path="/integrations">
+          {() => <ProtectedRoute component={Settings} />}
+        </Route>
+
+        {/* 404 fallback */}
+        <Route>
+          {() => isAuthenticated ? <ProtectedRoute component={NotFound} /> : <Landing />}
+        </Route>
+      </Switch>
+    </WouterRouter>
   );
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <RouterErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <AuthenticatedApp />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </RouterErrorBoundary>
   );
 }
 

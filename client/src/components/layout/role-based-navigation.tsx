@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useState } from "react";
 import { 
   LayoutDashboard, 
@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useRouter, routes } from "@/hooks/useRouter";
+import { useAuth } from "@/hooks/useAuth";
 import marinLogo from "@assets/IMG_2539_1754017041686.jpg";
 
 // Navigation items for regular employees
@@ -73,7 +75,8 @@ interface RoleBasedNavigationProps {
 }
 
 export default function RoleBasedNavigation({ userRole = "admin" }: RoleBasedNavigationProps) {
-  const [location] = useLocation();
+  const { location, isActive } = useRouter();
+  const { user } = useAuth();
   const [expandedSections, setExpandedSections] = useState<string[]>(["Core Operations"]);
   
   const toggleSection = (sectionLabel: string) => {
@@ -123,7 +126,7 @@ export default function RoleBasedNavigation({ userRole = "admin" }: RoleBasedNav
                     <div className="ml-4 space-y-1">
                       {section.items.map((item) => {
                         const Icon = item.icon;
-                        const isActive = location === item.path;
+                        const itemIsActive = isActive(item.path);
                         
                         return (
                           <Link key={item.path} href={item.path}>
@@ -131,7 +134,7 @@ export default function RoleBasedNavigation({ userRole = "admin" }: RoleBasedNav
                               variant="ghost"
                               className={cn(
                                 "w-full justify-start text-left h-auto py-2 px-3",
-                                isActive
+                                itemIsActive
                                   ? "bg-purple-600 text-white hover:bg-purple-700"
                                   : "text-zinc-300 hover:text-white hover:bg-zinc-800"
                               )}
