@@ -47,7 +47,7 @@ export class QuickBooksService {
   private clientId: string;
   private clientSecret: string;
   private oauthClient: OAuthClient;
-  private environment: string;
+  private environment: 'production' | 'sandbox';
   private webhookVerifierToken: string;
 
   constructor() {
@@ -58,7 +58,7 @@ export class QuickBooksService {
     this.clientId = process.env.QBO_CLIENT_ID || process.env.QUICKBOOKS_CLIENT_ID!;
     this.clientSecret = process.env.QBO_CLIENT_SECRET || process.env.QUICKBOOKS_CLIENT_SECRET!;
     this.webhookVerifierToken = process.env.QBO_WEBHOOK_VERIFIER || process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN!;
-    this.environment = isProduction ? 'production' : 'sandbox';
+    this.environment = isProduction ? ('production' as const) : ('sandbox' as const);
     this.baseUrl = process.env.QB_BASE_URL || (isProduction 
       ? 'https://quickbooks.api.intuit.com' 
       : 'https://sandbox-quickbooks.api.intuit.com');
@@ -149,7 +149,7 @@ export class QuickBooksService {
       this.clientSecret,
       accessToken,
       false, // No token secret needed for OAuth 2.0
-      integration.realmId,
+      integration.realmId || '',
       this.environment === 'sandbox',
       true, // Enable debugging
       4 // Minor version
@@ -159,17 +159,57 @@ export class QuickBooksService {
   // Get valid access token (refresh if needed)
   async getValidAccessToken(userId: string): Promise<string> {
     const integration = await storage.getIntegration(userId, 'quickbooks');
-    if (!integration) {
-      throw new Error('QuickBooks integration not found');
+    if (!integration || !integration.isActive) {
+      throw new Error('QuickBooks integration not found or inactive');
     }
 
-    const { accessToken, refreshToken } = integration;
-    if (!accessToken || !refreshToken) {
-      throw new Error('Invalid integration tokens');
+    if (!integration.accessToken) {
+      throw new Error('No access token found');
     }
 
-    // For now, return the access token (token refresh logic can be added later)
-    return accessToken;
+    try {
+      // Test token validity by making a simple API call
+      const testResponse = await axios.get(
+        `${this.baseUrl}/v3/companyinfo/${integration.realmId}/companyinfo/${integration.realmId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${integration.accessToken}`,
+            'Accept': 'application/json'
+          },
+          timeout: 10000
+        }
+      );
+      
+      // If successful, return current token
+      return integration.accessToken;
+    } catch (error: any) {
+      console.log('Token validation failed, attempting refresh...');
+      
+      // If 401 or connection issues, try to refresh token
+      if (integration.refreshToken) {
+        try {
+          const refreshedTokens = await this.refreshAccessToken(integration.refreshToken);
+          
+          // Update stored tokens
+          await storage.upsertIntegration({
+            userId,
+            provider: 'quickbooks',
+            accessToken: refreshedTokens.access_token,
+            refreshToken: refreshedTokens.refresh_token,
+            realmId: integration.realmId || refreshedTokens.realmId,
+            isActive: true,
+            lastSyncAt: new Date()
+          });
+          
+          return refreshedTokens.access_token;
+        } catch (refreshError) {
+          console.error('Failed to refresh QuickBooks token:', refreshError);
+          throw new Error('QuickBooks token expired and refresh failed');
+        }
+      }
+      
+      throw new Error('QuickBooks token validation failed and no refresh token available');
+    }
   }
 
   // Sync customers from QuickBooks
@@ -417,10 +457,10 @@ export class QuickBooksService {
           userId,
           provider: 'quickbooks',
           isActive: integration.isActive,
-          accessToken: integration.accessToken,
-          refreshToken: integration.refreshToken,
-          companyId: integration.companyId,
-          realmId: integration.realmId,
+          accessToken: integration.accessToken || '',
+          refreshToken: integration.refreshToken || '',
+          companyId: integration.companyId || undefined,
+          realmId: integration.realmId || '',
           settings: integration.settings as any,
           lastSyncAt: new Date()
         });
@@ -472,10 +512,10 @@ export class QuickBooksService {
           userId: integration.userId,
           provider: integration.provider,
           isActive: integration.isActive,
-          accessToken: integration.accessToken,
-          refreshToken: integration.refreshToken,
-          companyId: integration.companyId,
-          realmId: integration.realmId,
+          accessToken: integration.accessToken || '',
+          refreshToken: integration.refreshToken || '',
+          companyId: integration.companyId || undefined,
+          realmId: integration.realmId || '',
           settings: integration.settings as any,
           lastSyncAt: new Date()
         });
@@ -658,8 +698,8 @@ export class QuickBooksService {
 
       // Revoke tokens with QuickBooks
       this.oauthClient.setToken({
-        access_token: integration.accessToken,
-        refresh_token: integration.refreshToken
+        access_token: integration.accessToken || '',
+        refresh_token: integration.refreshToken || ''
       });
 
       await this.oauthClient.revoke();

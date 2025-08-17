@@ -110,12 +110,14 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 
 ### QuickBooks Integration Settings
 - **Production Client ID**: ABcxWWL62bJFQd43vWFkko728BJLReocAxJKfeeemZtXfVAO1S
-- **Development Client ID**: ABHA55nxxxAxGrLFLqQ9eQ1jwZOQi3Bkef7tLKOUEHfDQepUqi
+- **Development Client ID**: ABsZIbsFlA... (configured in Replit Secrets)
 - **Callback Route**: `/quickbooks/callback` (production) and `/api/integrations/quickbooks/callback` (development)
 - **OAuth Scope**: com.intuit.quickbooks.accounting
-- **Integration Features**: Customer sync, product catalog, invoice management
+- **Integration Features**: Customer sync, product catalog, invoice management, real-time webhooks
 - **Environment Detection**: Automatic production/development mode switching based on NODE_ENV
 - **API URLs**: Production (https://quickbooks.api.intuit.com) vs Sandbox (https://sandbox-quickbooks.api.intuit.com)
+- **Status**: Fully configured with credentials (QBO_CLIENT_ID, QBO_CLIENT_SECRET, QBO_WEBHOOK_VERIFIER)
+- **Sync Functionality**: Ready for OAuth connection and automated data synchronization
 
 ### GitHub Integration Preparation
 - **Repository Structure**: Complete project organization for version control
