@@ -157,25 +157,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // QuickBooks Integration routes
-  // Production QuickBooks connect endpoint
+  // QuickBooks connect endpoint
   app.get('/quickbooks/connect', isAuthenticated, (req, res) => {
-    const userId = req.user!.claims.sub;
-    const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
-    const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
-    res.redirect(authUrl);
-  });
-
-  // Development QuickBooks connect endpoint (keep for dev)
-  app.get('/api/integrations/quickbooks/connect', isAuthenticated, (req, res) => {
     const userId = req.user!.claims.sub;
     const redirectUri = process.env.NODE_ENV === 'production' 
       ? 'https://www.wemakemarin.com/quickbooks/callback'
-      : `${req.protocol}://${req.get('host')}/api/integrations/quickbooks/callback`;
+      : `${req.protocol}://${req.get('host')}/quickbooks/callback`;
     const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
     res.redirect(authUrl);
   });
 
-  // Production callback route for www.wemakemarin.com
+
+
+  // QuickBooks callback route
   app.get('/quickbooks/callback', isAuthenticated, async (req, res) => {
     try {
       const { code, realmId } = req.query;
@@ -185,7 +179,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userId = req.user!.claims.sub;
-      const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
+      const redirectUri = process.env.NODE_ENV === 'production' 
+        ? 'https://www.wemakemarin.com/quickbooks/callback'
+        : `${req.protocol}://${req.get('host')}/quickbooks/callback`;
       
       const tokens = await quickbooksService.exchangeCodeForTokens(
         code as string, 
@@ -221,51 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Development callback route (keep for local testing)
-  app.get('/api/integrations/quickbooks/callback', isAuthenticated, async (req, res) => {
-    try {
-      const { code, realmId } = req.query;
-      
-      if (!code || !realmId) {
-        return res.status(400).json({ message: 'Missing authorization code or realm ID' });
-      }
 
-      const userId = req.user!.claims.sub;
-      const redirectUri = `${req.protocol}://${req.get('host')}/api/integrations/quickbooks/callback`;
-      
-      const tokens = await quickbooksService.exchangeCodeForTokens(
-        code as string, 
-        redirectUri, 
-        realmId as string
-      );
-
-      // Store integration
-      await storage.upsertIntegration({
-        userId,
-        provider: 'quickbooks',
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        realmId: tokens.realmId,
-        isActive: true,
-        lastSyncAt: new Date()
-      });
-
-      // Start initial sync
-      await quickbooksService.fullSync(userId);
-
-      await storage.createActivityLog({
-        userId,
-        type: 'integration_connected',
-        description: 'QuickBooks integration connected successfully',
-        metadata: { realmId: tokens.realmId }
-      });
-
-      res.redirect('/integrations?success=quickbooks');
-    } catch (error) {
-      console.error('QuickBooks callback error:', error);
-      res.redirect('/integrations?error=quickbooks');
-    }
-  });
 
   // Initial data pull from QuickBooks
   app.post('/api/integrations/quickbooks/initial-sync', isAuthenticated, async (req, res) => {
@@ -320,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Production QuickBooks webhook endpoint  
+  // QuickBooks webhook endpoint  
   app.post('/quickbooks/webhook', async (req, res) => {
     try {
       const signature = req.headers['intuit-signature'] as string;
@@ -342,29 +294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Development QuickBooks webhook endpoint (keep for dev)
-  app.post('/api/webhooks/quickbooks', async (req, res) => {
-    try {
-      const signature = req.headers['intuit-signature'] as string;
-      const payload = JSON.stringify(req.body);
-      
-      // Verify webhook signature
-      if (!quickbooksService.verifyWebhookSignature(payload, signature)) {
-        console.error('Invalid QuickBooks webhook signature');
-        return res.status(401).json({ message: 'Invalid signature' });
-      }
 
-      // Process webhook payload
-      await quickbooksService.processWebhook(req.body);
-      
-      res.status(200).json({ message: 'Webhook processed successfully' });
-    } catch (error) {
-      console.error('Error processing QuickBooks webhook:', error);
-      res.status(500).json({ message: 'Failed to process webhook' });
-    }
-  });
 
-  // Production QuickBooks disconnect endpoint
+  // QuickBooks disconnect endpoint
   app.post('/quickbooks/disconnect', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.claims.sub;
@@ -377,18 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Development QuickBooks disconnect endpoint (keep for dev)
-  app.post('/api/integrations/quickbooks/disconnect', isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.user!.claims.sub;
-      await quickbooksService.revokeIntegration(userId);
-      
-      res.json({ message: "QuickBooks integration disconnected successfully" });
-    } catch (error) {
-      console.error("Error disconnecting QuickBooks:", error);
-      res.status(500).json({ message: "Failed to disconnect QuickBooks integration" });
-    }
-  });
+
 
   // QuickBooks connection status endpoint
   app.get('/api/integrations/quickbooks/status', isAuthenticated, async (req, res) => {

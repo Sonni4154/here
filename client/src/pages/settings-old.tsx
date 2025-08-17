@@ -313,7 +313,7 @@ export default function Settings() {
                       </Button>
                     </>
                   ) : (
-                    <Button onClick={() => window.location.href = '/api/integrations/quickbooks/connect'}>
+                    <Button onClick={() => window.location.href = '/quickbooks/connect'}>
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Connect QuickBooks
                     </Button>

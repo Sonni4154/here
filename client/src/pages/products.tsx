@@ -153,7 +153,7 @@ export default function Products() {
                 </Button>
               ) : (
                 <Button
-                  onClick={() => window.location.href = '/api/integrations/quickbooks/connect'}
+                  onClick={() => window.location.href = '/quickbooks/connect'}
                   size="sm"
                 >
                   Connect QuickBooks
