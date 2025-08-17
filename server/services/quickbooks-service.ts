@@ -70,7 +70,7 @@ export class QuickBooksService {
       environment: this.environment,
       redirectUri: isProduction 
         ? 'https://www.wemakemarin.com/quickbooks/callback'
-        : 'http://localhost:5000/api/integrations/quickbooks/callback'
+        : 'http://localhost:5000/quickbooks/callback'
     });
   }
 
