@@ -57,17 +57,32 @@ export default function ProductivityDashboard() {
 
   // Fetch dashboard data
   const { data: dashboardStats } = useQuery({
-    queryKey: ['/api/dashboard/stats'],
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/dashboard/stats');
+      if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+      return response.json();
+    },
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
   const { data: timeEntries } = useQuery({
-    queryKey: ['/api/time-entries'],
+    queryKey: ['time-entries'],
+    queryFn: async () => {
+      const response = await fetch('/api/time-entries');
+      if (!response.ok) throw new Error('Failed to fetch time entries');
+      return response.json();
+    },
     refetchInterval: 60000
   });
 
   const { data: customers } = useQuery({
-    queryKey: ['/api/customers']
+    queryKey: ['customers'],
+    queryFn: async () => {
+      const response = await fetch('/api/customers');
+      if (!response.ok) throw new Error('Failed to fetch customers');
+      return response.json();
+    }
   });
 
   // Handle drag and drop
@@ -101,15 +116,15 @@ export default function ProductivityDashboard() {
             <p className="text-xs text-muted-foreground">Online Now</p>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold">{customers?.length || 0}</div>
+            <div className="text-2xl font-bold">{(customers as any[])?.length || 0}</div>
             <p className="text-xs text-muted-foreground">Total Customers</p>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold">{timeEntries?.filter(t => !t.endTime).length || 0}</div>
+            <div className="text-2xl font-bold">{(timeEntries as any[])?.filter((t: any) => !t.endTime).length || 0}</div>
             <p className="text-xs text-muted-foreground">Active Jobs</p>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold">{dashboardStats?.completedToday || 0}</div>
+            <div className="text-2xl font-bold">{(dashboardStats as any)?.completedToday || 0}</div>
             <p className="text-xs text-muted-foreground">Completed Today</p>
           </div>
         </div>
@@ -129,7 +144,7 @@ export default function ProductivityDashboard() {
       <CardContent>
         <ScrollArea className="h-[200px]">
           <div className="space-y-3">
-            {timeEntries?.filter(entry => !entry.endTime)?.slice(0, 6).map((entry, index) => (
+            {(timeEntries as any[])?.filter((entry: any) => !entry.endTime)?.slice(0, 6).map((entry: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
                 <div className="space-y-1">
                   <div className="font-medium">{entry.customerName || 'Unknown Customer'}</div>

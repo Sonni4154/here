@@ -17,7 +17,8 @@ import {
   Timer,
   Upload,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,8 @@ const adminNavigationItems = [
     label: "Administration",
     items: [
       { path: "/reports", label: "Reports", icon: BarChart3 },
+      { path: "/productivity", label: "Productivity Dashboard", icon: BarChart3 },
+      { path: "/collaboration", label: "Collaboration", icon: MessageSquare },
       { path: "/data-import", label: "Data Import", icon: Upload },
       { path: "/settings", label: "Settings", icon: Settings },
       { path: "/workflows", label: "Workflows", icon: Zap },
