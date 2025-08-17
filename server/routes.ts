@@ -38,12 +38,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Data import routes
+  // Data import routes - temporarily disabled
   app.post('/api/import-sample-data', isAuthenticated, async (req, res) => {
     try {
-      const { importSampleData } = await import('./data-import');
-      await importSampleData();
-      res.json({ message: "Sample data imported successfully" });
+      res.json({ message: "Sample data import feature temporarily disabled" });
     } catch (error) {
       console.error("Error importing sample data:", error);
       res.status(500).json({ message: "Failed to import sample data" });
@@ -124,9 +122,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
-  app.get('/api/customers', isAuthenticated, async (req, res) => {
+  app.get('/api/customers', isAuthenticated, async (req: any, res) => {
     try {
-      const customers = await storage.getCustomers();
+      const userId = req.user?.claims?.sub;
+      const customers = await storage.getCustomers(userId);
       res.json(customers);
     } catch (error) {
       console.error("Error fetching customers:", error);
@@ -156,9 +155,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product routes
-  app.get('/api/products', isAuthenticated, async (req, res) => {
+  app.get('/api/products', isAuthenticated, async (req: any, res) => {
     try {
-      const products = await storage.getProducts();
+      const userId = req.user?.claims?.sub;
+      const products = await storage.getProducts(userId);
       res.json(products);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -188,9 +188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Invoice routes
-  app.get('/api/invoices', isAuthenticated, async (req, res) => {
+  app.get('/api/invoices', isAuthenticated, async (req: any, res) => {
     try {
-      const invoices = await storage.getInvoices();
+      const userId = req.user?.claims?.sub;
+      const invoices = await storage.getInvoices(userId);
       res.json(invoices);
     } catch (error) {
       console.error("Error fetching invoices:", error);
@@ -220,9 +221,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Time entry routes
-  app.get('/api/time-entries', isAuthenticated, async (req, res) => {
+  app.get('/api/time-entries', isAuthenticated, async (req: any, res) => {
     try {
-      const timeEntries = await storage.getTimeEntries();
+      const userId = req.user?.claims?.sub;
+      const timeEntries = await storage.getTimeEntries(userId);
       res.json(timeEntries);
     } catch (error) {
       console.error("Error fetching time entries:", error);
@@ -231,9 +233,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Integration routes
-  app.get('/api/integrations', isAuthenticated, async (req, res) => {
+  app.get('/api/integrations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = req.user?.claims?.sub;
       const integrations = await storage.getIntegrations(userId);
       res.json(integrations);
     } catch (error) {
@@ -244,8 +246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // QuickBooks Integration routes
   // QuickBooks connect endpoint
-  app.get('/quickbooks/connect', isAuthenticated, (req, res) => {
-    const userId = req.user!.claims.sub;
+  app.get('/quickbooks/connect', isAuthenticated, (req: any, res) => {
+    const userId = req.user?.claims?.sub;
     const redirectUri = process.env.NODE_ENV === 'production' 
       ? 'https://www.wemakemarin.com/quickbooks/callback'
       : `${req.protocol}://${req.get('host')}/quickbooks/callback`;
@@ -256,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // QuickBooks callback route
-  app.get('/quickbooks/callback', isAuthenticated, async (req, res) => {
+  app.get('/quickbooks/callback', isAuthenticated, async (req: any, res) => {
     try {
       const { code, realmId } = req.query;
       
@@ -264,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect('/integrations?error=missing_params');
       }
 
-      const userId = req.user!.claims.sub;
+      const userId = req.user?.claims?.sub;
       const redirectUri = process.env.NODE_ENV === 'production' 
         ? 'https://www.wemakemarin.com/quickbooks/callback'
         : `${req.protocol}://${req.get('host')}/quickbooks/callback`;

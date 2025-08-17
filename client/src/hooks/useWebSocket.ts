@@ -30,14 +30,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const reconnectTimer = useRef<NodeJS.Timeout>();
   
   const connect = useCallback(() => {
-    if (!user?.id) return;
+    if (!user?.id && !user?.userId) return;
     
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const userId = user.id || user.userId || 'anonymous';
       
-      ws.current = new WebSocket(`${protocol}//${host}/ws?userId=${user.id}&sessionId=${sessionId}`);
+      ws.current = new WebSocket(`${protocol}//${host}/ws?userId=${userId}&sessionId=${sessionId}`);
       
       ws.current.onopen = () => {
         console.log('🔗 WebSocket connected for collaboration');
@@ -76,7 +77,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     } catch (error) {
       console.error('Failed to connect WebSocket:', error);
     }
-  }, [user?.id, reconnectInterval, maxReconnectAttempts]);
+  }, [user?.id, user?.userId, reconnectInterval, maxReconnectAttempts]);
   
   const disconnect = useCallback(() => {
     if (reconnectTimer.current) {
@@ -217,14 +218,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   
   // Connect on mount, disconnect on unmount
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id || user?.userId) {
       connect();
     }
     
     return () => {
       disconnect();
     };
-  }, [user?.id, connect, disconnect]);
+  }, [user?.id, user?.userId, connect, disconnect]);
   
   // Send heartbeat every 30 seconds
   useEffect(() => {
