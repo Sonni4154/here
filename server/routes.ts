@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { QuickBooksService } from "./services/quickbooks-service";
+import { dataImportService } from "./services/data-import-service";
 import bcrypt from "bcrypt";
 
 // Initialize services
@@ -35,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sample data import
+  // Data import routes
   app.post('/api/import-sample-data', isAuthenticated, async (req, res) => {
     try {
       const { importSampleData } = await import('./data-import');
@@ -44,6 +45,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing sample data:", error);
       res.status(500).json({ message: "Failed to import sample data" });
+    }
+  });
+
+  // Import products from CSV
+  app.post('/api/import-products', isAuthenticated, async (req, res) => {
+    try {
+      const result = await dataImportService.importProducts();
+      res.json({
+        message: `Products import completed: ${result.imported} imported`,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error importing products:", error);
+      res.status(500).json({ message: "Failed to import products" });
+    }
+  });
+
+  // Import customers from CSV
+  app.post('/api/import-customers', isAuthenticated, async (req, res) => {
+    try {
+      const result = await dataImportService.importCustomers();
+      res.json({
+        message: `Customers import completed: ${result.imported} imported`,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error importing customers:", error);
+      res.status(500).json({ message: "Failed to import customers" });
+    }
+  });
+
+  // Import all data (products + customers)
+  app.post('/api/import-all-data', isAuthenticated, async (req, res) => {
+    try {
+      const result = await dataImportService.importAllData();
+      res.json({
+        message: `Data import completed: ${result.products.imported} products, ${result.customers.imported} customers`,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error importing all data:", error);
+      res.status(500).json({ message: "Failed to import data" });
     }
   });
 
