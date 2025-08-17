@@ -16,6 +16,8 @@ import {
   employeeSchedules,
   customerNotes,
   databaseConnections,
+  userPresence,
+  collaborationActivity,
   type User,
   type UpsertUser,
   type Customer,
@@ -50,6 +52,10 @@ import {
   type InsertCustomerNote,
   type DatabaseConnection,
   type InsertDatabaseConnection,
+  type UserPresence,
+  type InsertUserPresence,
+  type CollaborationActivity,
+  type InsertCollaborationActivity,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";

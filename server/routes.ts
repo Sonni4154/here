@@ -6,6 +6,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { QuickBooksService } from "./services/quickbooks-service";
 import { dataImportService } from "./services/data-import-service";
 import { syncScheduler } from "./services/sync-scheduler";
+import { presenceService } from "./services/presence-service";
 import bcrypt from "bcrypt";
 
 // Initialize services
@@ -1041,6 +1042,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Real-time collaboration and presence API routes
+  app.get('/api/presence/online', isAuthenticated, async (req, res) => {
+    try {
+      const onlineUsers = await presenceService.getOnlineUsers();
+      res.json(onlineUsers);
+    } catch (error) {
+      console.error("Error fetching online users:", error);
+      res.status(500).json({ message: "Failed to fetch online users" });
+    }
+  });
+
+  app.post('/api/presence/update', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const presenceData = {
+        userId,
+        ...req.body
+      };
+      
+      const updatedPresence = await presenceService.updatePresence(presenceData);
+      res.json(updatedPresence);
+    } catch (error) {
+      console.error("Error updating presence:", error);
+      res.status(500).json({ message: "Failed to update presence" });
+    }
+  });
+
+  app.get('/api/collaboration/activities', isAuthenticated, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const activities = await presenceService.getRecentActivities(limit);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching collaboration activities:", error);
+      res.status(500).json({ message: "Failed to fetch collaboration activities" });
+    }
+  });
+
+  app.post('/api/collaboration/activity', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const activityData = {
+        userId,
+        ...req.body
+      };
+      
+      const activity = await presenceService.recordActivity(activityData);
+      res.json(activity);
+    } catch (error) {
+      console.error("Error recording activity:", error);
+      res.status(500).json({ message: "Failed to record activity" });
+    }
+  });
+
+  app.post('/api/presence/typing', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const typingData = {
+        userId,
+        ...req.body
+      };
+      
+      await presenceService.updateTypingIndicator(typingData);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating typing indicator:", error);
+      res.status(500).json({ message: "Failed to update typing indicator" });
+    }
+  });
+
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ 
@@ -1049,7 +1120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       services: {
         database: 'connected',
         quickbooks: 'configured',
-        oauth: 'enabled'
+        oauth: 'enabled',
+        websocket: 'active',
+        collaboration: 'enabled'
       }
     });
   });

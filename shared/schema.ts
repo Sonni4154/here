@@ -87,6 +87,36 @@ export const taskAssignments = pgTable("task_assignments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// User presence tracking for real-time collaboration
+export const userPresence = pgTable("user_presence", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  status: varchar("status").notNull().default('offline'), // 'online', 'away', 'busy', 'offline'
+  currentPage: varchar("current_page"), // Current page/route user is viewing
+  currentActivity: varchar("current_activity"), // What they're working on
+  currentCustomer: varchar("current_customer").references(() => customers.id), // Customer they're working with
+  lastSeen: timestamp("last_seen").defaultNow(),
+  sessionId: varchar("session_id"), // WebSocket session identifier
+  deviceInfo: text("device_info"), // Browser/device information
+  isTyping: boolean("is_typing").default(false), // Real-time typing indicator
+  typingIn: varchar("typing_in"), // Which form/field they're typing in
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Collaboration activity log for team awareness
+export const collaborationActivity = pgTable("collaboration_activity", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  activityType: varchar("activity_type").notNull(), // 'page_view', 'form_edit', 'customer_view', 'task_start', 'task_complete'
+  activityData: jsonb("activity_data"), // Additional context data
+  resourceId: varchar("resource_id"), // ID of customer, task, etc. being worked on
+  resourceType: varchar("resource_type"), // 'customer', 'task', 'invoice', 'schedule'
+  description: text("description"), // Human-readable activity description
+  duration: integer("duration"), // Time spent on activity (seconds)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Customers table
 export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -679,3 +709,13 @@ export const jobPhotos = pgTable("job_photos", {
 // Job photo types
 export type InsertJobPhoto = typeof jobPhotos.$inferInsert;
 export type JobPhoto = typeof jobPhotos.$inferSelect;
+
+// Zod schemas for presence and collaboration
+export const insertUserPresenceSchema = createInsertSchema(userPresence);
+export const insertCollaborationActivitySchema = createInsertSchema(collaborationActivity);
+
+// Presence and collaboration types
+export type InsertUserPresence = typeof userPresence.$inferInsert;
+export type UserPresence = typeof userPresence.$inferSelect;
+export type InsertCollaborationActivity = typeof collaborationActivity.$inferInsert;
+export type CollaborationActivity = typeof collaborationActivity.$inferSelect;

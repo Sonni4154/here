@@ -68,6 +68,15 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     
+    // Initialize WebSocket server for real-time collaboration
+    try {
+      const { CollaborationWebSocketServer } = await import('./websocket-server');
+      new CollaborationWebSocketServer(server);
+      log('WebSocket server for collaboration initialized');
+    } catch (error) {
+      log(`Failed to initialize WebSocket server: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+    
     // Initialize automated sync after server starts
     setTimeout(async () => {
       try {
