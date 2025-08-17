@@ -102,6 +102,11 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // For development, redirect to a simple login page
+    if (process.env.NODE_ENV === 'development') {
+      return res.redirect('/auth/login');
+    }
+    
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
@@ -128,6 +133,11 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // For development, allow access without authentication
+  if (process.env.NODE_ENV === 'development') {
+    return next();
+  }
+  
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {
