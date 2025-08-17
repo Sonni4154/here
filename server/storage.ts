@@ -485,8 +485,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Clock entry operations
-  async getClockEntries(userId: string): Promise<ClockEntry[]> {
-    return await db.select().from(clockEntries).where(eq(clockEntries.userId, userId)).orderBy(desc(clockEntries.createdAt));
+  async getClockEntries(userId: string, period?: string): Promise<ClockEntry[]> {
+    let query = db.select().from(clockEntries).where(eq(clockEntries.userId, userId));
+    
+    // Add period filtering logic here when needed
+    return query.orderBy(desc(clockEntries.clockIn));
   }
 
   async getActiveClockEntry(userId: string): Promise<ClockEntry | undefined> {
@@ -686,13 +689,6 @@ export class DatabaseStorage implements IStorage {
       ...data,
       createdAt: new Date()
     };
-  }
-
-  async getClockEntries(userId: string, period?: string): Promise<ClockEntry[]> {
-    let query = db.select().from(clockEntries).where(eq(clockEntries.userId, userId));
-    
-    // Add period filtering logic here when needed
-    return query.orderBy(desc(clockEntries.clockIn));
   }
 
   async getTrappingPrograms(): Promise<any[]> {

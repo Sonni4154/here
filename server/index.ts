@@ -75,7 +75,7 @@ app.use((req, res, next) => {
         await initializeScheduledSync();
         log('Automated QuickBooks sync initialized');
       } catch (error) {
-        log(`Failed to initialize automated sync: ${error.message}`);
+        log(`Failed to initialize automated sync: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }, 5000); // Wait 5 seconds for server to be ready
   });
