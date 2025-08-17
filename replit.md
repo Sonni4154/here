@@ -105,7 +105,7 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Comprehensive Webhook System**: Full webhook handler with signature verification using HMAC-SHA256
 - **Real-time Data Sync**: Webhook processing for Customer, Item, and Invoice entity changes (Create/Update/Delete)
 - **Enhanced Token Management**: Automatic token refresh with proper credential storage and validation
-- **Production Webhook URL**: https://www.wemakemarin.com/api/webhooks/quickbooks
+- **Production Webhook URL**: https://www.wemakemarin.com/quickbooks/webhook
 - **API Documentation**: Complete endpoint documentation with 25+ routes covering all integrations
 
 ### QuickBooks Integration Settings

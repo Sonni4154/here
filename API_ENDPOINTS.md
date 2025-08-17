@@ -140,7 +140,7 @@ Supported entity types:
 ### Production URLs
 - **Base URL**: https://www.wemakemarin.com
 - **QuickBooks Callback**: https://www.wemakemarin.com/quickbooks/callback
-- **Webhook URL**: https://www.wemakemarin.com/api/webhooks/quickbooks
+- **Webhook URL**: https://www.wemakemarin.com/quickbooks/webhook
 
 ### Development URLs
 - **Base URL**: http://localhost:5000
