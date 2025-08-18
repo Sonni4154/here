@@ -3,7 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
     queryKey: ["/api/auth/user"],
-    retry: false,
+    retry: (failureCount, error) => {
+      // Don't retry on 401 (unauthenticated) errors
+      if ((error as any)?.status === 401) return false;
+      return failureCount < 3;
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: false,

@@ -58,31 +58,17 @@ export default function ProductivityDashboard() {
   // Fetch dashboard data
   const { data: dashboardStats } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      const response = await fetch('/api/dashboard/stats');
-      if (!response.ok) throw new Error('Failed to fetch dashboard stats');
-      return response.json();
-    },
-    refetchInterval: 30000 // Refresh every 30 seconds
+    refetchInterval: 30000, // Refresh every 30 seconds
+    enabled: false // Disable until we have proper endpoint
   });
 
   const { data: timeEntries } = useQuery({
-    queryKey: ['time-entries'],
-    queryFn: async () => {
-      const response = await fetch('/api/time-entries');
-      if (!response.ok) throw new Error('Failed to fetch time entries');
-      return response.json();
-    },
+    queryKey: ['/api/time-entries'],
     refetchInterval: 60000
   });
 
   const { data: customers } = useQuery({
-    queryKey: ['customers'],
-    queryFn: async () => {
-      const response = await fetch('/api/customers');
-      if (!response.ok) throw new Error('Failed to fetch customers');
-      return response.json();
-    }
+    queryKey: ['/api/customers']
   });
 
   // Handle drag and drop

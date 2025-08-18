@@ -7,6 +7,7 @@ import { QuickBooksService } from "./services/quickbooks-service";
 import { dataImportService } from "./services/data-import-service";
 import { syncScheduler } from "./services/sync-scheduler";
 import { presenceService } from "./services/presence-service";
+import { getUserId, getUserEmail, getUserFirstName, getUserLastName, getUserPicture } from "./types/auth";
 import bcrypt from "bcrypt";
 
 // Initialize services
@@ -57,11 +58,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
+      
+      let user;
+      try {
+        user = await storage.getUser(userId);
+      } catch (error) {
+        console.error("Database error fetching user:", error);
+        // Return basic user info from auth if database fails
+        return res.json({
+          id: userId,
+          email: req.user.claims.email || 'unknown@example.com',
+          firstName: req.user.claims.given_name || 'User',
+          lastName: req.user.claims.family_name || '',
+          role: 'admin',
+          profileImageUrl: req.user.claims.picture || null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
       
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        // Create user if doesn't exist
+        try {
+          user = await storage.upsertUser({
+            id: userId,
+            email: getUserEmail(req),
+            firstName: getUserFirstName(req),
+            lastName: getUserLastName(req),
+            role: 'admin',
+            profileImageUrl: getUserPicture(req)
+          });
+        } catch (createError) {
+          console.error("Error creating user:", createError);
+          // Return basic user info if creation fails
+          return res.json({
+            id: userId,
+            email: getUserEmail(req),
+            firstName: getUserFirstName(req),
+            lastName: getUserLastName(req),
+            role: 'admin',
+            profileImageUrl: getUserPicture(req),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        }
       }
       
       res.json(user);
@@ -343,7 +387,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initial data pull from QuickBooks
   app.post('/api/integrations/quickbooks/initial-sync', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       
       // Pull customers
       console.log('Pulling QuickBooks customers...');
@@ -369,14 +416,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error pulling initial QuickBooks data:", error);
       res.status(500).json({ 
         message: "Failed to pull initial QuickBooks data", 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       });
     }
   });
 
   app.post('/api/integrations/quickbooks/sync', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       await quickbooksService.fullSync(userId);
       
       await storage.createActivityLog({
@@ -420,7 +470,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QuickBooks disconnect endpoint
   app.post('/quickbooks/disconnect', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       await quickbooksService.revokeIntegration(userId);
       
       res.json({ message: "QuickBooks integration disconnected successfully" });
@@ -435,7 +488,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QuickBooks connection status endpoint
   app.get('/api/integrations/quickbooks/status', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const integration = await storage.getIntegration(userId, 'quickbooks');
       
       res.json({
@@ -708,7 +764,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/clock/out', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const { clockEntryId, notes } = req.body;
       
       const user = await storage.getUser(userId);
@@ -729,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update clock entry
       const updatedEntry = await storage.updateClockEntry(clockEntryId, {
         clockOut: new Date(),
-        notes: notes || clockEntry.notes,
+        notes: notes ?? clockEntry.notes,
       });
 
       // Update calendar event
@@ -743,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await calendarService.updateClockEvent(clockEntry.calendarEventId, {
             employeeId: userId,
             employeeName: `${user.firstName} ${user.lastName}`,
-            employeeEmail: user.email || '',
+            employeeEmail: user.email ?? '',
             customerId: clockEntry.customerId,
             customerName: customer?.name,
             action: 'clock_out',
@@ -772,7 +831,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current clock status
   app.get('/api/clock/status', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const activeClockEntry = await storage.getActiveClockEntry(userId);
       
       res.json({
@@ -788,7 +850,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sync status route
   app.get('/api/sync/status', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const integrations = await storage.getIntegrations(userId);
 
       const syncStatus = {
@@ -796,7 +861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           provider: integration.provider,
           isActive: integration.isActive,
           lastSyncAt: integration.lastSyncAt,
-          syncStatus: integration.syncStatus || 'pending',
+          syncStatus: 'pending',
         })),
         recentLogs: [],
       };
@@ -817,9 +882,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      // Find user by email
-      const users = await storage.getUsers();
-      const user = users.find((u: any) => u.email === email);
+      // Find user by email  
+      const user = await storage.getUserByEmail(email);
       
       if (!user || !user.passwordHash) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -832,7 +896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create session manually for password auth
-      req.session.user = {
+      (req.session as any).user = {
         claims: {
           sub: user.id,
           email: user.email,
@@ -860,8 +924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user already exists
-      const users = await storage.getUsers();
-      const existingUser = users.find((u: any) => u.email === email);
+      const existingUser = await storage.getUserByEmail(email);
       
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
@@ -903,10 +966,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sync scheduler routes
   app.get('/api/sync/status', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const { syncScheduler } = await import('./services/sync-scheduler');
       
-      const syncStatus = syncScheduler.getSyncStatus(userId);
+      const syncStatus = syncScheduler.getStatus();
       const recentLogs = await storage.getActivityLogs(userId, 10);
       
       res.json({
@@ -923,11 +989,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/sync/start-automated', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const { intervalMinutes = 60 } = req.body;
       const { syncScheduler } = await import('./services/sync-scheduler');
       
-      await syncScheduler.startAutomatedSync(userId, intervalMinutes);
+      await syncScheduler.start();
       
       res.json({ 
         message: `Automated sync started (every ${intervalMinutes} minutes)`,
@@ -941,10 +1010,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/sync/stop-automated', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const { syncScheduler } = await import('./services/sync-scheduler');
       
-      syncScheduler.stopAutomatedSync(userId);
+      syncScheduler.stop();
       
       res.json({ message: "Automated sync stopped" });
     } catch (error) {
@@ -955,10 +1027,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/sync/trigger-immediate', isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user!.claims.sub;
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
       const { syncScheduler } = await import('./services/sync-scheduler');
       
-      await syncScheduler.triggerImmediateSync(userId);
+      await syncScheduler.triggerSync();
       
       res.json({ message: "Immediate sync completed" });
     } catch (error) {
