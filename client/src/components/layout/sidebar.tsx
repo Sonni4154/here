@@ -16,12 +16,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
+  { name: "Team Dashboard", href: "/team-dashboard", icon: Users },
   { name: "Time Tracking", href: "/time-tracking", icon: Clock },
   { name: "Clock In/Out", href: "/clock", icon: Timer },
   { name: "Materials", href: "/materials", icon: Package },
-  { name: "Customers", href: "/customers", icon: Users },
-  { name: "Invoice Search", href: "/invoices", icon: Search },
-  { name: "Reports", href: "/reports", icon: FileText },
+  { name: "Customers", href: "/customers", icon: Search },
+  { name: "Invoice Search", href: "/invoices", icon: FileText },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
 export default function Sidebar() {

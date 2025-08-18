@@ -1222,6 +1222,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Calendar routes
+  app.get('/api/calendar/events', async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || 'dev_user_123';
+      const { week } = req.query;
+      
+      // Mock calendar events for now
+      const mockEvents = [
+        {
+          id: '1',
+          title: 'Insect Control - John Smith',
+          start: new Date().toISOString(),
+          end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+          calendar: 'Insect Control / Sprays',
+          assignee: 'Spencer Reiser',
+          customer: {
+            name: 'John Smith',
+            address: '123 Main St, San Rafael, CA',
+            phone: '(415) 555-0123',
+            email: 'john@email.com'
+          }
+        }
+      ];
+      
+      res.json(mockEvents);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar events' });
+    }
+  });
+
+  app.get('/api/calendar/my-tasks', async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || 'dev_user_123';
+      
+      // Mock tasks for current user
+      const mockTasks = [
+        {
+          id: 'task1',
+          title: 'Spray Treatment - Johnson Residence',
+          start: new Date().toISOString(),
+          end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+          calendar: 'Insect Control / Sprays',
+          customer: {
+            name: 'Sarah Johnson',
+            address: '456 Oak Ave, Novato, CA 94949',
+            phone: '(415) 555-0456',
+            email: 'sarah.johnson@email.com'
+          }
+        }
+      ];
+      
+      res.json(mockTasks);
+    } catch (error) {
+      console.error('Error fetching user tasks:', error);
+      res.status(500).json({ error: 'Failed to fetch tasks' });
+    }
+  });
+
+  app.get('/api/calendar/events/:eventId', async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      
+      // Mock event detail
+      const mockEvent = {
+        id: eventId,
+        title: 'Spray Treatment - Johnson Residence',
+        start: new Date().toISOString(),
+        end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+        calendar: 'Insect Control / Sprays',
+        customer: {
+          name: 'Sarah Johnson',
+          address: '456 Oak Ave, Novato, CA 94949',
+          phone: '(415) 555-0456',
+          email: 'sarah.johnson@email.com'
+        },
+        checklist: [],
+        formData: {},
+        completed: false
+      };
+      
+      res.json(mockEvent);
+    } catch (error) {
+      console.error('Error fetching event:', error);
+      res.status(500).json({ error: 'Failed to fetch event' });
+    }
+  });
+
+  app.patch('/api/calendar/events/:eventId/checklist', async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const { checklist, formData } = req.body;
+      
+      // Store checklist updates
+      console.log(`Updating checklist for event ${eventId}:`, { checklist, formData });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating checklist:', error);
+      res.status(500).json({ error: 'Failed to update checklist' });
+    }
+  });
+
+  app.patch('/api/calendar/events/:eventId/complete', async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const { completed, completedBy, completedAt } = req.body;
+      
+      // Mark event as completed
+      console.log(`Completing event ${eventId}:`, { completed, completedBy, completedAt });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error completing event:', error);
+      res.status(500).json({ error: 'Failed to complete event' });
+    }
+  });
+
+  // Authentication routes
+  app.get('/api/auth/user', async (req, res) => {
+    try {
+      // Mock user for development
+      const mockUser = {
+        id: 'dev_user_123',
+        firstName: 'Spencer',
+        lastName: 'Reiser',
+        email: 'spencer@marinpestcontrol.com',
+        role: 'admin',
+        profileImageUrl: null
+      };
+      
+      res.json(mockUser);
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      res.status(401).json({ error: 'Unauthorized' });
+    }
+  });
+
   // Health check endpoint
   app.get('/api/health', (req, res) => {
     res.json({ 

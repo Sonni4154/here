@@ -1,27 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from '@tanstack/react-query';
+
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: 'admin' | 'employee';
+  avatar?: string;
+}
 
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
-    queryKey: ["/api/auth/user"],
-    retry: (failureCount, error) => {
-      // Don't retry on 401 (unauthenticated) errors
-      if ((error as any)?.status === 401) return false;
-      return failureCount < 3;
+    queryKey: ['/api/auth/user'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/user');
+      if (!response.ok) {
+        if (response.status === 401) {
+          return null; // User not authenticated
+        }
+        throw new Error('Failed to fetch user');
+      }
+      return response.json();
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: true, // Enable refetch on focus for better auth state sync
-    refetchOnMount: true, // Enable refetch on mount for immediate auth check
-    refetchInterval: false,
-    throwOnError: false, // Don't throw errors, handle them gracefully
+    retry: false
   });
-
-  // Check if error is 401 (unauthenticated) - this is expected for logged out users
-  const isUnauthenticatedError = error && (error as any).status === 401;
 
   return {
     user,
+    isAuthenticated: !!user,
     isLoading,
-    isAuthenticated: !!user && !isUnauthenticatedError,
-    error: isUnauthenticatedError ? null : error, // Don't treat 401 as an error
+    error,
+    isAdmin: user?.role === 'admin'
   };
 }

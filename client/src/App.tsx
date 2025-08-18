@@ -25,6 +25,7 @@ import Employees from "@/pages/employees";
 import DataImport from "@/pages/data-import";
 import CollaborationDashboard from "@/pages/collaboration";
 import ProductivityDashboard from "@/pages/productivity-dashboard";
+import TeamDashboard from "@/pages/team-dashboard";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
 import { RouterErrorBoundary } from "@/components/router/error-boundary";
@@ -162,6 +163,10 @@ function Router() {
         
         <Route path="/productivity">
           {() => <ProtectedRoute component={ProductivityDashboard} />}
+        </Route>
+        
+        <Route path="/team-dashboard">
+          {() => <ProtectedRoute component={TeamDashboard} />}
         </Route>
         
         <Route path="/data-import">
