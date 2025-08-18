@@ -9,8 +9,8 @@ export function useAuth() {
       return failureCount < 3;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnWindowFocus: true, // Enable refetch on focus for better auth state sync
+    refetchOnMount: true, // Enable refetch on mount for immediate auth check
     refetchInterval: false,
     throwOnError: false, // Don't throw errors, handle them gracefully
   });

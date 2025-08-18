@@ -44,10 +44,16 @@ function LoadingScreen() {
 
 // Simplified authentication wrapper
 function AuthenticatedApp() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, error } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
+  }
+
+  // Show error state if authentication fails unexpectedly
+  if (error && !isAuthenticated) {
+    console.error("Authentication error:", error);
+    return <Landing />;
   }
 
   if (!isAuthenticated) {
@@ -178,14 +184,12 @@ function Router() {
 
 function App() {
   return (
-    <RouterErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <AuthenticatedApp />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </RouterErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <AuthenticatedApp />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 
