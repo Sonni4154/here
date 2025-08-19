@@ -1823,6 +1823,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Monitoring endpoints
+  app.get('/api/monitoring/metrics', async (req, res) => {
+    try {
+      const { monitoring } = await import('./services/monitoring-service');
+      res.json(monitoring.getMetrics());
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get metrics' });
+    }
+  });
+
+  app.get('/api/monitoring/health', async (req, res) => {
+    try {
+      const { monitoring } = await import('./services/monitoring-service');
+      const healthCheck = await monitoring.performHealthCheck();
+      res.json(healthCheck);
+    } catch (error) {
+      res.status(500).json({ status: 'error', message: 'Health check failed' });
+    }
+  });
+
+  app.get('/api/monitoring/report', async (req, res) => {
+    try {
+      const { monitoring } = await import('./services/monitoring-service');
+      const report = monitoring.generateReport();
+      res.type('text/plain').send(report);
+    } catch (error) {
+      res.status(500).send('Failed to generate monitoring report');
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
