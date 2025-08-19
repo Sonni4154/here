@@ -86,10 +86,22 @@ export class QuickBooksService {
   // Exchange authorization code for tokens using Intuit OAuth Client
   async exchangeCodeForTokens(code: string, redirectUri: string, realmId: string): Promise<QuickBooksTokens> {
     try {
+      // Set the redirect URI for the OAuth client
+      this.oauthClient.setRedirectUri(redirectUri);
+      
       const authResponse = await this.oauthClient.createToken(code);
       
-      if (!authResponse.token) {
-        throw new Error('No token received from QuickBooks');
+      console.log('OAuth Response:', {
+        hasToken: !!authResponse.token,
+        tokenType: authResponse.token?.token_type,
+        hasAccessToken: !!authResponse.token?.access_token,
+        hasRefreshToken: !!authResponse.token?.refresh_token,
+        realmId: authResponse.token?.realmId || realmId
+      });
+
+      if (!authResponse.token || !authResponse.token.access_token) {
+        console.error('Invalid token response:', authResponse);
+        throw new Error('No valid token received from QuickBooks');
       }
 
       return {
@@ -98,11 +110,13 @@ export class QuickBooksService {
         token_type: authResponse.token.token_type || 'Bearer',
         expires_in: authResponse.token.expires_in || 3600,
         scope: authResponse.token.scope || 'com.intuit.quickbooks.accounting',
-        realmId
+        realmId: authResponse.token.realmId || realmId
       };
     } catch (error: any) {
-      console.error('Error exchanging code for tokens:', error.authResponse || error.message);
-      throw new Error('Failed to exchange authorization code for tokens');
+      console.error('Error exchanging code for tokens:', error);
+      console.error('OAuth Client environment:', this.environment);
+      console.error('OAuth Client ID:', this.clientId.substring(0, 10) + '...');
+      throw new Error(`Failed to exchange authorization code for tokens: ${error.message}`);
     }
   }
 
