@@ -534,6 +534,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // QuickBooks Integration routes
   // QuickBooks connect endpoint
+  // Initial Authorization Route - One-time setup to get fresh tokens
+  app.get('/quickbooks/initial-auth', async (req, res) => {
+    try {
+      console.log('🚀 Starting QuickBooks Initial Authorization');
+      console.log('Environment:', process.env.QBO_ENV);
+      console.log('Client ID:', process.env.QBO_CLIENT_ID?.substring(0, 15) + '...');
+      console.log('Redirect URI:', process.env.QBO_REDIRECT_URI);
+
+      const OAuthClient = require('intuit-oauth');
+      const oauthClient = new OAuthClient({
+        clientId: process.env.QBO_CLIENT_ID!,
+        clientSecret: process.env.QBO_CLIENT_SECRET!,
+        environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
+        redirectUri: process.env.QBO_REDIRECT_URI!,
+      });
+
+      const authUrl = oauthClient.authorizeUri({
+        scope: [OAuthClient.scopes.Accounting],
+        state: 'initial_auth_' + Date.now(),
+      });
+
+      console.log('\n🔗 Authorization URL Generated:', authUrl);
+      console.log('\n📝 Copy this URL and complete the QuickBooks authorization');
+
+      res.json({
+        success: true,
+        authUrl,
+        message: 'Copy the authorization URL and complete QuickBooks setup',
+        instructions: [
+          'This is a one-time authorization to get fresh tokens',
+          'Copy the URL below and paste it in your browser',
+          'Complete the QuickBooks authorization',
+          'You will be redirected back with the authorization code',
+          'The fresh tokens will be displayed in the response'
+        ]
+      });
+    } catch (error) {
+      console.error('Error generating initial auth URL:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate authorization URL',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   app.get('/quickbooks/connect', (req: any, res) => {
     console.log('🔗 QuickBooks connection initiated');
     const userId = 'dev_user_123';
@@ -568,6 +613,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!code || !realmId) {
         console.error('Missing required parameters:', { code: !!code, realmId: !!realmId });
         return res.redirect('/products?qb_error=missing_params');
+      }
+
+      // Handle initial authorization flow
+      if (req.query.state?.toString().startsWith('initial_auth_')) {
+        console.log('🎯 Processing initial authorization...');
+        
+        try {
+          const OAuthClient = require('intuit-oauth');
+          const oauthClient = new OAuthClient({
+            clientId: process.env.QBO_CLIENT_ID!,
+            clientSecret: process.env.QBO_CLIENT_SECRET!,
+            environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
+            redirectUri: process.env.QBO_REDIRECT_URI!,
+          });
+
+          // Exchange code for tokens
+          const authResponse = await oauthClient.createToken(String(code));
+          
+          console.log('\n🎉 SUCCESS! Fresh tokens obtained:');
+          console.log('Access Token:', authResponse.access_token?.substring(0, 20) + '...');
+          console.log('Refresh Token:', authResponse.refresh_token?.substring(0, 20) + '...');
+          console.log('Company ID:', realmId);
+          console.log('Expires In:', authResponse.expires_in);
+          
+          // Return the tokens as JSON for easy copying
+          return res.json({
+            success: true,
+            message: 'QuickBooks authorization successful! Save these tokens to your secrets.',
+            tokens: {
+              QBO_ACCESS_TOKEN: authResponse.access_token,
+              QBO_REFRESH_TOKEN: authResponse.refresh_token,
+              QBO_COMPANY_ID: realmId,
+              expires_in: authResponse.expires_in,
+              refresh_expires_in: authResponse.x_refresh_token_expires_in
+            },
+            instructions: [
+              'Add these tokens to your Replit secrets:',
+              'QBO_ACCESS_TOKEN=' + authResponse.access_token,
+              'QBO_REFRESH_TOKEN=' + authResponse.refresh_token,
+              'QBO_COMPANY_ID=' + realmId,
+              'Then restart your application to use the new tokens'
+            ]
+          });
+        } catch (authError) {
+          console.error('Initial authorization error:', authError);
+          return res.status(500).json({
+            error: 'Failed to exchange authorization code for tokens',
+            details: authError instanceof Error ? authError.message : 'Unknown error'
+          });
+        }
       }
 
       // Check if we're in development mode with redirect URI mismatch
