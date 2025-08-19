@@ -56,6 +56,15 @@ import {
   type InsertUserPresence,
   type CollaborationActivity,
   type InsertCollaborationActivity,
+  pendingApprovals,
+  weeklyPayroll,
+  emailNotifications,
+  type PendingApproval,
+  type InsertPendingApproval,
+  type WeeklyPayroll,
+  type InsertWeeklyPayroll,
+  type EmailNotification,
+  type InsertEmailNotification,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -71,6 +80,7 @@ export interface IStorage {
   getCustomers(userId: string): Promise<Customer[]>;
   searchCustomers(userId: string, query: string): Promise<Customer[]>;
   getCustomer(id: string): Promise<Customer | undefined>;
+  getCustomerByName(name: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer>;
   deleteCustomer(id: string): Promise<void>;
@@ -188,6 +198,21 @@ export interface IStorage {
   createDatabaseConnection(connection: InsertDatabaseConnection): Promise<DatabaseConnection>;
   updateDatabaseConnection(id: string, connection: Partial<InsertDatabaseConnection>): Promise<DatabaseConnection>;
   deleteDatabaseConnection(id: string): Promise<void>;
+  
+  // Pending Approvals operations
+  getPendingApprovals(): Promise<PendingApproval[]>;
+  createPendingApproval(approval: InsertPendingApproval): Promise<PendingApproval>;
+  approvePendingApproval(id: string, approvedBy: string): Promise<PendingApproval>;
+  denyPendingApproval(id: string, approvedBy: string, reason: string): Promise<PendingApproval>;
+  updatePendingApproval(id: string, data: Partial<InsertPendingApproval>): Promise<PendingApproval>;
+  
+  // Weekly Payroll operations
+  createWeeklyPayroll(payroll: InsertWeeklyPayroll): Promise<WeeklyPayroll>;
+  getWeeklyPayrollByEmployee(employeeId: string, weekEndingDate: Date): Promise<WeeklyPayroll | undefined>;
+  
+  // Email Notifications operations
+  createEmailNotification(notification: InsertEmailNotification): Promise<EmailNotification>;
+  getPendingEmailNotifications(): Promise<EmailNotification[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -239,6 +264,11 @@ export class DatabaseStorage implements IStorage {
 
   async getCustomer(id: string): Promise<Customer | undefined> {
     const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer;
+  }
+
+  async getCustomerByName(name: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.name, name));
     return customer;
   }
 
@@ -872,6 +902,187 @@ export class DatabaseStorage implements IStorage {
   async deleteDatabaseConnection(id: string): Promise<void> {
     await db.delete(databaseConnections)
       .where(eq(databaseConnections.id, id));
+  }
+
+  // Pending Approvals operations
+  async getPendingApprovals(): Promise<PendingApproval[]> {
+    return await db.select().from(pendingApprovals).orderBy(desc(pendingApprovals.submitDate));
+  }
+
+  async createPendingApproval(approval: InsertPendingApproval): Promise<PendingApproval> {
+    const [newApproval] = await db.insert(pendingApprovals).values(approval).returning();
+    return newApproval;
+  }
+
+  async approvePendingApproval(id: string, approvedBy: string): Promise<PendingApproval> {
+    const [approval] = await db
+      .update(pendingApprovals)
+      .set({
+        approved: true,
+        approvedBy,
+        approvedDate: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(pendingApprovals.id, id))
+      .returning();
+    return approval;
+  }
+
+  async denyPendingApproval(id: string, approvedBy: string, reason: string): Promise<PendingApproval> {
+    const [approval] = await db
+      .update(pendingApprovals)
+      .set({
+        approved: false,
+        approvedBy,
+        approvedDate: new Date(),
+        denyReason: reason,
+        updatedAt: new Date(),
+      })
+      .where(eq(pendingApprovals.id, id))
+      .returning();
+    return approval;
+  }
+
+  async updatePendingApproval(id: string, data: Partial<InsertPendingApproval>): Promise<PendingApproval> {
+    const [approval] = await db
+      .update(pendingApprovals)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(pendingApprovals.id, id))
+      .returning();
+    return approval;
+  }
+
+  // Weekly Payroll operations
+  async createWeeklyPayroll(payroll: InsertWeeklyPayroll): Promise<WeeklyPayroll> {
+    const [newPayroll] = await db.insert(weeklyPayroll).values(payroll).returning();
+    return newPayroll;
+  }
+
+  async getWeeklyPayrollByEmployee(employeeId: string, weekEndingDate: Date): Promise<WeeklyPayroll | undefined> {
+    const [payroll] = await db
+      .select()
+      .from(weeklyPayroll)
+      .where(and(eq(weeklyPayroll.employeeId, employeeId), eq(weeklyPayroll.weekEndingDate, weekEndingDate)));
+    return payroll;
+  }
+
+  // Email Notifications operations
+  async createEmailNotification(notification: InsertEmailNotification): Promise<EmailNotification> {
+    const [newNotification] = await db.insert(emailNotifications).values(notification).returning();
+    return newNotification;
+  }
+
+  async getPendingEmailNotifications(): Promise<EmailNotification[]> {
+    return await db
+      .select()
+      .from(emailNotifications)
+      .where(eq(emailNotifications.status, 'pending'))
+      .orderBy(emailNotifications.createdAt);
+  }
+
+  // Helper method to create sample approval data
+  async createSampleApprovalData(): Promise<void> {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+    const sampleApprovals = [
+      {
+        id: 'approval-001',
+        formType: 'Weekly Payroll',
+        submittedBy: 'Spencer Reiser',
+        submittedByEmail: 'spencer@marinpestcontrol.com',
+        submitDate: yesterday,
+        weekEndingDate: yesterday,
+        totalAmount: '2,840.00',
+        data: {
+          employeeId: 'emp-001',
+          totalHours: 71,
+          regularHours: 40,
+          overtimeHours: 31,
+          hourlyRate: 40,
+          clockEntries: [
+            { date: '2025-01-13', clockIn: '7:00 AM', clockOut: '5:30 PM', hours: 9.5 },
+            { date: '2025-01-14', clockIn: '7:15 AM', clockOut: '6:00 PM', hours: 10.75 },
+            { date: '2025-01-15', clockIn: '8:00 AM', clockOut: '4:30 PM', hours: 8.5 },
+            { date: '2025-01-16', clockIn: '7:00 AM', clockOut: '5:15 PM', hours: 10.25 },
+            { date: '2025-01-17', clockIn: '7:30 AM', clockOut: '8:45 PM', hours: 13.25 }
+          ]
+        },
+        approved: null,
+        approvedBy: null,
+        approvedDate: null,
+        denyReason: null,
+        createdAt: yesterday,
+        updatedAt: yesterday
+      },
+      {
+        id: 'approval-002',
+        formType: 'Hours & Materials',
+        submittedBy: 'Boden Haines',
+        submittedByEmail: 'boden@marinpestcontrol.com',
+        submitDate: now,
+        weekEndingDate: null,
+        totalAmount: '485.50',
+        data: {
+          customerName: 'Johnson Residence',
+          customerEmail: 'mjohnson@email.com',
+          customerPhone: '(415) 555-0123',
+          customerAddress: '123 Oak Street, Mill Valley, CA',
+          serviceType: 'Rodent Control',
+          hoursWorked: 4.5,
+          hourlyRate: 65,
+          materialsUsed: [
+            { name: 'Snap Traps (6-pack)', quantity: 2, cost: 24.00 },
+            { name: 'Bait Stations', quantity: 4, cost: 48.00 },
+            { name: 'Exclusion Materials', quantity: 1, cost: 121.00 }
+          ],
+          laborCost: 292.50,
+          materialsCost: 193.00,
+          description: 'Comprehensive rodent control with exclusion work in attic and basement areas'
+        },
+        approved: null,
+        approvedBy: null,
+        approvedDate: null,
+        denyReason: null,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: 'approval-003',
+        formType: 'Calendar Appointment',
+        submittedBy: 'Jorge Sisneros',
+        submittedByEmail: 'jorge@marinpestcontrol.com',
+        submitDate: twoDaysAgo,
+        weekEndingDate: null,
+        totalAmount: null,
+        data: {
+          eventId: 'cal-event-789',
+          customerName: 'Wilson Property',
+          eventTitle: 'Emergency Wasp Removal',
+          scheduledDate: '2025-01-20',
+          scheduledTime: '2:00 PM - 4:00 PM',
+          serviceType: 'Wasp/Hornet Removal',
+          urgency: 'High',
+          notes: 'Large wasp nest discovered near front entrance, requires immediate attention'
+        },
+        approved: null,
+        approvedBy: null,
+        approvedDate: null,
+        denyReason: null,
+        createdAt: twoDaysAgo,
+        updatedAt: twoDaysAgo
+      }
+    ];
+
+    for (const approval of sampleApprovals) {
+      try {
+        await this.createPendingApproval(approval);
+        console.log(`Created sample approval: ${approval.id}`);
+      } catch (error) {
+        console.log(`Sample approval ${approval.id} may already exist`);
+      }
+    }
   }
 }
 

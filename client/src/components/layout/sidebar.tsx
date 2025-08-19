@@ -10,7 +10,8 @@ import {
   Settings,
   Timer,
   Package,
-  Calendar
+  Calendar,
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +27,10 @@ const navigation = [
   { name: "Invoice Search", href: "/invoices", icon: FileText },
   { name: "Sync Scheduler", href: "/sync-scheduler", icon: Calendar },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+];
+
+const adminNavigation = [
+  { name: "Pending Approvals", href: "/pending-approvals", icon: CheckCircle },
 ];
 
 export default function Sidebar() {
@@ -70,6 +75,37 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Admin Section */}
+        {user?.role === 'admin' && (
+          <>
+            <div className="pt-4 pb-2">
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3">
+                Admin
+              </h3>
+            </div>
+            {adminNavigation.map((item) => {
+              const isActive = location === item.href;
+              const Icon = item.icon;
+              
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                    isActive
+                      ? "bg-slate-800 text-white"
+                      : "text-slate-600 hover:bg-slate-100"
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       {/* User Profile */}

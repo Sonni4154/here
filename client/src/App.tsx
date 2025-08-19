@@ -26,6 +26,7 @@ import DataImport from "@/pages/data-import";
 import CollaborationDashboard from "@/pages/collaboration";
 import ProductivityDashboard from "@/pages/productivity-dashboard";
 import TeamDashboard from "@/pages/team-dashboard";
+import PendingApprovals from "@/pages/pending-approvals";
 import SyncSchedulerPage from "@/pages/sync-scheduler";
 import PunchClockLogsPage from "@/pages/punch-clock-logs";
 import { Suspense } from "react";
@@ -170,6 +171,10 @@ function Router() {
         
         <Route path="/punch-clock-logs">
           {() => <ProtectedRoute component={PunchClockLogsPage} />}
+        </Route>
+        
+        <Route path="/pending-approvals">
+          {() => <ProtectedRoute component={PendingApprovals} />}
         </Route>
 
         {/* Integration callback routes */}

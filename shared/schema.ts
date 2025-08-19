@@ -796,6 +796,70 @@ export const insertWorkflowActionTemplateSchema = createInsertSchema(workflowAct
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Pending Approvals tables
+export const pendingApprovals = pgTable("pending_approvals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: varchar("type").notNull(), // 'payroll', 'hours_materials', 'calendar_appointment'
+  submittedBy: varchar("submitted_by").notNull(),
+  submittedByEmail: varchar("submitted_by_email"),
+  submitDate: timestamp("submit_date").defaultNow().notNull(),
+  formType: varchar("form_type").notNull(),
+  suspicious: boolean("suspicious").default(false).notNull(),
+  approved: boolean("approved"), // null = pending, true = approved, false = denied
+  approvedBy: varchar("approved_by"),
+  approvedDate: timestamp("approved_date"),
+  denyReason: text("deny_reason"),
+  data: jsonb("data").notNull(), // Store form data as JSON
+  weekEndingDate: timestamp("week_ending_date"),
+  customerName: varchar("customer_name"),
+  totalAmount: decimal("total_amount"),
+  eventDate: timestamp("event_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PendingApproval = typeof pendingApprovals.$inferSelect;
+export type InsertPendingApproval = typeof pendingApprovals.$inferInsert;
+
+// Weekly Payroll Summary table
+export const weeklyPayroll = pgTable("weekly_payroll", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  employeeId: varchar("employee_id").notNull().references(() => users.id),
+  employeeName: varchar("employee_name").notNull(),
+  weekEndingDate: timestamp("week_ending_date").notNull(),
+  totalHours: decimal("total_hours").notNull(),
+  regularHours: decimal("regular_hours").notNull(),
+  overtimeHours: decimal("overtime_hours").default('0').notNull(),
+  hourlyRate: decimal("hourly_rate").notNull(),
+  totalPay: decimal("total_pay").notNull(),
+  clockEntries: jsonb("clock_entries").notNull(), // Array of clock entry IDs
+  approved: boolean("approved").default(false),
+  approvedBy: varchar("approved_by"),
+  approvedDate: timestamp("approved_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type WeeklyPayroll = typeof weeklyPayroll.$inferSelect;
+export type InsertWeeklyPayroll = typeof weeklyPayroll.$inferInsert;
+
+// Email notifications log
+export const emailNotifications = pgTable("email_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  recipientEmail: varchar("recipient_email").notNull(),
+  subject: varchar("subject").notNull(),
+  body: text("body").notNull(),
+  type: varchar("type").notNull(), // 'approval_denied', 'payroll_reminder', etc.
+  status: varchar("status").default('pending').notNull(), // 'pending', 'sent', 'failed'
+  relatedApprovalId: varchar("related_approval_id").references(() => pendingApprovals.id),
+  sentAt: timestamp("sent_at"),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type EmailNotification = typeof emailNotifications.$inferSelect;
+export type InsertEmailNotification = typeof emailNotifications.$inferInsert;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;

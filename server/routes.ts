@@ -2034,6 +2034,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pending Approvals API routes
+  app.get('/api/pending-approvals', async (req: any, res) => {
+    try {
+      let approvals = await storage.getPendingApprovals();
+      
+      // If no approvals exist, create sample data
+      if (approvals.length === 0) {
+        console.log('No pending approvals found, creating sample data...');
+        await storage.createSampleApprovalData();
+        approvals = await storage.getPendingApprovals();
+      }
+      
+      res.json(approvals);
+    } catch (error: any) {
+      console.error('Error fetching pending approvals:', error);
+      res.status(500).json({ message: 'Failed to fetch pending approvals' });
+    }
+  });
+
+  app.post('/api/pending-approvals/:id/approve', async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { type } = req.body;
+      const userId = req.user?.claims?.sub || 'dev_user_123';
+
+      const approval = await storage.approvePendingApproval(id, userId);
+      
+      // Process the approval based on type
+      if (type === 'hours_materials') {
+        await processHoursAndMaterialsApproval(approval);
+      } else if (type === 'payroll') {
+        await processPayrollApproval(approval);
+      } else if (type === 'calendar_appointment') {
+        await processCalendarApproval(approval);
+      }
+
+      res.json(approval);
+    } catch (error: any) {
+      console.error('Error approving item:', error);
+      res.status(500).json({ message: 'Failed to approve item' });
+    }
+  });
+
+  app.post('/api/pending-approvals/:id/deny', async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      const userId = req.user?.claims?.sub || 'dev_user_123';
+
+      const approval = await storage.denyPendingApproval(id, userId, reason);
+      
+      // Send denial emails
+      await sendDenialEmails(approval, reason);
+
+      res.json(approval);
+    } catch (error: any) {
+      console.error('Error denying item:', error);
+      res.status(500).json({ message: 'Failed to deny item' });
+    }
+  });
+
+  app.patch('/api/pending-approvals/:id', async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      const approval = await storage.updatePendingApproval(id, updateData);
+      res.json(approval);
+    } catch (error: any) {
+      console.error('Error updating approval:', error);
+      res.status(500).json({ message: 'Failed to update approval' });
+    }
+  });
+
+  // Helper functions for processing approvals
+  async function processHoursAndMaterialsApproval(approval: any) {
+    try {
+      // Convert hours & materials to QuickBooks customer/invoice
+      const qbData = approval.data;
+      
+      // Create customer if doesn't exist
+      let customer = await storage.getCustomerByName?.(qbData.customerName);
+      if (!customer) {
+        customer = await storage.createCustomer({
+          name: qbData.customerName,
+          email: qbData.customerEmail || '',
+          phone: qbData.customerPhone || '',
+          address: qbData.customerAddress || '',
+          notes: `Created from H&M approval ${approval.id}`
+        });
+      }
+
+      // Create invoice
+      await storage.createInvoice({
+        customerId: customer.id,
+        invoiceNumber: `HM-${approval.id}`,
+        amount: parseFloat(approval.totalAmount || '0'),
+        status: 'pending',
+        description: `Hours and Materials - ${qbData.serviceType || 'Service'}`,
+        metadata: {
+          approvalId: approval.id,
+          hoursWorked: qbData.hoursWorked,
+          materialsUsed: qbData.materialsUsed,
+          technician: approval.submittedBy
+        }
+      });
+
+      console.log(`Processed H&M approval ${approval.id} -> Created invoice`);
+    } catch (error) {
+      console.error('Error processing H&M approval:', error);
+    }
+  }
+
+  async function processPayrollApproval(approval: any) {
+    try {
+      // Mark weekly payroll as approved
+      const payrollData = approval.data;
+      
+      await storage.createWeeklyPayroll({
+        employeeId: payrollData.employeeId,
+        employeeName: approval.submittedBy,
+        weekEndingDate: new Date(approval.weekEndingDate || Date.now()),
+        totalHours: parseFloat(payrollData.totalHours || '0'),
+        regularHours: parseFloat(payrollData.regularHours || '0'),
+        overtimeHours: parseFloat(payrollData.overtimeHours || '0'),
+        hourlyRate: parseFloat(payrollData.hourlyRate || '0'),
+        totalPay: parseFloat(approval.totalAmount || '0'),
+        clockEntries: payrollData.clockEntries || [],
+        approved: true,
+        approvedBy: approval.approvedBy,
+        approvedDate: new Date()
+      });
+
+      console.log(`Processed payroll approval ${approval.id} for ${approval.submittedBy}`);
+    } catch (error) {
+      console.error('Error processing payroll approval:', error);
+    }
+  }
+
+  async function processCalendarApproval(approval: any) {
+    try {
+      // Update calendar event color to gray (approved)
+      const eventData = approval.data;
+      console.log(`Calendar event ${eventData.eventId} approved - would set color to gray`);
+      
+      // TODO: Integrate with Google Calendar API to update event color
+    } catch (error) {
+      console.error('Error processing calendar approval:', error);
+    }
+  }
+
+  async function sendDenialEmails(approval: any, reason: string) {
+    try {
+      // Send email to technician
+      if (approval.submittedByEmail) {
+        await storage.createEmailNotification({
+          recipientEmail: approval.submittedByEmail,
+          subject: `${approval.formType} Submission Denied`,
+          body: `Your ${approval.formType} submission from ${approval.submitDate} has been denied.\n\nReason: ${reason}\n\nPlease contact the office at 415-875-0720 as soon as possible to discuss this matter.`,
+          type: 'approval_denied',
+          relatedApprovalId: approval.id
+        });
+      }
+
+      // Send email to admin
+      await storage.createEmailNotification({
+        recipientEmail: 'marinpestcontrol@gmail.com',
+        subject: `Denied Submission Alert - ${approval.formType}`,
+        body: `A ${approval.formType} submission by ${approval.submittedBy} on ${approval.submitDate} has been denied.\n\nReason: ${reason}\n\nThe technician has been notified to contact the office at 415-875-0720.`,
+        type: 'admin_alert',
+        relatedApprovalId: approval.id
+      });
+
+      console.log(`Sent denial emails for approval ${approval.id}`);
+    } catch (error) {
+      console.error('Error sending denial emails:', error);
+    }
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }

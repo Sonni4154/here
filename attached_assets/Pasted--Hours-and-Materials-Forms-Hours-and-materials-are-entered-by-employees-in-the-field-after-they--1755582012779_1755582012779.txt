@@ -1,0 +1,30 @@
+
+Hours and Materials Forms
+
+Hours and materials are entered by employees in the field after they finish working at a job site.  These forms after admin approval will directly equate to a Quickbooks Online invoice so the fields must also equate. 
+
+General Required fields:  
+	Customer Name (match quickbooks or database, autocomplete from 'customers' or enter manually-- manual entries should add the invoice to a customer with the same Display Name, if no customer with that Display Name is found, they should Create a Customer under this name)
+	Customer Address (match quickbooks or database, autocomplete from 'customer shipping address' if no customer is found from the customer name field then this will be the newly created customers address-- quickbooks breaks this into 'Customer Street Address, Customer City, Custmoer State, Customer Zip, Custmoer Country'-- always enter Customer State as CA and customer country as USA if there is no input on a found customer from Customer Name)
+	Customer E-Mail Address (match quickbooks or database, autocomplete from 'customer email',  if no customer is found from the customer name field then this will be the newly created customers Email)
+	Customer Phone Number (match quickbooks or database, autocomplete from 'phone number',  if no customer is found from the customer name field then this will be the newly created customers phone number )
+
+Every Line Item is required to have
+	Date Entered (plug in date form is being entered, allow edits)
+	Product/Service - (autocomplete and match "Products" in quickbooks, we consider "Non-Inventory Products" as materials and "Service Products" as Hours)
+	Description of Product/Service - (enter quickbooks or database description for product, allow edits)
+	Quantity of Product/Service - (enter number, increments of .25, minimum value 1.0, allow edits)
+	Price Rate of Product/Service - (enter value set in quickbooks, allow edits, flag under admin approval as changed)
+	Line Item Total (Multiply Rate * Quantity of this line item in dollars, only visible in admin approval/view mode)
+
+Example Line Item:
+    08/18/2025 - Exclusion - Sealed rodent entry points - 2.5 - $120 - [$300, admin only]
+
+Totals (listed on admin invoices only)
+	Subtotal: (sum of line items (rate*quantity) before tax)
+	Tax:  (tax at rate listed in quickbooks)
+	Discount: (admin only field to enter, subtract from total)
+	Deposit:  (admin only field to enter, subtract from total)
+	Total invoice: [(sum of subtotal - discount - deposit) x tax]
+
+This should then be pushed to quickbooks via the API as a "Create Customer" or "Update Customer" and then a "Create Invoice".  Quickbooks will assign a invoice ID number, this should be added to the invoice along with any other meta information quickbooks sends back with it (we may need to search invoices to get updated values after admin approval and then it then all values should be commit to "invoices" in database)
