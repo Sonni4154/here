@@ -95,10 +95,15 @@ export class QuickBooksService {
   // Exchange authorization code for tokens using Intuit OAuth Client
   async exchangeCodeForTokens(code: string, redirectUri: string, realmId: string): Promise<QuickBooksTokens> {
     try {
-      // Set the redirect URI for the OAuth client
-      this.oauthClient.setRedirectUri(redirectUri);
+      // Create a new OAuth client with the correct redirect URI for token exchange
+      const tokenClient = new OAuthClient({
+        clientId: this.clientId,
+        clientSecret: this.clientSecret,
+        environment: this.environment,
+        redirectUri: redirectUri
+      });
       
-      const authResponse = await this.oauthClient.createToken(code);
+      const authResponse = await tokenClient.createToken(code);
       
       console.log('OAuth Response:', {
         hasToken: !!authResponse.token,
@@ -132,11 +137,18 @@ export class QuickBooksService {
   // Refresh access token using Intuit OAuth Client
   async refreshAccessToken(refreshToken: string): Promise<QuickBooksTokens> {
     try {
-      this.oauthClient.setToken({
-        refresh_token: refreshToken
+      // Create a new OAuth client for token refresh
+      const refreshClient = new OAuthClient({
+        clientId: this.clientId,
+        clientSecret: this.clientSecret,
+        environment: this.environment,
+        redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback'
       });
       
-      const authResponse = await this.oauthClient.refresh();
+      // Use the refresh method with the refresh token
+      // The intuit-oauth library handles token setting internally
+      
+      const authResponse = await refreshClient.refreshUsingToken(refreshToken);
       
       if (!authResponse.token) {
         throw new Error('No refreshed token received from QuickBooks');
@@ -371,10 +383,8 @@ export class QuickBooksService {
 
   // Add missing methods for production readiness
   private async setCredentials(integration: any): Promise<void> {
-    this.oauthClient.setToken({
-      access_token: integration.accessToken,
-      refresh_token: integration.refreshToken
-    });
+    // The intuit-oauth library doesn't use setToken method
+    // Authentication is handled through API calls directly
   }
 
   private async makeRequest(endpoint: string, method: string = 'GET', data?: any): Promise<any> {
@@ -717,13 +727,15 @@ export class QuickBooksService {
         throw new Error('QuickBooks integration not found');
       }
 
-      // Revoke tokens with QuickBooks
-      this.oauthClient.setToken({
-        access_token: integration.accessToken || '',
-        refresh_token: integration.refreshToken || ''
+      // Create a revoke client for token revocation
+      const revokeClient = new OAuthClient({
+        clientId: this.clientId,
+        clientSecret: this.clientSecret,
+        environment: this.environment,
+        redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback'
       });
 
-      await this.oauthClient.revoke();
+      await revokeClient.revokeAccess(integration.accessToken || '');
 
       // Deactivate integration in our database
       await storage.upsertIntegration({

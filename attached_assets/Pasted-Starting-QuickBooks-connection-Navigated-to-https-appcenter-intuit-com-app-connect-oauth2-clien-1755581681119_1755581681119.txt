@@ -1,0 +1,166 @@
+Starting QuickBooks connection...
+Navigated to https://appcenter.intuit.com/app/connect/oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=eyJ1c2VySWQiOiJkZXZfdXNlcl8xMjMiLCJ0aW1lc3RhbXAiOjE3NTU1ODE2NjMyOTZ9
+543.06b6e9f0fec2e351c5c7.js:1 All core plugins started...
+543.06b6e9f0fec2e351c5c7.js:1 Plugins registered...
+543.06b6e9f0fec2e351c5c7.js:1 Application before-ready completed...
+543.06b6e9f0fec2e351c5c7.js:1 Application ready...
+AppInitializer.5f295ebf95ba5af648b8.js:1 default delegate action handler  {typeName: 'webShellEvent.handle', category: 'webShellEvent', command: 'handle', payload: {…}, context: {…}}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Shell - successfully initialized RUM module {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Shell - successfully loaded {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Subscription Plugin Landing {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Deprecated sandbox analytics API used by plugin: developer-apps-subscription-ui {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+warn @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+i._executeAction @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+Promise.then
+i.handleAction @ 614.284f7dea8ace4103d91b.js:1
+n._doExecution @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+n.triggerExecutions @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+Promise.then
+sendEvents @ 614.284f7dea8ace4103d91b.js:1
+$n @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+n.onWidgetReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+s.onReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+value @ BaseWidget.min.js:1
+value @ BaseWidget.min.js:1
+handleWidgetReady @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+(anonymous) @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+Promise.then
+P.fetchPreAuthInfo @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+getErrorMessageFeatureFlagInfo @ 79.b3f32f40bc079b6a.js:2
+componentWillMount @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+Ce @ VM12:83
+Ch @ VM12:114
+Pj @ VM12:233
+di @ VM12:168
+Nj @ VM12:168
+sc @ VM12:168
+gf @ VM12:162
+(anonymous) @ VM12:73
+unstable_runWithPriority @ index-aPgVBEI6.js:24
+Za @ VM12:73
+$g @ VM12:73
+ja @ VM12:73
+Pa @ VM12:157
+enqueueSetState @ VM12:218
+v.setState @ index-aPgVBEI6.js:19
+a.renderWidgetInShellLayout @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+Promise.then
+a.displayView @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+l._renderView @ 543.06b6e9f0fec2e351c5c7.js:1
+l._processNavigationResponse @ 543.06b6e9f0fec2e351c5c7.js:1
+then.o @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+l.navigate @ 543.06b6e9f0fec2e351c5c7.js:1
+l.onApplicationReady @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+s._invokeAppReadyOnCorePlugins @ 543.06b6e9f0fec2e351c5c7.js:1
+s._onApplicationReady @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+s._invokeFunctionsSequentially @ 543.06b6e9f0fec2e351c5c7.js:1
+s.onBeforeStart @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+n._processTransitionEvent @ 543.06b6e9f0fec2e351c5c7.js:1
+f.start @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+Promise.then
+rr @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=eyJ1c2VySWQiOiJkZXZfdXNlcl8xMjMiLCJ0aW1lc3RhbXAiOjE3NTU1ODE2NjMyOTZ9:2
+Promise.then
+(anonymous) @ oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=eyJ1c2VySWQiOiJkZXZfdXNlcl8xMjMiLCJ0aW1lc3RhbXAiOjE3NTU1ODE2NjMyOTZ9:2Understand this warning
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Shell - application bootstrapped successfully! {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 aalstepup cookie {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-performance.8664001a0a687b46de4e.js:1 No end time provided for PAGE_LOAD:/app/connect/oauth2
+e.pageInitiated @ appf-intuit-performance.8664001a0a687b46de4e.js:1
+r.pageInitiated @ AppInitializer.5f295ebf95ba5af648b8.js:1
+n._doExecution @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+n.triggerExecutions @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+Promise.then
+sendEvents @ AppInitializer.5f295ebf95ba5af648b8.js:1
+$n @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+n.onWidgetReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+s.onReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+value @ BaseWidget.min.js:1
+value @ BaseWidget.min.js:1
+handleWidgetReady @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+(anonymous) @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+Promise.then
+P.fetchPreAuthInfo @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+getErrorMessageFeatureFlagInfo @ 79.b3f32f40bc079b6a.js:2
+componentWillMount @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+Ce @ VM12:83
+Ch @ VM12:114
+Pj @ VM12:233
+di @ VM12:168
+Nj @ VM12:168
+sc @ VM12:168
+gf @ VM12:162
+(anonymous) @ VM12:73
+unstable_runWithPriority @ index-aPgVBEI6.js:24
+Za @ VM12:73
+$g @ VM12:73
+ja @ VM12:73
+Pa @ VM12:157
+enqueueSetState @ VM12:218
+v.setState @ index-aPgVBEI6.js:19
+a.renderWidgetInShellLayout @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+Promise.then
+a.displayView @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+l._renderView @ 543.06b6e9f0fec2e351c5c7.js:1
+l._processNavigationResponse @ 543.06b6e9f0fec2e351c5c7.js:1
+then.o @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+l.navigate @ 543.06b6e9f0fec2e351c5c7.js:1
+l.onApplicationReady @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+s._invokeAppReadyOnCorePlugins @ 543.06b6e9f0fec2e351c5c7.js:1
+s._onApplicationReady @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+s._invokeFunctionsSequentially @ 543.06b6e9f0fec2e351c5c7.js:1
+s.onBeforeStart @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+Promise.then
+n._processTransitionEvent @ 543.06b6e9f0fec2e351c5c7.js:1
+f.start @ 543.06b6e9f0fec2e351c5c7.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+Promise.then
+rr @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=eyJ1c2VySWQiOiJkZXZfdXNlcl8xMjMiLCJ0aW1lc3RhbXAiOjE3NTU1ODE2NjMyOTZ9:2
+Promise.then
+(anonymous) @ oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=eyJ1c2VySWQiOiJkZXZfdXNlcl8xMjMiLCJ0aW1lc3RhbXAiOjE3NTU1ODE2NjMyOTZ9:2Understand this warning
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Verify AAL 25 Response: true userAuthId: 9130354661988036; channel: c2qb; region: US; clientId: ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN; {msgProps: null, appProps: null, context: {…}, queued: false, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 AAL compliant in connection workflow for app:  clientId: ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN;, applying PreAuth decision {msgProps: null, appProps: null, context: {…}, queued: false, flushLogsImmediately: false, …}
+Navigated to https://www.wemakemarin.com/products?qb_error=Failed%20to%20exchange%20authorization%20code%20for%20tokens%3A%20this.oauthClient.setRedirectUri%20is%20not%20a%20function
