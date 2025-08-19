@@ -1823,11 +1823,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Monitoring endpoints
+  // Prometheus metrics endpoint
+  app.get('/metrics', async (req, res) => {
+    try {
+      const { prometheusMetrics } = await import('./services/prometheus-metrics');
+      const metrics = await prometheusMetrics.getMetrics();
+      res.set('Content-Type', 'text/plain');
+      res.send(metrics);
+    } catch (error) {
+      res.status(500).send('Failed to get Prometheus metrics');
+    }
+  });
+
+  // Comprehensive monitoring endpoints
   app.get('/api/monitoring/metrics', async (req, res) => {
     try {
       const { monitoring } = await import('./services/monitoring-service');
-      res.json(monitoring.getMetrics());
+      const { prometheusMetrics } = await import('./services/prometheus-metrics');
+      
+      const customMetrics = monitoring.getMetrics();
+      const prometheusHealthy = prometheusMetrics.isHealthy();
+      
+      res.json({
+        ...customMetrics,
+        prometheus_healthy: prometheusHealthy,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       res.status(500).json({ error: 'Failed to get metrics' });
     }
@@ -1836,8 +1857,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/monitoring/health', async (req, res) => {
     try {
       const { monitoring } = await import('./services/monitoring-service');
+      const { prometheusMetrics } = await import('./services/prometheus-metrics');
+      const { errorTracking } = await import('./services/error-tracking');
+      
       const healthCheck = await monitoring.performHealthCheck();
-      res.json(healthCheck);
+      
+      res.json({
+        ...healthCheck,
+        services: {
+          ...healthCheck.checks,
+          prometheus: prometheusMetrics.isHealthy(),
+          error_tracking: process.env.SENTRY_DSN ? 'sentry' : 'console'
+        }
+      });
     } catch (error) {
       res.status(500).json({ status: 'error', message: 'Health check failed' });
     }

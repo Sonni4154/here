@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import * as Sentry from '@sentry/node';
 
-// Error tracking service that integrates with Sentry when configured
+// Error tracking service with full Sentry integration
 export class ErrorTrackingService {
   private sentryInitialized = false;
 
@@ -11,20 +12,38 @@ export class ErrorTrackingService {
   private initializeSentry() {
     const sentryDsn = process.env.SENTRY_DSN;
     
-    if (sentryDsn && sentryDsn !== 'your-sentry-dsn') {
+    if (sentryDsn && sentryDsn !== 'your-sentry-dsn' && sentryDsn.startsWith('https://')) {
       try {
-        // Initialize Sentry if DSN is provided
+        // Initialize Sentry with proper configuration
         console.log('🔍 Initializing Sentry error tracking...');
         
-        // For now, we'll use console logging until Sentry package is installed
-        this.sentryInitialized = false; // Will be true when Sentry is properly configured
+        Sentry.init({
+          dsn: sentryDsn,
+          environment: process.env.NODE_ENV || 'development',
+          tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+          integrations: [
+            new Sentry.Integrations.Http({ tracing: true }),
+            new Sentry.Integrations.Express({ app: undefined }),
+          ],
+          beforeSend(event) {
+            // Filter out sensitive information
+            if (event.request?.headers) {
+              delete event.request.headers.authorization;
+              delete event.request.headers.cookie;
+            }
+            return event;
+          }
+        });
         
-        console.log('✅ Error tracking configured (Console mode until Sentry DSN provided)');
+        this.sentryInitialized = true;
+        console.log('✅ Sentry error tracking initialized successfully');
       } catch (error) {
         console.error('❌ Failed to initialize Sentry:', error);
+        this.sentryInitialized = false;
       }
     } else {
       console.log('⚠️ Sentry DSN not configured - using console error tracking');
+      console.log('ℹ️ To enable Sentry, provide SENTRY_DSN environment variable');
     }
   }
 
@@ -38,11 +57,18 @@ export class ErrorTrackingService {
     };
 
     if (this.sentryInitialized) {
-      // TODO: Send to Sentry when configured
-      // Sentry.captureException(error, { extra: context });
+      Sentry.withScope((scope) => {
+        if (context) {
+          Object.keys(context).forEach(key => {
+            scope.setExtra(key, context[key]);
+          });
+        }
+        scope.setLevel('error');
+        Sentry.captureException(error);
+      });
     }
 
-    // Always log to console for now
+    // Always log to console for debugging
     console.error('🚨 ERROR CAPTURED:', errorData);
     
     return errorData;
@@ -58,8 +84,15 @@ export class ErrorTrackingService {
     };
 
     if (this.sentryInitialized) {
-      // TODO: Send to Sentry when configured
-      // Sentry.captureMessage(message, level);
+      Sentry.withScope((scope) => {
+        if (context) {
+          Object.keys(context).forEach(key => {
+            scope.setExtra(key, context[key]);
+          });
+        }
+        scope.setLevel(level === 'warning' ? 'warning' : level === 'error' ? 'error' : 'info');
+        Sentry.captureMessage(message);
+      });
     }
 
     // Log to console based on level
