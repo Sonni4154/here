@@ -394,9 +394,8 @@ start_application() {
 module.exports = {
   apps: [{
     name: '$APP_NAME',
-    script: 'server/index.ts',
+    script: 'dist/index.js',
     interpreter: 'node',
-    interpreter_args: '--loader tsx',
     instances: 'max',
     exec_mode: 'cluster',
     env: {

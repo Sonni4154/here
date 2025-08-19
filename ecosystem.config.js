@@ -1,9 +1,8 @@
 module.exports = {
   apps: [{
     name: 'timesync-pro',
-    script: 'server/index.ts',
+    script: 'dist/index.js',
     interpreter: 'node',
-    interpreter_args: '--loader tsx',
     instances: 'max',
     exec_mode: 'cluster',
     env: {
