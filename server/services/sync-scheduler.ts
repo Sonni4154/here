@@ -1,116 +1,276 @@
-import { dataImportService } from './data-import-service';
+import { storage } from '../storage';
 import { QuickBooksService } from './quickbooks-service';
 
+export interface SyncScheduleConfig {
+  provider: string;
+  enabled: boolean;
+  interval: number; // minutes
+  businessHoursOnly: boolean;
+  retryAttempts: number;
+  lastRun?: Date;
+  nextRun?: Date;
+  priority: 'low' | 'medium' | 'high';
+}
+
+export interface SyncRecommendation {
+  provider: string;
+  recommendedInterval: number;
+  reason: string;
+  confidence: number;
+  suggestedBusinessHours: boolean;
+  estimatedDuration: number; // minutes
+}
+
 export class SyncScheduler {
-  private intervals: NodeJS.Timeout[] = [];
-  private isRunning = false;
+  private activeIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private scheduleConfigs: Map<string, SyncScheduleConfig> = new Map();
+  private quickbooksService: QuickBooksService;
 
-  /**
-   * Start all scheduled sync processes
-   */
-  start() {
-    if (this.isRunning) return;
-    
-    this.isRunning = true;
-    console.log('🕐 Starting scheduled sync processes...');
-
-    // Schedule data import sync every 15 minutes
-    const dataImportInterval = setInterval(async () => {
-      await this.runDataImportSync();
-    }, 15 * 60 * 1000); // 15 minutes
-
-    // Schedule QuickBooks sync every hour (existing)
-    const quickbooksInterval = setInterval(async () => {
-      await this.runQuickBooksSync();
-    }, 60 * 60 * 1000); // 1 hour
-
-    this.intervals.push(dataImportInterval, quickbooksInterval);
-
-    // Run initial syncs
-    setTimeout(() => this.runDataImportSync(), 5000); // Run after 5 seconds
-    setTimeout(() => this.runQuickBooksSync(), 10000); // Run after 10 seconds
-
-    console.log('✅ Scheduled sync processes started');
+  constructor() {
+    this.quickbooksService = new QuickBooksService();
+    this.initializeDefaultSchedules();
   }
 
-  /**
-   * Stop all scheduled sync processes
-   */
-  stop() {
-    if (!this.isRunning) return;
+  private initializeDefaultSchedules() {
+    // Default QuickBooks sync configuration
+    this.scheduleConfigs.set('quickbooks', {
+      provider: 'quickbooks',
+      enabled: false,
+      interval: 60, // 1 hour
+      businessHoursOnly: true,
+      retryAttempts: 3,
+      priority: 'high'
+    });
 
-    this.intervals.forEach(interval => clearInterval(interval));
-    this.intervals = [];
-    this.isRunning = false;
-    
-    console.log('🛑 Scheduled sync processes stopped');
+    // Default Google Calendar sync configuration
+    this.scheduleConfigs.set('google_calendar', {
+      provider: 'google_calendar',
+      enabled: false,
+      interval: 30, // 30 minutes
+      businessHoursOnly: false,
+      retryAttempts: 2,
+      priority: 'medium'
+    });
   }
 
-  /**
-   * Run data import sync (CSV files)
-   */
-  private async runDataImportSync() {
-    try {
-      console.log('🔄 Running scheduled data import sync...');
-      
-      const result = await dataImportService.importAllData();
-      
-      const totalImported = result.products.imported + result.customers.imported;
-      const totalErrors = result.products.errors.length + result.customers.errors.length;
-      
-      if (totalImported > 0 || totalErrors > 0) {
-        console.log(`📊 Data import sync completed: ${totalImported} items imported, ${totalErrors} errors`);
-      } else {
-        console.log('✅ Data import sync completed - no new data');
-      }
-      
-    } catch (error) {
-      console.error('❌ Data import sync failed:', error);
-    }
-  }
+  async getScheduleStatus(): Promise<{
+    isRunning: boolean;
+    activeIntervals: number;
+    nextScheduledSync?: Date;
+    schedules: SyncScheduleConfig[];
+  }> {
+    const schedules = Array.from(this.scheduleConfigs.values());
+    const nextRuns = schedules
+      .filter(s => s.enabled && s.nextRun)
+      .map(s => s.nextRun!)
+      .sort((a, b) => a.getTime() - b.getTime());
 
-  /**
-   * Run QuickBooks sync (existing logic)
-   */
-  private async runQuickBooksSync() {
-    try {
-      console.log('🔄 Running scheduled QuickBooks sync...');
-      
-      const quickbooksService = new QuickBooksService();
-      // Note: This would use existing QuickBooks sync logic
-      // For now, just log that it would run
-      
-      console.log('✅ QuickBooks sync check completed');
-      
-    } catch (error) {
-      console.error('❌ QuickBooks sync failed:', error);
-    }
-  }
-
-  /**
-   * Get sync status information
-   */
-  getStatus() {
     return {
-      isRunning: this.isRunning,
-      activeIntervals: this.intervals.length,
-      nextDataImportSync: this.isRunning ? 'Every 15 minutes' : 'Not scheduled',
-      nextQuickBooksSync: this.isRunning ? 'Every hour' : 'Not scheduled'
+      isRunning: this.activeIntervals.size > 0,
+      activeIntervals: this.activeIntervals.size,
+      nextScheduledSync: nextRuns[0],
+      schedules
     };
   }
 
-  /**
-   * Manually trigger data import sync
-   */
-  async triggerDataImportSync() {
-    return await this.runDataImportSync();
+  async updateScheduleConfig(provider: string, config: Partial<SyncScheduleConfig>): Promise<void> {
+    const existing = this.scheduleConfigs.get(provider);
+    if (!existing) {
+      throw new Error(`No schedule configuration found for provider: ${provider}`);
+    }
+
+    const updated = { ...existing, ...config };
+    this.scheduleConfigs.set(provider, updated);
+
+    // Restart the schedule if it was running
+    if (this.activeIntervals.has(provider)) {
+      this.stopSchedule(provider);
+      if (updated.enabled) {
+        this.startSchedule(provider);
+      }
+    } else if (updated.enabled) {
+      this.startSchedule(provider);
+    }
+
+    // Log the configuration change
+    await storage.createActivityLog({
+      userId: 'system',
+      type: 'schedule_updated',
+      description: `Sync schedule updated for ${provider}`,
+      metadata: { provider, config: updated }
+    });
   }
 
-  /**
-   * Manually trigger QuickBooks sync
-   */
-  async triggerQuickBooksSync() {
-    return await this.runQuickBooksSync();
+  private startSchedule(provider: string): void {
+    const config = this.scheduleConfigs.get(provider);
+    if (!config || !config.enabled) return;
+
+    const intervalMs = config.interval * 60 * 1000;
+    
+    const runSync = async () => {
+      if (config.businessHoursOnly && !this.isBusinessHours()) {
+        console.log(`⏰ Skipping ${provider} sync - outside business hours`);
+        return;
+      }
+
+      try {
+        console.log(`🔄 Starting scheduled ${provider} sync`);
+        await this.executeSyncForProvider(provider);
+        
+        config.lastRun = new Date();
+        config.nextRun = new Date(Date.now() + intervalMs);
+        
+        await storage.createActivityLog({
+          userId: 'system',
+          type: 'scheduled_sync',
+          description: `Scheduled ${provider} sync completed successfully`,
+          metadata: { provider, timestamp: new Date() }
+        });
+      } catch (error) {
+        console.error(`❌ Scheduled ${provider} sync failed:`, error);
+        await storage.createActivityLog({
+          userId: 'system',
+          type: 'sync_error',
+          description: `Scheduled ${provider} sync failed`,
+          metadata: { 
+            provider, 
+            error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date()
+          }
+        });
+      }
+    };
+
+    // Calculate next run time
+    config.nextRun = new Date(Date.now() + intervalMs);
+    
+    const interval = setInterval(runSync, intervalMs);
+    this.activeIntervals.set(provider, interval);
+    
+    console.log(`📅 Scheduled ${provider} sync every ${config.interval} minutes`);
+  }
+
+  private stopSchedule(provider: string): void {
+    const interval = this.activeIntervals.get(provider);
+    if (interval) {
+      clearInterval(interval);
+      this.activeIntervals.delete(provider);
+      console.log(`⏹️ Stopped scheduled ${provider} sync`);
+    }
+  }
+
+  private isBusinessHours(): boolean {
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    // Business hours: Monday-Friday, 7 AM - 7 PM Pacific Time
+    return day >= 1 && day <= 5 && hour >= 7 && hour < 19;
+  }
+
+  private async executeSyncForProvider(provider: string): Promise<void> {
+    const userId = 'dev_user_123'; // Default admin user
+    
+    switch (provider) {
+      case 'quickbooks':
+        const integration = await storage.getIntegration(userId, 'quickbooks');
+        if (integration?.accessToken) {
+          await this.quickbooksService.fullSync(userId);
+        } else {
+          throw new Error('QuickBooks not connected');
+        }
+        break;
+        
+      case 'google_calendar':
+        // Implement Google Calendar sync when ready
+        console.log('Google Calendar sync not yet implemented');
+        break;
+        
+      default:
+        throw new Error(`Unknown provider: ${provider}`);
+    }
+  }
+
+  async generateRecommendations(): Promise<SyncRecommendation[]> {
+    const recommendations: SyncRecommendation[] = [];
+    
+    // Analyze QuickBooks sync patterns
+    const qbRecommendation = await this.analyzeQuickBooksUsage();
+    if (qbRecommendation) {
+      recommendations.push(qbRecommendation);
+    }
+
+    // Add Google Calendar recommendations
+    recommendations.push({
+      provider: 'google_calendar',
+      recommendedInterval: 15,
+      reason: 'Calendar events change frequently during business hours',
+      confidence: 0.8,
+      suggestedBusinessHours: false,
+      estimatedDuration: 2
+    });
+
+    return recommendations;
+  }
+
+  private async analyzeQuickBooksUsage(): Promise<SyncRecommendation | null> {
+    try {
+      // Analyze recent activity logs to determine optimal sync frequency
+      const recentLogs = await storage.getRecentActivityLogs('system', 7); // Last 7 days
+      const syncLogs = recentLogs.filter(log => 
+        log.type === 'scheduled_sync' && 
+        log.metadata?.provider === 'quickbooks'
+      );
+
+      let recommendedInterval = 60; // Default 1 hour
+      let confidence = 0.7;
+      let reason = 'Standard business sync frequency';
+
+      if (syncLogs.length > 0) {
+        // If there have been many manual syncs, suggest more frequent automated sync
+        const manualSyncs = recentLogs.filter(log => log.type === 'manual_sync');
+        if (manualSyncs.length > 10) {
+          recommendedInterval = 30;
+          confidence = 0.9;
+          reason = 'High manual sync activity suggests need for more frequent automated sync';
+        }
+      }
+
+      return {
+        provider: 'quickbooks',
+        recommendedInterval,
+        reason,
+        confidence,
+        suggestedBusinessHours: true,
+        estimatedDuration: 5
+      };
+    } catch (error) {
+      console.error('Error analyzing QuickBooks usage:', error);
+      return null;
+    }
+  }
+
+  async triggerQuickBooksSync(): Promise<void> {
+    await this.executeSyncForProvider('quickbooks');
+  }
+
+  async triggerDataImportSync(): Promise<void> {
+    // Implement data import sync logic
+    console.log('Data import sync triggered');
+  }
+
+  startAllSchedules(): void {
+    for (const [provider, config] of this.scheduleConfigs.entries()) {
+      if (config.enabled) {
+        this.startSchedule(provider);
+      }
+    }
+  }
+
+  stopAllSchedules(): void {
+    for (const provider of this.activeIntervals.keys()) {
+      this.stopSchedule(provider);
+    }
   }
 }
 

@@ -26,6 +26,7 @@ import DataImport from "@/pages/data-import";
 import CollaborationDashboard from "@/pages/collaboration";
 import ProductivityDashboard from "@/pages/productivity-dashboard";
 import TeamDashboard from "@/pages/team-dashboard";
+import SyncSchedulerPage from "@/pages/sync-scheduler";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
 import { RouterErrorBoundary } from "@/components/router/error-boundary";
@@ -162,6 +163,10 @@ function Router() {
         
         <Route path="/data-import">
           {() => <ProtectedRoute component={DataImport} />}
+        </Route>
+        
+        <Route path="/sync-scheduler">
+          {() => <ProtectedRoute component={SyncSchedulerPage} />}
         </Route>
 
         {/* Integration callback routes */}

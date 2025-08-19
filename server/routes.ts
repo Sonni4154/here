@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sync control routes
   app.get('/api/sync/status', async (req, res) => {
     try {
-      const status = syncScheduler.getStatus();
+      const status = await syncScheduler.getScheduleStatus();
       res.json(status);
     } catch (error) {
       console.error("Error getting sync status:", error);
@@ -195,6 +195,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error triggering QuickBooks sync:", error);
       res.status(500).json({ message: "Failed to trigger QuickBooks sync" });
+    }
+  });
+
+  // Advanced sync scheduling endpoints
+  app.get('/api/sync/recommendations', async (req, res) => {
+    try {
+      const recommendations = await syncScheduler.generateRecommendations();
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error generating sync recommendations:", error);
+      res.status(500).json({ message: "Failed to generate sync recommendations" });
+    }
+  });
+
+  app.post('/api/sync/schedule/:provider', async (req, res) => {
+    try {
+      const { provider } = req.params;
+      const config = req.body;
+      
+      await syncScheduler.updateScheduleConfig(provider, config);
+      res.json({ message: `Schedule updated for ${provider}` });
+    } catch (error) {
+      console.error("Error updating sync schedule:", error);
+      res.status(500).json({ 
+        message: "Failed to update sync schedule",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post('/api/sync/start-all', async (req, res) => {
+    try {
+      syncScheduler.startAllSchedules();
+      res.json({ message: "All scheduled syncs started" });
+    } catch (error) {
+      console.error("Error starting all syncs:", error);
+      res.status(500).json({ message: "Failed to start all syncs" });
+    }
+  });
+
+  app.post('/api/sync/stop-all', async (req, res) => {
+    try {
+      syncScheduler.stopAllSchedules();
+      res.json({ message: "All scheduled syncs stopped" });
+    } catch (error) {
+      console.error("Error stopping all syncs:", error);
+      res.status(500).json({ message: "Failed to stop all syncs" });
     }
   });
 

@@ -9,7 +9,8 @@ import {
   FileText, 
   Settings,
   Timer,
-  Package
+  Package,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Materials", href: "/materials", icon: Package },
   { name: "Customers", href: "/customers", icon: Search },
   { name: "Invoice Search", href: "/invoices", icon: FileText },
+  { name: "Sync Scheduler", href: "/sync-scheduler", icon: Calendar },
   { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
