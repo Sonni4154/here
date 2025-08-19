@@ -534,6 +534,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // QuickBooks Integration routes
   // QuickBooks connect endpoint
+  // Serve development authorization page
+  app.get('/quickbooks/dev-auth', (req, res) => {
+    res.sendFile('quickbooks-dev-auth.html', { root: '.' });
+  });
+
+  // API endpoint to exchange authorization code for tokens
+  app.post('/api/quickbooks/exchange-code', async (req, res) => {
+    try {
+      const { code, realmId, redirectUri } = req.body;
+      
+      if (!code || !realmId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Missing required parameters: code and realmId' 
+        });
+      }
+
+      console.log('🔄 Exchanging authorization code for tokens...');
+      console.log('Code:', code.substring(0, 20) + '...');
+      console.log('Realm ID:', realmId);
+      
+      const OAuthClient = require('intuit-oauth');
+      const oauthClient = new OAuthClient({
+        clientId: process.env.QBO_CLIENT_ID!,
+        clientSecret: process.env.QBO_CLIENT_SECRET!,
+        environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
+        redirectUri: redirectUri || process.env.QBO_REDIRECT_URI!,
+      });
+
+      // Exchange code for tokens
+      const authResponse = await oauthClient.createToken(String(code));
+      
+      console.log('🎉 SUCCESS! Fresh tokens obtained:');
+      console.log('Access Token:', authResponse.access_token?.substring(0, 20) + '...');
+      console.log('Refresh Token:', authResponse.refresh_token?.substring(0, 20) + '...');
+      
+      res.json({
+        success: true,
+        message: 'QuickBooks authorization successful!',
+        tokens: {
+          QBO_ACCESS_TOKEN: authResponse.access_token,
+          QBO_REFRESH_TOKEN: authResponse.refresh_token,
+          QBO_COMPANY_ID: realmId,
+          expires_in: authResponse.expires_in,
+          refresh_expires_in: authResponse.x_refresh_token_expires_in
+        }
+      });
+    } catch (error) {
+      console.error('Token exchange error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to exchange authorization code for tokens',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Initial Authorization Route - One-time setup to get fresh tokens
   app.get('/api/quickbooks/initial-auth', async (req, res) => {
     try {

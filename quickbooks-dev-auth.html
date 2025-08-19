@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickBooks Development Authorization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .auth-url {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            word-break: break-all;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #0077c5;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background: #005c9b;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e8f4f8;
+            border-left: 4px solid #0077c5;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 QuickBooks Development Authorization</h1>
+            <p>Complete QuickBooks OAuth for development testing</p>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Development Mode:</strong> This process uses your production redirect URI but will give you fresh tokens for development testing.
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Authorize QuickBooks</h3>
+            <p>Click the button below to start the QuickBooks authorization process:</p>
+            <a href="https://appcenter.intuit.com/connect/oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=dev_manual_auth_1755625600000" 
+               class="btn" target="_blank">
+                🚀 Authorize QuickBooks
+            </a>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Copy the Callback URL</h3>
+            <p>After authorization, you'll be redirected to a URL that looks like:</p>
+            <div class="auth-url">
+                https://www.wemakemarin.com/quickbooks/callback?code=<strong>Q0116...</strong>&realmId=<strong>9130354674010826</strong>&state=dev_manual_auth_1755625600000
+            </div>
+            <p><strong>Copy the entire URL</strong> from your browser's address bar after authorization.</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Process the Authorization</h3>
+            <p>Paste the callback URL here and click "Process Authorization":</p>
+            <input type="text" id="callbackUrl" placeholder="Paste the full callback URL here..." style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+            <button onclick="processAuth()" class="btn">🔄 Process Authorization</button>
+        </div>
+
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        function processAuth() {
+            const callbackUrl = document.getElementById('callbackUrl').value.trim();
+            if (!callbackUrl) {
+                alert('Please paste the callback URL');
+                return;
+            }
+
+            try {
+                const url = new URL(callbackUrl);
+                const code = url.searchParams.get('code');
+                const realmId = url.searchParams.get('realmId');
+                const error = url.searchParams.get('error');
+
+                if (error) {
+                    document.getElementById('result').innerHTML = `
+                        <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                            <strong>❌ Authorization Error:</strong> ${error}
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (!code || !realmId) {
+                    document.getElementById('result').innerHTML = `
+                        <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                            <strong>❌ Missing Parameters:</strong> Could not find authorization code or realm ID in the URL
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Make the API call to exchange the code for tokens
+                fetch('/api/quickbooks/exchange-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        realmId: realmId,
+                        redirectUri: 'https://www.wemakemarin.com/quickbooks/callback'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('result').innerHTML = `
+                            <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 5px;">
+                                <h3>🎉 Success! Fresh Tokens Generated</h3>
+                                <p><strong>Add these to your Replit secrets:</strong></p>
+                                <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">QBO_ACCESS_TOKEN=${data.tokens.QBO_ACCESS_TOKEN}
+QBO_REFRESH_TOKEN=${data.tokens.QBO_REFRESH_TOKEN}
+QBO_COMPANY_ID=${data.tokens.QBO_COMPANY_ID}</pre>
+                                <p><strong>Next:</strong> Restart your application to use the new tokens.</p>
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('result').innerHTML = `
+                            <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                                <strong>❌ Token Exchange Failed:</strong> ${data.error || 'Unknown error'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `
+                        <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                            <strong>❌ Request Failed:</strong> ${error.message}
+                        </div>
+                    `;
+                });
+
+            } catch (e) {
+                document.getElementById('result').innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                        <strong>❌ Invalid URL:</strong> Please make sure you pasted the complete callback URL
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
