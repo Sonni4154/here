@@ -751,8 +751,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect('/products?qb_error=missing_params');
       }
 
-      // Handle initial authorization flow
-      if (req.query.state?.toString().startsWith('initial_auth_')) {
+      // Handle initial authorization flow for fresh tokens
+      if (req.query.state?.toString().includes('initial_auth')) {
         console.log('🎯 Processing initial authorization...');
         
         try {
