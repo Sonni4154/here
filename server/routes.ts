@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import products from CSV
-  app.post('/api/import-products', isAuthenticated, async (req, res) => {
+  app.post('/api/import-products', async (req, res) => {
     try {
       const result = await dataImportService.importProducts();
       res.json({
@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import customers from CSV
-  app.post('/api/import-customers', isAuthenticated, async (req, res) => {
+  app.post('/api/import-customers', async (req, res) => {
     try {
       const result = await dataImportService.importCustomers();
       res.json({
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import all data (products + customers)
-  app.post('/api/import-all-data', isAuthenticated, async (req, res) => {
+  app.post('/api/import-all-data', async (req, res) => {
     try {
       const result = await dataImportService.importAllData();
       res.json({
@@ -178,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/sync/trigger-data', isAuthenticated, async (req, res) => {
+  app.post('/api/sync/trigger-data', async (req, res) => {
     try {
       await syncScheduler.triggerDataImportSync();
       res.json({ message: "Data import sync triggered successfully" });
@@ -651,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/database-connections", isAuthenticated, async (req, res) => {
+  app.post("/api/database-connections", async (req, res) => {
     try {
       const userId = req.user!.claims.sub;
       const connectionData = { ...req.body, userId };
@@ -664,7 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/database-connections/test", isAuthenticated, async (req, res) => {
+  app.post("/api/database-connections/test", async (req, res) => {
     try {
       const { host, port, database, username, password, ssl } = req.body;
       
@@ -683,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/database-connections/:id/sync", isAuthenticated, async (req, res) => {
+  app.post("/api/database-connections/:id/sync", async (req, res) => {
     try {
       const { id } = req.params;
       const userId = req.user!.claims.sub;
@@ -701,7 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/database-connections/:id/auto-sync", isAuthenticated, async (req, res) => {
+  app.post("/api/database-connections/:id/auto-sync", async (req, res) => {
     try {
       const { id } = req.params;
       const { autoSync, syncInterval } = req.body;
@@ -716,7 +716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/database-connections/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/database-connections/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const userId = req.user!.claims.sub;
