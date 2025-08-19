@@ -21,14 +21,46 @@ export interface SyncRecommendation {
   estimatedDuration: number; // minutes
 }
 
+export interface SyncHistoryEntry {
+  provider: string;
+  timestamp: Date;
+  duration: number; // milliseconds
+  success: boolean;
+  dataVolume: number; // number of records synced
+  errorMessage?: string;
+}
+
+export interface SyncRecommendation {
+  provider: string;
+  type: 'interval' | 'timing' | 'performance' | 'cost_optimization';
+  recommendedInterval: number;
+  currentInterval: number;
+  reason: string;
+  confidence: number; // 0-100
+  suggestedBusinessHours: boolean;
+  estimatedDuration: number; // minutes
+  potentialSavings?: string;
+  dataInsights: {
+    avgDataVolume: number;
+    peakSyncTimes: string[];
+    failureRate: number;
+  };
+}
+
 export class SyncScheduler {
   private activeIntervals: Map<string, NodeJS.Timeout> = new Map();
   private scheduleConfigs: Map<string, SyncScheduleConfig> = new Map();
   private quickbooksService: QuickBooksService;
+  private syncHistory: SyncHistoryEntry[] = [];
+  private recommendations: SyncRecommendation[] = [];
+  private recommendationEngine: NodeJS.Timeout | null = null;
 
   constructor() {
     this.quickbooksService = new QuickBooksService();
     this.initializeDefaultSchedules();
+    this.loadSyncHistory();
+    this.startRecommendationEngine();
+    console.log('🕒 SyncScheduler initialized with smart recommendations');
   }
 
   private initializeDefaultSchedules() {
@@ -58,6 +90,14 @@ export class SyncScheduler {
     activeIntervals: number;
     nextScheduledSync?: Date;
     schedules: SyncScheduleConfig[];
+    recommendations: SyncRecommendation[];
+    syncHistory: SyncHistoryEntry[];
+    performanceMetrics: {
+      totalSyncs: number;
+      successRate: number;
+      avgDuration: number;
+      lastWeekSyncs: number;
+    };
   }> {
     const schedules = Array.from(this.scheduleConfigs.values());
     const nextRuns = schedules
@@ -65,11 +105,27 @@ export class SyncScheduler {
       .map(s => s.nextRun!)
       .sort((a, b) => a.getTime() - b.getTime());
 
+    // Generate fresh recommendations
+    await this.generateRecommendations();
+
+    // Calculate performance metrics
+    const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const lastWeekSyncs = this.syncHistory.filter(h => h.timestamp >= lastWeek);
+    const successfulSyncs = this.syncHistory.filter(h => h.success);
+
     return {
       isRunning: this.activeIntervals.size > 0,
       activeIntervals: this.activeIntervals.size,
       nextScheduledSync: nextRuns[0],
-      schedules
+      schedules,
+      recommendations: this.recommendations,
+      syncHistory: this.syncHistory.slice(-20), // Last 20 sync operations
+      performanceMetrics: {
+        totalSyncs: this.syncHistory.length,
+        successRate: this.syncHistory.length > 0 ? (successfulSyncs.length / this.syncHistory.length) * 100 : 0,
+        avgDuration: this.syncHistory.length > 0 ? this.syncHistory.reduce((sum, h) => sum + h.duration, 0) / this.syncHistory.length : 0,
+        lastWeekSyncs: lastWeekSyncs.length
+      }
     };
   }
 
