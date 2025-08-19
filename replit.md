@@ -4,6 +4,8 @@
 
 The Internal Dashboard is a comprehensive business management platform for Marin Pest Control. It features role-based access control, advanced employee and customer management (including trapping programs), QuickBooks 2-way synchronization, Google Calendar integration for scheduling, photo upload for job documentation, automated workflow triggers, and dual authentication. The system supports full employee lifecycle management, detailed time tracking, and intelligent automation for real-time business event processing. Its primary purpose is to streamline internal operations and enhance productivity for Marin Pest Control.
 
+**Status: Version 1.0 Production Deployment - August 19, 2025**
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -31,6 +33,8 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 
 ### Database
 - **Type**: PostgreSQL (Neon serverless)
+- **Production Host**: ep-summer-hall-afs3kfw3.c-2.us-west-2.aws.neon.tech:5432
+- **Database**: neondb (Production continuity established)
 - **Schema Management**: Drizzle migrations
 - **Core Data**: Users, Sessions, Customers, Products, Invoices, InvoiceItems, Integrations, ActivityLogs, Workflow Triggers/Executions
 
@@ -94,9 +98,11 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 ### OAuth-QuickBooks Integration
 - **Libraries**: `intuit-oauth` and `node-quickbooks` for robust OAuth 2.0 and API interactions.
 - **Credentials**: Standardized QBO_ environment variables for all OAuth settings.
+- **Production Ready**: Version 1.0 deployed with definitive OAuth credentials (ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN).
 - **Webhooks**: Full webhook handler with signature verification for real-time data sync (Customer, Item, Invoice).
 - **Token Management**: Automatic token refresh using definitive production credentials.
 - **Redirect URI**: Production callback at https://www.wemakemarin.com/quickbooks/callback
+- **Development URI**: https://054d2a3f-de93-43b0-a8dc-53ade5c1fa79-00-28ngf53nf2i1b.kirk.replit.dev/quickbooks/callback
 
 ### Google Calendar Integration
 - **Clock Events**: Automatic calendar event creation for employee clock in/out.
@@ -137,3 +143,6 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 
 ### Deployment
 - **Replit**: Primary hosting platform
+- **Version 1.0**: Production deployment initiated August 19, 2025
+- **Production Domain**: www.wemakemarin.com
+- **Status**: Live testing in progress
