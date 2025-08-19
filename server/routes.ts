@@ -701,6 +701,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // Development: Check QuickBooks connection status
+  app.get('/api/integrations/quickbooks/debug', async (req, res) => {
+    try {
+      const userId = 'dev_user_123';
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      
+      res.json({
+        hasIntegration: !!integration,
+        isActive: integration?.isActive || false,
+        hasAccessToken: !!integration?.accessToken,
+        hasRefreshToken: !!integration?.refreshToken,
+        realmId: integration?.realmId || null,
+        lastSyncAt: integration?.lastSyncAt || null,
+        envVars: {
+          hasClientId: !!process.env.QBO_CLIENT_ID,
+          hasClientSecret: !!process.env.QBO_CLIENT_SECRET,
+          redirectUri: process.env.QBO_REDIRECT_URI
+        }
+      });
+    } catch (error) {
+      console.error('Debug error:', error);
+      res.status(500).json({ error: 'Debug check failed' });
+    }
+  });
+
   // Simulate QuickBooks connection for development
   app.post('/api/integrations/quickbooks/simulate-connection', async (req, res) => {
     try {

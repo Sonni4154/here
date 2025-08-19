@@ -82,7 +82,8 @@ export default function SyncButton() {
   });
 
   const connectToQuickBooks = () => {
-    window.open('/quickbooks/connect', '_blank');
+    // Use same window to avoid popup blockers
+    window.location.href = '/quickbooks/connect';
   };
 
   const getStatusIcon = (status: string) => {
