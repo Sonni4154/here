@@ -2708,6 +2708,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile(path.join(__dirname, '..', 'get-fresh-tokens.html'));
   });
 
+  app.get('/quickbooks-production', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'quickbooks-production-oauth.html'));
+  });
+
   // QuickBooks OAuth diagnostic endpoint
   app.get('/quickbooks/debug', (req, res) => {
     const config = {

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickBooks Production OAuth - Marin Pest Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .oauth-button {
+            display: inline-block;
+            background: #0077C5;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .oauth-button:hover {
+            background: #005FA3;
+        }
+        .config-info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-left: 4px solid #0077C5;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 QuickBooks Production OAuth - Marin Pest Control</h1>
+        
+        <div class="config-info">
+            <h3>📋 Production Configuration</h3>
+            <ul>
+                <li><strong>Environment:</strong> Production</li>
+                <li><strong>Client ID:</strong> ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN</li>
+                <li><strong>Redirect URI:</strong> https://www.wemakemarin.com/quickbooks/callback</li>
+                <li><strong>Company ID:</strong> 9130354674010826</li>
+                <li><strong>API Base:</strong> https://quickbooks.api.intuit.com</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ Before clicking the button below:</h3>
+            <ol>
+                <li>Go to <a href="https://developer.intuit.com/app/developer/myapps" target="_blank">QuickBooks Developer Dashboard</a></li>
+                <li>Find your app with Client ID: <code>ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN</code></li>
+                <li>Verify Redirect URI is exactly: <code>https://www.wemakemarin.com/quickbooks/callback</code></li>
+                <li>Make sure Environment is set to <strong>Production</strong> (not Sandbox)</li>
+                <li>Save any changes</li>
+            </ol>
+        </div>
+
+        <h2>🚀 Connect to QuickBooks (Production)</h2>
+        <p>Click the button below to authorize your QuickBooks account for production use:</p>
+        
+        <a href="https://appcenter.intuit.com/connect/oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=production_oauth_2025" class="oauth-button">
+            🔐 Connect QuickBooks (Production)
+        </a>
+
+        <h3>Expected Flow:</h3>
+        <ol>
+            <li><strong>Authorization:</strong> QuickBooks login page</li>
+            <li><strong>Permission:</strong> Grant access to accounting data</li>
+            <li><strong>Redirect:</strong> Back to wemakemarin.com with authorization code</li>
+            <li><strong>Token Exchange:</strong> Convert code to access tokens</li>
+            <li><strong>Success:</strong> QuickBooks integration active</li>
+        </ol>
+
+        <div class="config-info">
+            <h3>🔧 Troubleshooting</h3>
+            <p>If you get a 400 error during token exchange:</p>
+            <ul>
+                <li>Verify the redirect URI in QuickBooks Developer dashboard matches exactly</li>
+                <li>Make sure you're using the Production environment (not Sandbox)</li>
+                <li>Complete the OAuth flow quickly (codes expire in ~10 minutes)</li>
+                <li>Check that the Client ID and Secret are for the production app</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
