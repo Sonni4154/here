@@ -56,9 +56,9 @@ DATABASE_URL=postgresql://timesync_user:timesync_secure_password@db:5432/timesyn
 SESSION_SECRET=$(openssl rand -hex 32)
 
 # QuickBooks Integration (Update with your credentials)
-QUICKBOOKS_CLIENT_ID=your_quickbooks_client_id
-QUICKBOOKS_CLIENT_SECRET=your_quickbooks_client_secret
-QUICKBOOKS_REDIRECT_URI=http://localhost:5000/api/integrations/quickbooks/callback
+QBO_CLIENT_ID=your_quickbooks_client_id
+QBO_CLIENT_SECRET=your_quickbooks_client_secret
+QBO_REDIRECT_URI=https://your-domain.com/quickbooks/callback
 QUICKBOOKS_ENVIRONMENT=sandbox
 
 # Google Integration (Update with your credentials)

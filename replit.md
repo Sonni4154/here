@@ -91,10 +91,12 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Health Checks**: For database, QuickBooks, sync scheduler.
 - **Performance Monitoring**: API response times, memory usage, sync job durations.
 
-### OAuth-Intuit Integration
+### OAuth-QuickBooks Integration
 - **Libraries**: `intuit-oauth` and `node-quickbooks` for robust OAuth 2.0 and API interactions.
+- **Credentials**: Standardized QBO_ environment variables for all OAuth settings.
 - **Webhooks**: Full webhook handler with signature verification for real-time data sync (Customer, Item, Invoice).
-- **Token Management**: Automatic token refresh.
+- **Token Management**: Automatic token refresh using definitive production credentials.
+- **Redirect URI**: Production callback at https://www.wemakemarin.com/quickbooks/callback
 
 ### Google Calendar Integration
 - **Clock Events**: Automatic calendar event creation for employee clock in/out.

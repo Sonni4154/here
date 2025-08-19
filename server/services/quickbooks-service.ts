@@ -51,25 +51,15 @@ export class QuickBooksService {
   private webhookVerifierToken: string;
 
   constructor() {
-    // Production vs Development URLs
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Use standardized QBO_ environment variables
+    this.clientId = process.env.QBO_CLIENT_ID!;
+    this.clientSecret = process.env.QBO_CLIENT_SECRET!;
+    this.webhookVerifierToken = process.env.QBO_WEBHOOK_VERIFIER!;
+    this.environment = (process.env.QBO_ENV as 'production' | 'sandbox') || 'production';
+    this.baseUrl = process.env.QBO_BASE_URL || 'https://quickbooks.api.intuit.com';
     
-    // Use new QBO_ environment variables or fallback to old ones
-    this.clientId = process.env.QBO_CLIENT_ID || process.env.QUICKBOOKS_CLIENT_ID!;
-    this.clientSecret = process.env.QBO_CLIENT_SECRET || process.env.QUICKBOOKS_CLIENT_SECRET!;
-    this.webhookVerifierToken = process.env.QBO_WEBHOOK_VERIFIER || process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN!;
-    this.environment = 'production'; // Always use production for www.wemakemarin.com
-    this.baseUrl = 'https://quickbooks.api.intuit.com'; // Production API URL
-    
-    // ✅ FIXED: Use separate OAuth callback URI from environment or construct properly
-    // For Replit development, use the .replit.app domain 
-    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-    const redirectUri = process.env.QBO_REDIRECT_URI || 
-      (replitDomain 
-        ? `https://${replitDomain}/quickbooks/callback`  // Replit environment
-        : isProduction 
-          ? 'https://www.wemakemarin.com/quickbooks/callback'  // Production
-          : 'http://localhost:5000/quickbooks/callback');  // Local development
+    // Use definitive redirect URI from environment
+    const redirectUri = process.env.QBO_REDIRECT_URI!;
 
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({
@@ -82,9 +72,15 @@ export class QuickBooksService {
     console.log('🔧 QuickBooks OAuth Configuration:');
     console.log(`   Environment: ${this.environment}`);
     console.log(`   OAuth Callback: ${redirectUri}`);
-    console.log(`   Replit Domain: ${replitDomain || 'not available'}`);
-    console.log(`   QBO_REDIRECT_URI env: ${process.env.QBO_REDIRECT_URI || 'not set'}`);
-    console.log(`   Webhook URL: ${process.env.QBO_WEBHOOK_URI || (isProduction ? 'https://www.wemakemarin.com/quickbooks/webhook' : 'http://localhost:5000/quickbooks/webhook')}`);
+    console.log(`   Company ID: ${process.env.QBO_COMPANY_ID}`);
+    console.log(`   Base URL: ${this.baseUrl}`);
+    console.log(`   Webhook URL: ${process.env.QBO_WEBHOOK_URI}`);
+
+    if (!this.clientId || !this.clientSecret) {
+      throw new Error('QuickBooks OAuth credentials not configured. Please set QBO_CLIENT_ID and QBO_CLIENT_SECRET environment variables.');
+    }
+
+    console.log('✅ QuickBooks service initialized successfully');
   }
 
   // Generate OAuth authorization URL using Intuit OAuth Client
@@ -174,10 +170,14 @@ export class QuickBooksService {
         redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback'
       });
       
-      // Use the refresh method with the refresh token
-      // The intuit-oauth library handles token setting internally
+      // Create a temporary token object for refresh
+      const tempToken = {
+        access_token: '',
+        refresh_token: refreshToken,
+        token_type: 'Bearer'
+      };
       
-      const authResponse = await refreshClient.refreshUsingToken(refreshToken);
+      const authResponse = await refreshClient.refresh();
       
       if (!authResponse.token) {
         throw new Error('No refreshed token received from QuickBooks');
@@ -764,7 +764,7 @@ export class QuickBooksService {
         redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback'
       });
 
-      await revokeClient.revokeAccess(integration.accessToken || '');
+      await revokeClient.revoke();
 
       // Deactivate integration in our database
       await storage.upsertIntegration({

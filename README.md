@@ -104,9 +104,9 @@ REPLIT_DOMAINS="localhost:5000,www.wemakemarin.com"
 ISSUER_URL="https://replit.com/oidc"
 
 # QuickBooks Integration (Optional)
-QUICKBOOKS_CLIENT_ID="your-production-client-id"
-QUICKBOOKS_CLIENT_SECRET="your-client-secret"
-QUICKBOOKS_SANDBOX_BASE_URL="https://sandbox-quickbooks.api.intuit.com"
+QBO_CLIENT_ID="your-quickbooks-client-id"
+QBO_CLIENT_SECRET="your-quickbooks-client-secret"
+QBO_REDIRECT_URI="https://your-domain.com/quickbooks/callback"
 
 # Google APIs (Optional)
 GOOGLE_CLIENT_ID="your-google-client-id"
