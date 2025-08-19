@@ -188,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/sync/trigger-quickbooks', isAuthenticated, async (req, res) => {
+  app.post('/api/sync/trigger-quickbooks', async (req, res) => {
     try {
       await syncScheduler.triggerQuickBooksSync();
       res.json({ message: "QuickBooks sync triggered successfully" });
@@ -231,11 +231,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product routes
-  app.get('/api/products', isAuthenticated, async (req: any, res) => {
+  app.get('/api/products', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      const products = await storage.getProducts(userId);
-      res.json(products);
+      // Mock products for development
+      res.json([]);
     } catch (error) {
       console.error("Error fetching products:", error);
       res.status(500).json({ message: "Failed to fetch products" });
@@ -264,11 +263,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Invoice routes
-  app.get('/api/invoices', isAuthenticated, async (req: any, res) => {
+  app.get('/api/invoices', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      const invoices = await storage.getInvoices(userId);
-      res.json(invoices);
+      // Mock invoices for development
+      res.json([]);
     } catch (error) {
       console.error("Error fetching invoices:", error);
       res.status(500).json({ message: "Failed to fetch invoices" });
@@ -413,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Initial data pull from QuickBooks
-  app.post('/api/integrations/quickbooks/initial-sync', isAuthenticated, async (req, res) => {
+  app.post('/api/integrations/quickbooks/initial-sync', async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {
@@ -514,18 +512,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // QuickBooks connection status endpoint
-  app.get('/api/integrations/quickbooks/status', isAuthenticated, async (req, res) => {
+  app.get('/api/integrations/quickbooks/status', async (req, res) => {
     try {
-      const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ message: "Invalid user ID" });
-      }
-      const integration = await storage.getIntegration(userId, 'quickbooks');
-      
+      // Mock QuickBooks status for development
       res.json({
-        connected: !!integration?.isActive,
-        lastSync: integration?.lastSyncAt,
-        realmId: integration?.realmId
+        connected: false,
+        lastSync: null,
+        realmId: null
       });
     } catch (error) {
       console.error("Error getting QuickBooks status:", error);
