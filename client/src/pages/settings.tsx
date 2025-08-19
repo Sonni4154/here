@@ -225,17 +225,29 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground mb-2">
                     Manage your QuickBooks Online connection and sync settings
                   </p>
-                  {getIntegrationStatus('quickbooks') === 'Connected' && (
+                  <div className="flex gap-2">
+                    {getIntegrationStatus('quickbooks') === 'Connected' && (
+                      <Button
+                        onClick={() => initialDataPull.mutate()}
+                        disabled={initialDataPull.isPending}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Database className="w-4 h-4 mr-2" />
+                        {initialDataPull.isPending ? "Pulling Data..." : "Pull Initial Data"}
+                      </Button>
+                    )}
                     <Button
-                      onClick={() => initialDataPull.mutate()}
-                      disabled={initialDataPull.isPending}
-                      variant="outline"
+                      onClick={() => {
+                        window.open(`${window.location.protocol}//${window.location.host}:5000/quickbooks/connect`, '_blank');
+                      }}
+                      variant="default"
                       size="sm"
                     >
-                      <Database className="w-4 h-4 mr-2" />
-                      {initialDataPull.isPending ? "Pulling Data..." : "Pull Initial Data"}
+                      <SiQuickbooks className="w-4 h-4 mr-2" />
+                      {getIntegrationStatus('quickbooks') === 'Connected' ? 'Re-authorize' : 'Connect'} QuickBooks
                     </Button>
-                  )}
+                  </div>
                 </div>
                 <UnifiedSyncStatus variant="button" showLabel={true} size="sm" />
               </div>
