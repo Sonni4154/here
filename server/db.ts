@@ -3,7 +3,10 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
+// Configure Neon for serverless environments
 neonConfig.webSocketConstructor = ws;
+neonConfig.poolQueryViaFetch = true;
+neonConfig.useSecureWebSocket = true;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
