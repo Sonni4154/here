@@ -170,13 +170,7 @@ export class QuickBooksService {
         redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback'
       });
       
-      // Create a temporary token object for refresh
-      const tempToken = {
-        access_token: '',
-        refresh_token: refreshToken,
-        token_type: 'Bearer'
-      };
-      
+      // Set the refresh token and call refresh
       const authResponse = await refreshClient.refresh();
       
       if (!authResponse.token) {

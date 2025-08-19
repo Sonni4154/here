@@ -17,46 +17,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Auth routes - Check authentication status without requiring auth
-  app.get('/api/auth/user', async (req: any, res) => {
+  // Auth routes - Production authentication required
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      // For development, create a test user if no authentication
-      if (process.env.NODE_ENV === 'development' && (!req.isAuthenticated() || !req.user)) {
-        const testUser = {
-          id: 'dev_user_123',
-          email: 'admin@marinpestcontrol.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          role: 'admin',
-          profileImageUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        // Store test user if it doesn't exist
-        try {
-          let existingUser = await storage.getUser('dev_user_123');
-          if (!existingUser) {
-            existingUser = await storage.upsertUser({
-              id: 'dev_user_123',
-              email: 'admin@marinpestcontrol.com',
-              firstName: 'Admin',
-              lastName: 'User',
-              role: 'admin',
-              profileImageUrl: null
-            });
-          }
-          return res.json(existingUser);
-        } catch (userError) {
-          console.error("Error creating test user:", userError);
-          return res.json(testUser);
-        }
-      }
-      
-      // Check if user is authenticated first
-      if (!req.isAuthenticated() || !req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
+
       
       const userId = getUserId(req);
       if (!userId) {
