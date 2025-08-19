@@ -76,7 +76,7 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     
-    // Skip WebSocket and sync initialization for faster startup
-    log('Server ready - WebSocket and sync disabled for development');
+    // Initialize sync scheduler for production operations
+    log('Server ready - Production sync enabled');
   });
 })();

@@ -773,23 +773,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Company ID:', realmId);
           console.log('Expires In:', authResponse.expires_in);
           
-          // Return the tokens as JSON for easy copying
+          // Store the tokens in the database immediately
+          const userId = 'dev_user_123';
+          const existingIntegration = await storage.getIntegration(userId, 'quickbooks');
+          
+          if (existingIntegration) {
+            await storage.updateIntegration(existingIntegration.id, {
+              accessToken: authResponse.access_token,
+              refreshToken: authResponse.refresh_token,
+              realmId: realmId as string,
+              isActive: true,
+              lastSyncAt: new Date()
+            });
+          } else {
+            await storage.createIntegration({
+              userId,
+              provider: 'quickbooks',
+              accessToken: authResponse.access_token!,
+              refreshToken: authResponse.refresh_token!,
+              realmId: realmId as string,
+              isActive: true,
+              lastSyncAt: new Date()
+            });
+          }
+
+          console.log('✅ Fresh tokens automatically stored in database');
+
+          // Return success confirmation
           return res.json({
             success: true,
-            message: 'QuickBooks authorization successful! Save these tokens to your secrets.',
-            tokens: {
-              QBO_ACCESS_TOKEN: authResponse.access_token,
-              QBO_REFRESH_TOKEN: authResponse.refresh_token,
-              QBO_COMPANY_ID: realmId,
-              expires_in: authResponse.expires_in,
-              refresh_expires_in: authResponse.x_refresh_token_expires_in
+            message: 'QuickBooks connected successfully! Fresh tokens stored automatically.',
+            integration: {
+              provider: 'quickbooks',
+              realmId: realmId,
+              status: 'connected with fresh production tokens',
+              tokenExpiry: authResponse.expires_in + ' seconds'
             },
-            instructions: [
-              'Add these tokens to your Replit secrets:',
-              'QBO_ACCESS_TOKEN=' + authResponse.access_token,
-              'QBO_REFRESH_TOKEN=' + authResponse.refresh_token,
-              'QBO_COMPANY_ID=' + realmId,
-              'Then restart your application to use the new tokens'
+            nextSteps: [
+              'QuickBooks sync is now active and will run every 60 minutes',
+              'You can manually trigger a sync from the dashboard',
+              'Visit /products to see your connected integration'
             ]
           });
         } catch (authError) {
@@ -2583,6 +2606,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/quickbooks-setup', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'quickbooks-auth-production.html'));
+  });
+
+  app.get('/get-fresh-tokens', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'get-fresh-tokens.html'));
   });
 
   const httpServer = createServer(app);
