@@ -73,7 +73,7 @@
         <div class="step">
             <h3>Step 1: Authorize QuickBooks</h3>
             <p>Click the button below to start the QuickBooks authorization process:</p>
-            <a href="https://appcenter.intuit.com/connect/oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwww.wemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=dev_manual_auth_1755625600000" 
+            <a href="https://appcenter.intuit.com/connect/oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=dev_manual_auth_1755625600000" 
                class="btn" target="_blank">
                 🚀 Authorize QuickBooks
             </a>
@@ -83,7 +83,7 @@
             <h3>Step 2: Copy the Callback URL</h3>
             <p>After authorization, you'll be redirected to a URL that looks like:</p>
             <div class="auth-url">
-                https://www.wemakemarin.com/quickbooks/callback?code=<strong>Q0116...</strong>&realmId=<strong>9130354674010826</strong>&state=dev_manual_auth_1755625600000
+                https://wemakemarin.com/quickbooks/callback?code=<strong>Q0116...</strong>&realmId=<strong>9130354674010826</strong>&state=dev_manual_auth_1755625600000
             </div>
             <p><strong>Copy the entire URL</strong> from your browser's address bar after authorization.</p>
         </div>
@@ -139,7 +139,7 @@
                     body: JSON.stringify({
                         code: code,
                         realmId: realmId,
-                        redirectUri: 'https://www.wemakemarin.com/quickbooks/callback'
+                        redirectUri: 'https://wemakemarin.com/quickbooks/callback'
                     })
                 })
                 .then(response => response.json())
