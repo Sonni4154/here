@@ -58,10 +58,8 @@ export class QuickBooksService {
     this.clientId = process.env.QBO_CLIENT_ID || process.env.QUICKBOOKS_CLIENT_ID!;
     this.clientSecret = process.env.QBO_CLIENT_SECRET || process.env.QUICKBOOKS_CLIENT_SECRET!;
     this.webhookVerifierToken = process.env.QBO_WEBHOOK_VERIFIER || process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN!;
-    this.environment = isProduction ? ('production' as const) : ('sandbox' as const);
-    this.baseUrl = process.env.QB_BASE_URL || (isProduction 
-      ? 'https://quickbooks.api.intuit.com' 
-      : 'https://sandbox-quickbooks.api.intuit.com');
+    this.environment = 'production'; // Always use production for www.wemakemarin.com
+    this.baseUrl = 'https://quickbooks.api.intuit.com'; // Production API URL
     
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({
