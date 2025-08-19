@@ -761,14 +761,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const { default: OAuthClient } = await import('intuit-oauth');
           
-          // Create OAuth client with exact production settings
-          const oauthClient = new OAuthClient({
-            clientId: process.env.QBO_CLIENT_ID!,
-            clientSecret: process.env.QBO_CLIENT_SECRET!,
-            environment: 'production',
-            redirectUri: 'https://www.wemakemarin.com/quickbooks/callback',
-          });
-
           console.log('🔄 Attempting token exchange...');
           console.log('OAuth Configuration Debug:');
           console.log('- Client ID:', process.env.QBO_CLIENT_ID?.substring(0, 10) + '...');
@@ -776,6 +768,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('- Redirect URI:', 'https://www.wemakemarin.com/quickbooks/callback');
           console.log('- Code length:', code.toString().length);
           console.log('- Code preview:', code.toString().substring(0, 20) + '...');
+          console.log('- State:', state);
+          console.log('- Realm ID:', realmId);
+          
+          // Create OAuth client for token exchange  
+          const oauthClient = new OAuthClient({
+            clientId: process.env.QBO_CLIENT_ID!,
+            clientSecret: process.env.QBO_CLIENT_SECRET!,
+            environment: 'production',
+            redirectUri: 'https://www.wemakemarin.com/quickbooks/callback'
+          });
           
           // Exchange code for tokens with detailed error handling
           const authResponse = await oauthClient.createToken(String(code));

@@ -1,0 +1,49 @@
+Navigated to https://appcenter.intuit.com/app/connect/oauth2?client_id=ABsZIbsFlAirINSbO…state=eyJ1c2VySWQiOiJkZXZfdXNlcl8xMjMiLCJ0aW1lc3RhbXAiOjE3NTU2NDc1NTUzMzh9
+injected.js:1 All core plugins started...
+injected.js:1 Plugins registered...
+injected.js:1 Application before-ready completed...
+injected.js:1 Application ready...
+replit-dev-banner.js:1 default delegate action handler  
+{typeName: 'webShellEvent.handle', category: 'webShellEvent', command: 'handle', payload: {…}, context: {…}}
+543.06b6e9f….js:1 Fetch finished loading: GET "https://uxfabric.intuitcdn.net/components/design-systems/tokens/ddms3.0/prod/24.20.0/css/intuit.css".
+543.06b6e9f….js:1 Fetch finished loading: GET "https://segment.intuitcdn.net/v1/projects/zuCssrvmQtayd1mOzUsxxBp5GhExQyO5/settings".
+543.06b6e9f….js:1 Fetch failed loading: POST "https://eventbus.intuit.com/v2/segment/sbseg-qbo-clickstream/i".
+7
+Fetch finished loading: POST "<URL>".
+appf-intuit-logging.…d9b5b3878a6274.js:1 Shell - successfully initialized RUM module 
+{msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.…d9b5b3878a6274.js:1 Network interceptor(s) started successfully 
+{msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.…d9b5b3878a6274.js:1 Shell - successfully loaded 
+{msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.…d9b5b3878a6274.js:1 Subscription Plugin Landing 
+{msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.…d9b5b3878a6274.js:1 Deprecated sandbox analytics API used by plugin: developer-apps-subscription-ui 
+{msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.…d9b5b3878a6274.js:1 Shell - application bootstrapped successfully! 
+{msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-performa…1a0a687b46de4e.js:1 No end time provided for PAGE_LOAD:/app/connect/oauth2
+appf-intuit-logging.…d9b5b3878a6274.js:1 Verify AAL 25 Response: true userAuthId: 9130354661988036; channel: c2qb; region: US; clientId: ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN; 
+{msgProps: null, appProps: null, context: {…}, queued: false, flushLogsImmediately: false, …}
+appf-intuit-logging.…d9b5b3878a6274.js:1 AAL compliant in connection workflow for app:  clientId: ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN;, applying PreAuth decision 
+{msgProps: null, appProps: null, context: {…}, queued: false, flushLogsImmediately: false, …}
+543.06b6e9f….js:1 Fetch failed loading: POST "https://eventbus.intuit.com/v2/segment/sbseg-qbo-clickstream/t".
+Navigated to https://www.wemakemarin.com/products?qb_error=QuickBooks%20OAuth%20Error%20…red.%20Original%20error%3A%20Request%20failed%20with%20status%20code%20400
+16
+Fetch finished loading: GET "<URL>".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/integrations".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/products".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/customers".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/integrations".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/integrations".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/integrations".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
+index-DVXzC9Ac.js:48 Fetch finished loading: GET "https://www.wemakemarin.com/api/sync/status".
