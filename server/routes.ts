@@ -753,10 +753,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle initial authorization flow for fresh tokens
       if (req.query.state?.toString().includes('initial_auth')) {
-        console.log('🎯 Processing initial authorization...');
+        console.log('🎯 Processing initial authorization for fresh tokens...');
+        console.log('Code length:', code.toString().length);
+        console.log('Realm ID:', realmId);
         
         try {
           const { default: OAuthClient } = await import('intuit-oauth');
+          
+          // Create OAuth client with exact production settings
           const oauthClient = new OAuthClient({
             clientId: process.env.QBO_CLIENT_ID!,
             clientSecret: process.env.QBO_CLIENT_SECRET!,
@@ -764,14 +768,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
             redirectUri: 'https://www.wemakemarin.com/quickbooks/callback',
           });
 
+          console.log('🔄 Attempting token exchange...');
+          
           // Exchange code for tokens
           const authResponse = await oauthClient.createToken(String(code));
           
-          console.log('\n🎉 SUCCESS! Fresh tokens obtained:');
-          console.log('Access Token:', authResponse.access_token?.substring(0, 20) + '...');
-          console.log('Refresh Token:', authResponse.refresh_token?.substring(0, 20) + '...');
+          console.log('🎉 Token exchange successful!');
+          console.log('Token response structure:', Object.keys(authResponse));
+          
+          // Handle different response structures
+          let accessToken, refreshToken;
+          if (authResponse.token) {
+            // Standard response structure
+            accessToken = authResponse.token.access_token;
+            refreshToken = authResponse.token.refresh_token;
+          } else {
+            // Alternative response structure
+            accessToken = authResponse.access_token;
+            refreshToken = authResponse.refresh_token;
+          }
+          
+          if (!accessToken) {
+            throw new Error('No access token received in response');
+          }
+          
+          console.log('Access Token:', accessToken?.substring(0, 20) + '...');
+          console.log('Refresh Token:', refreshToken?.substring(0, 20) + '...');
           console.log('Company ID:', realmId);
-          console.log('Expires In:', authResponse.expires_in);
           
           // Store the tokens in the database immediately
           const userId = 'dev_user_123';
@@ -779,48 +802,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (existingIntegration) {
             await storage.updateIntegration(existingIntegration.id, {
-              accessToken: authResponse.access_token,
-              refreshToken: authResponse.refresh_token,
+              accessToken: accessToken,
+              refreshToken: refreshToken,
               realmId: realmId as string,
               isActive: true,
               lastSyncAt: new Date()
             });
+            console.log('✅ Updated existing integration with fresh tokens');
           } else {
             await storage.createIntegration({
               userId,
               provider: 'quickbooks',
-              accessToken: authResponse.access_token!,
-              refreshToken: authResponse.refresh_token!,
+              accessToken: accessToken!,
+              refreshToken: refreshToken!,
               realmId: realmId as string,
               isActive: true,
               lastSyncAt: new Date()
             });
+            console.log('✅ Created new integration with fresh tokens');
           }
 
-          console.log('✅ Fresh tokens automatically stored in database');
+          // Test the fresh tokens immediately
+          try {
+            const testResponse = await fetch(`https://quickbooks.api.intuit.com/v3/company/${realmId}/companyinfo/${realmId}?minorversion=73`, {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json'
+              }
+            });
+            console.log('Token test result:', testResponse.status);
+          } catch (testError) {
+            console.log('Token test failed (non-critical):', testError);
+          }
 
-          // Return success confirmation
-          return res.json({
-            success: true,
-            message: 'QuickBooks connected successfully! Fresh tokens stored automatically.',
-            integration: {
-              provider: 'quickbooks',
-              realmId: realmId,
-              status: 'connected with fresh production tokens',
-              tokenExpiry: authResponse.expires_in + ' seconds'
-            },
-            nextSteps: [
-              'QuickBooks sync is now active and will run every 60 minutes',
-              'You can manually trigger a sync from the dashboard',
-              'Visit /products to see your connected integration'
-            ]
+          // Return success page instead of JSON
+          const successHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>QuickBooks Connected Successfully!</title>
+                <style>
+                    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+                    .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; padding: 15px; border-radius: 8px; margin: 15px 0; }
+                    .button { background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
+                </style>
+            </head>
+            <body>
+                <h1>🎉 QuickBooks Connected Successfully!</h1>
+                <div class="success">
+                    <strong>Fresh tokens obtained and stored automatically!</strong><br>
+                    Company ID: ${realmId}<br>
+                    Status: Connected to production QuickBooks
+                </div>
+                <div class="info">
+                    <strong>What's Next:</strong>
+                    <ul>
+                        <li>QuickBooks sync is now active and will run every 60 minutes</li>
+                        <li>You can manually trigger a sync from your dashboard</li>
+                        <li>All customer, product, and invoice data will sync automatically</li>
+                    </ul>
+                </div>
+                <a href="/products" class="button">Go to Dashboard</a>
+                <a href="/api/quickbooks/trigger-sync" class="button">Test Sync Now</a>
+            </body>
+            </html>
+          `;
+          
+          return res.send(successHtml);
+          
+        } catch (authError: any) {
+          console.error('❌ Token exchange failed:', authError);
+          console.error('Error details:', {
+            message: authError.message,
+            status: authError.status,
+            statusText: authError.statusText,
+            data: authError.data
           });
-        } catch (authError) {
-          console.error('Initial authorization error:', authError);
-          return res.status(500).json({
-            error: 'Failed to exchange authorization code for tokens',
-            details: authError instanceof Error ? authError.message : 'Unknown error'
-          });
+          
+          const errorHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>QuickBooks Connection Error</title>
+                <style>
+                    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+                    .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .button { background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
+                </style>
+            </head>
+            <body>
+                <h1>❌ QuickBooks Connection Failed</h1>
+                <div class="error">
+                    <strong>Error:</strong> ${authError.message}<br>
+                    <strong>Status:</strong> ${authError.status || 'Unknown'}<br>
+                    <strong>Details:</strong> Authorization code exchange failed
+                </div>
+                <p>This usually happens when:</p>
+                <ul>
+                    <li>The authorization code has expired (they expire quickly)</li>
+                    <li>There's a mismatch in OAuth settings</li>
+                    <li>The QuickBooks session has timed out</li>
+                </ul>
+                <a href="/quickbooks/connect" class="button">Try Again</a>
+            </body>
+            </html>
+          `;
+          
+          return res.send(errorHtml);
         }
       }
 
