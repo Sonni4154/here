@@ -71,21 +71,19 @@
         </div>
 
         <div class="step">
-            <h3>Step 1: Authorize QuickBooks</h3>
-            <p>Click the button below to start the QuickBooks authorization process:</p>
-            <a href="https://appcenter.intuit.com/connect/oauth2?client_id=ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN&redirect_uri=https%3A%2F%2Fwemakemarin.com%2Fquickbooks%2Fcallback&response_type=code&scope=com.intuit.quickbooks.accounting&state=dev_manual_auth_1755625600000" 
-               class="btn" target="_blank">
-                🚀 Authorize QuickBooks
-            </a>
+            <h3>Step 1: Get Authorization URL</h3>
+            <p>First, let's generate a fresh authorization URL:</p>
+            <button onclick="generateAuthUrl()" class="btn">🔗 Generate Authorization URL</button>
+            <div id="authUrlResult" style="margin-top: 15px;"></div>
         </div>
 
         <div class="step">
-            <h3>Step 2: Copy the Callback URL</h3>
-            <p>After authorization, you'll be redirected to a URL that looks like:</p>
+            <h3>Step 2: Complete Authorization</h3>
+            <p>Click the generated authorization URL, complete the QuickBooks authorization, and copy the callback URL from your browser's address bar.</p>
+            <p>The callback URL will look like:</p>
             <div class="auth-url">
-                https://wemakemarin.com/quickbooks/callback?code=<strong>Q0116...</strong>&realmId=<strong>9130354674010826</strong>&state=dev_manual_auth_1755625600000
+                https://wemakemarin.com/quickbooks/callback?code=<strong>Q0116...</strong>&realmId=<strong>9130354674010826</strong>&state=dev_manual_auth_...
             </div>
-            <p><strong>Copy the entire URL</strong> from your browser's address bar after authorization.</p>
         </div>
 
         <div class="step">
@@ -99,6 +97,46 @@
     </div>
 
     <script>
+        function generateAuthUrl() {
+            fetch('/api/quickbooks/generate-dev-auth-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('authUrlResult').innerHTML = `
+                        <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 5px;">
+                            <p><strong>✅ Authorization URL Generated!</strong></p>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; word-break: break-all;">
+                                <a href="${data.authUrl}" target="_blank" style="color: #0077c5; text-decoration: underline;">
+                                    ${data.authUrl}
+                                </a>
+                            </div>
+                            <a href="${data.authUrl}" target="_blank" class="btn" style="margin-top: 10px;">
+                                🚀 Open Authorization Page
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('authUrlResult').innerHTML = `
+                        <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                            <strong>❌ Error:</strong> ${data.error || 'Failed to generate authorization URL'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('authUrlResult').innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px;">
+                        <strong>❌ Request Failed:</strong> ${error.message}
+                    </div>
+                `;
+            });
+        }
+
         function processAuth() {
             const callbackUrl = document.getElementById('callbackUrl').value.trim();
             if (!callbackUrl) {

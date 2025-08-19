@@ -539,6 +539,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile('quickbooks-dev-auth.html', { root: '.' });
   });
 
+  // Generate development authorization URL
+  app.post('/api/quickbooks/generate-dev-auth-url', async (req, res) => {
+    try {
+      const OAuthClient = require('intuit-oauth');
+      const oauthClient = new OAuthClient({
+        clientId: process.env.QBO_CLIENT_ID!,
+        clientSecret: process.env.QBO_CLIENT_SECRET!,
+        environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
+        redirectUri: 'https://wemakemarin.com/quickbooks/callback',
+      });
+
+      const authUrl = oauthClient.authorizeUri({
+        scope: [OAuthClient.scopes.Accounting],
+        state: 'dev_manual_auth_' + Date.now(),
+      });
+
+      console.log('🔗 Generated development authorization URL:', authUrl);
+
+      res.json({
+        success: true,
+        authUrl: authUrl,
+        message: 'Authorization URL generated successfully'
+      });
+    } catch (error) {
+      console.error('Error generating auth URL:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to generate authorization URL',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // API endpoint to exchange authorization code for tokens
   app.post('/api/quickbooks/exchange-code', async (req, res) => {
     try {
@@ -754,7 +787,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         console.log('✅ Simulated QuickBooks integration created for development');
-        return res.redirect('/products?qb_success=simulated_connection');
+        return res.json({
+          success: true,
+          message: 'Development QuickBooks connection simulated successfully!',
+          redirect: '/products?qb_success=simulated_connection',
+          integration: {
+            provider: 'quickbooks',
+            realmId: realmId,
+            status: 'connected (simulated for development)'
+          }
+        });
       }
 
       const userId = 'dev_user_123';
