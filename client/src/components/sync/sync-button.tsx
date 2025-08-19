@@ -43,6 +43,11 @@ export default function SyncButton() {
     })
   });
 
+  const { data: integrations } = useQuery({
+    queryKey: ['/api/integrations'],
+    refetchInterval: 5000,
+  });
+
   const quickbooksSyncMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest('/api/integrations/quickbooks/sync', {
@@ -106,7 +111,8 @@ export default function SyncButton() {
     }
   };
 
-  const quickbooksIntegration = syncStatus?.integrations?.find(i => i.provider === 'quickbooks');
+  // Use the same data source as the header for consistency
+  const quickbooksIntegration = Array.isArray(integrations) ? integrations.find((i: any) => i.provider === 'quickbooks') : undefined;
   const isSyncing = quickbooksIntegration?.syncStatus === 'syncing' || quickbooksSyncMutation.isPending;
 
   return (
@@ -122,7 +128,10 @@ export default function SyncButton() {
           Sync
           {quickbooksIntegration && (
             <div className="ml-2">
-              {getStatusIcon(quickbooksIntegration.syncStatus)}
+              {quickbooksIntegration.connected ? 
+                getStatusIcon('success') : 
+                getStatusIcon(quickbooksIntegration.syncStatus)
+              }
             </div>
           )}
         </Button>
@@ -132,7 +141,7 @@ export default function SyncButton() {
           <div>
             <h3 className="font-medium text-slate-900 mb-2">Integration Status</h3>
             <div className="space-y-2">
-              {(syncStatus?.integrations || []).map((integration) => (
+              {(integrations || []).map((integration: any) => (
                 <div key={integration.provider} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     {getStatusIcon(integration.syncStatus)}
@@ -146,10 +155,10 @@ export default function SyncButton() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {getStatusBadge(integration.syncStatus)}
+                    {getStatusBadge(integration.connected ? 'success' : integration.syncStatus)}
                     {integration.provider === 'quickbooks' && (
                       <div className="flex space-x-2">
-                        {!integration.isActive ? (
+                        {!integration.connected ? (
                           <Button
                             size="sm"
                             variant="outline"
