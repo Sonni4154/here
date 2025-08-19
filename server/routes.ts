@@ -585,10 +585,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Use appropriate redirect URI based on environment
     const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-    const redirectUri = process.env.QBO_REDIRECT_URI || 
-      (replitDomain 
-        ? `https://${replitDomain}/quickbooks/callback`
-        : 'https://www.wemakemarin.com/quickbooks/callback');
+    const redirectUri = replitDomain 
+      ? `https://${replitDomain}/quickbooks/callback`
+      : process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
     console.log('🔧 Using redirect URI:', redirectUri);
     
     const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
