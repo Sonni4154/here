@@ -10,13 +10,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface SyncStatus {
-  integrations: Array<{
+  integrations?: Array<{
     provider: string;
     isActive: boolean;
     lastSyncAt: string | null;
     syncStatus: 'pending' | 'syncing' | 'success' | 'error';
   }>;
-  recentLogs: Array<{
+  recentLogs?: Array<{
     id: string;
     operation: string;
     entityType: string;
@@ -35,6 +35,12 @@ export default function SyncButton() {
   const { data: syncStatus, isLoading } = useQuery<SyncStatus>({
     queryKey: ["/api/sync/status"],
     refetchInterval: 5000, // Refresh every 5 seconds
+    retry: false,
+    // Provide fallback data structure
+    select: (data) => ({
+      integrations: data?.integrations || [],
+      recentLogs: data?.recentLogs || []
+    })
   });
 
   const quickbooksSyncMutation = useMutation({

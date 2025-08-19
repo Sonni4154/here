@@ -307,6 +307,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Material entries routes
+  app.get('/api/material-entries', async (req: any, res) => {
+    try {
+      // Mock material entries for development
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching material entries:", error);
+      res.status(500).json({ message: "Failed to fetch material entries" });
+    }
+  });
+
+  // Activity routes
+  app.get('/api/activity', async (req: any, res) => {
+    try {
+      // Mock activity data for development
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ message: "Failed to fetch activities" });
+    }
+  });
+
   // Integration routes
   app.get('/api/integrations', async (req: any, res) => {
     try {
