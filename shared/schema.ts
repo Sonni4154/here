@@ -119,6 +119,82 @@ export const taskAssignments = pgTable("task_assignments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Hours and Materials form submissions
+export const hoursAndMaterials = pgTable("hours_and_materials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  submittedBy: varchar("submitted_by").notNull().references(() => users.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  customerName: varchar("customer_name").notNull(),
+  customerAddress: text("customer_address"),
+  customerPhone: varchar("customer_phone"),
+  customerEmail: varchar("customer_email"),
+  jobDescription: text("job_description"),
+  workDate: timestamp("work_date").notNull(),
+  status: varchar("status").default('pending'), // 'pending', 'approved', 'rejected', 'invoiced'
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  invoiceId: varchar("invoice_id"), // QuickBooks invoice ID
+  totalHours: decimal("total_hours", { precision: 8, scale: 2 }),
+  totalMaterialsCost: decimal("total_materials_cost", { precision: 10, scale: 2 }),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
+  googleDriveFolderId: varchar("google_drive_folder_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Hours entries for H&M forms
+export const hoursEntries = pgTable("hours_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hmFormId: varchar("hm_form_id").notNull().references(() => hoursAndMaterials.id, { onDelete: 'cascade' }),
+  serviceId: varchar("service_id").references(() => products.id),
+  serviceName: varchar("service_name").notNull(),
+  hours: decimal("hours", { precision: 5, scale: 2 }).notNull(),
+  rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Materials entries for H&M forms
+export const materialsEntries = pgTable("materials_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hmFormId: varchar("hm_form_id").notNull().references(() => hoursAndMaterials.id, { onDelete: 'cascade' }),
+  productId: varchar("product_id").references(() => products.id),
+  productName: varchar("product_name").notNull(),
+  quantity: decimal("quantity", { precision: 8, scale: 2 }).notNull(),
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  lineTotal: decimal("line_total", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Photo uploads for H&M forms
+export const formPhotos = pgTable("form_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  hmFormId: varchar("hm_form_id").notNull().references(() => hoursAndMaterials.id, { onDelete: 'cascade' }),
+  photoType: varchar("photo_type").notNull(), // 'before', 'after', 'materials', 'other'
+  fileName: varchar("file_name").notNull(),
+  googleDriveFileId: varchar("google_drive_file_id"),
+  googleDriveUrl: text("google_drive_url"),
+  description: text("description"),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+// Google Drive integration tracking
+export const googleDriveFolders = pgTable("google_drive_folders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").references(() => customers.id),
+  customerName: varchar("customer_name").notNull(),
+  customerAddress: text("customer_address"),
+  folderId: varchar("folder_id").notNull().unique(),
+  folderName: varchar("folder_name").notNull(),
+  folderUrl: text("folder_url"),
+  photosFolderId: varchar("photos_folder_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // User presence tracking for real-time collaboration
 export const userPresence = pgTable("user_presence", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -537,6 +613,61 @@ export const integrationsRelations = relations(integrations, ({ one }) => ({
   user: one(users, {
     fields: [integrations.userId],
     references: [users.id],
+  }),
+}));
+
+// Hours and Materials relations
+export const hoursAndMaterialsRelations = relations(hoursAndMaterials, ({ one, many }) => ({
+  submittedBy: one(users, {
+    fields: [hoursAndMaterials.submittedBy],
+    references: [users.id],
+  }),
+  customer: one(customers, {
+    fields: [hoursAndMaterials.customerId],
+    references: [customers.id],
+  }),
+  approver: one(users, {
+    fields: [hoursAndMaterials.approvedBy],
+    references: [users.id],
+  }),
+  hoursEntries: many(hoursEntries),
+  materialsEntries: many(materialsEntries),
+  photos: many(formPhotos),
+}));
+
+export const hoursEntriesRelations = relations(hoursEntries, ({ one }) => ({
+  hmForm: one(hoursAndMaterials, {
+    fields: [hoursEntries.hmFormId],
+    references: [hoursAndMaterials.id],
+  }),
+  service: one(products, {
+    fields: [hoursEntries.serviceId],
+    references: [products.id],
+  }),
+}));
+
+export const materialsEntriesRelations = relations(materialsEntries, ({ one }) => ({
+  hmForm: one(hoursAndMaterials, {
+    fields: [materialsEntries.hmFormId],
+    references: [hoursAndMaterials.id],
+  }),
+  product: one(products, {
+    fields: [materialsEntries.productId],
+    references: [products.id],
+  }),
+}));
+
+export const formPhotosRelations = relations(formPhotos, ({ one }) => ({
+  hmForm: one(hoursAndMaterials, {
+    fields: [formPhotos.hmFormId],
+    references: [hoursAndMaterials.id],
+  }),
+}));
+
+export const googleDriveFoldersRelations = relations(googleDriveFolders, ({ one }) => ({
+  customer: one(customers, {
+    fields: [googleDriveFolders.customerId],
+    references: [customers.id],
   }),
 }));
 
