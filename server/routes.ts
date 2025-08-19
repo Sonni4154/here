@@ -9,6 +9,7 @@ import { SyncScheduler } from "./services/sync-scheduler";
 import { presenceService } from "./services/presence-service";
 import { getUserId, getUserEmail, getUserFirstName, getUserLastName, getUserPicture } from "./types/auth";
 import bcrypt from "bcrypt";
+import path from "path";
 
 // Initialize services
 const quickbooksService = new QuickBooksService();
@@ -769,23 +770,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           console.log('🔄 Attempting token exchange...');
+          console.log('OAuth Configuration Debug:');
+          console.log('- Client ID:', process.env.QBO_CLIENT_ID?.substring(0, 10) + '...');
+          console.log('- Environment:', 'production');
+          console.log('- Redirect URI:', 'https://www.wemakemarin.com/quickbooks/callback');
+          console.log('- Code length:', code.toString().length);
+          console.log('- Code preview:', code.toString().substring(0, 20) + '...');
           
-          // Exchange code for tokens
+          // Exchange code for tokens with detailed error handling
           const authResponse = await oauthClient.createToken(String(code));
           
           console.log('🎉 Token exchange successful!');
           console.log('Token response structure:', Object.keys(authResponse));
           
-          // Handle different response structures
+          // Handle different response structures from OAuth library
           let accessToken, refreshToken;
           if (authResponse.token) {
-            // Standard response structure
-            accessToken = authResponse.token.access_token;
-            refreshToken = authResponse.token.refresh_token;
+            // Standard response structure from intuit-oauth
+            accessToken = (authResponse as any).token.access_token;
+            refreshToken = (authResponse as any).token.refresh_token;
           } else {
             // Alternative response structure
-            accessToken = authResponse.access_token;
-            refreshToken = authResponse.refresh_token;
+            accessToken = (authResponse as any).access_token;
+            refreshToken = (authResponse as any).refresh_token;
           }
           
           if (!accessToken) {
@@ -2699,6 +2706,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/get-fresh-tokens', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'get-fresh-tokens.html'));
+  });
+
+  // QuickBooks OAuth diagnostic endpoint
+  app.get('/quickbooks/debug', (req, res) => {
+    const config = {
+      clientId: process.env.QBO_CLIENT_ID,
+      hasClientSecret: !!process.env.QBO_CLIENT_SECRET,
+      redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback',
+      environment: 'production',
+      companyId: process.env.QBO_COMPANY_ID,
+      baseUrl: process.env.QBO_BASE_URL || 'https://quickbooks.api.intuit.com',
+    };
+
+    res.json({
+      message: 'QuickBooks OAuth Configuration Debug',
+      config,
+      authUrl: `https://appcenter.intuit.com/connect/oauth2?client_id=${config.clientId}&redirect_uri=${encodeURIComponent(config.redirectUri)}&response_type=code&scope=com.intuit.quickbooks.accounting&state=debug_mode`,
+      notes: [
+        'The redirect URI must match exactly what is configured in your QuickBooks app',
+        'Authorization codes expire in ~10 minutes after authorization',
+        'Make sure you complete the OAuth flow quickly after getting the code',
+        'If you get a 400 error, check that the redirect URI matches your QuickBooks app configuration'
+      ]
+    });
   });
 
   const httpServer = createServer(app);
