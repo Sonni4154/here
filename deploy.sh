@@ -12,39 +12,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration - Auto-detect or prompt for values
-AUTO_DETECT_REPO=$(git config --get remote.origin.url 2>/dev/null || echo "")
-DEFAULT_APP_NAME=$(basename "$(pwd)")
-DEFAULT_DOMAIN=$(hostname -f 2>/dev/null || echo "your-domain.com")
-
-# Prompt for configuration
-echo -e "${BLUE}📋 Configuration Setup${NC}"
-echo "----------------------------------------"
-
-read -p "App name (default: $DEFAULT_APP_NAME): " APP_NAME
-APP_NAME=${APP_NAME:-$DEFAULT_APP_NAME}
-
-read -p "Repository URL (default: $AUTO_DETECT_REPO): " REPO_URL
-REPO_URL=${REPO_URL:-$AUTO_DETECT_REPO}
-
-read -p "Domain name (default: $DEFAULT_DOMAIN): " DOMAIN
-DOMAIN=${DOMAIN:-$DEFAULT_DOMAIN}
-
-read -p "Node.js version (default: 18): " NODE_VERSION
-NODE_VERSION=${NODE_VERSION:-18}
-
-# Derived configuration
+# Configuration
+APP_NAME="timesync-pro"
 APP_DIR="/var/www/$APP_NAME"
-DB_NAME=$(echo "$APP_NAME" | tr '-' '_')
-DB_USER="${APP_NAME}_user"
-
-echo -e "\n${GREEN}Configuration Summary:${NC}"
-echo "App Name: $APP_NAME"
-echo "App Directory: $APP_DIR"
-echo "Repository: $REPO_URL"
-echo "Domain: $DOMAIN"
-echo "Database: $DB_NAME"
-echo "Database User: $DB_USER"
+REPO_URL="https://github.com/your-username/timesync-pro.git"  # Update with your repo
+DOMAIN="www.wemakemarin.com"
+NODE_VERSION="18"
+DB_NAME="timesync_pro"
 
 echo -e "${BLUE}🚀 TimeSync Pro - Production Deployment Script${NC}"
 echo -e "${BLUE}================================================${NC}"
@@ -170,7 +144,10 @@ setup_database() {
     
     # Create database and user
     echo "Creating database and user..."
-    read -s -p "Enter database password for $DB_USER: " DB_PASS
+    read -p "Enter database username (default: timesync_user): " DB_USER
+    DB_USER=${DB_USER:-timesync_user}
+    
+    read -s -p "Enter database password: " DB_PASS
     echo
     
     sudo -u postgres psql << EOF
@@ -225,11 +202,8 @@ configure_environment() {
         echo "Creating environment configuration..."
         cp .env.example .env
         
-        # Update database URL in .env file
-        sed -i "s|DATABASE_URL=.*|DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME|g" .env
-        
-        echo "Environment file created with database configuration."
-        echo "Please edit the .env file to add:"
+        echo "Please edit the .env file with your configuration:"
+        echo "- Database connection string"
         echo "- Session secret"
         echo "- QuickBooks credentials"
         echo "- Other API keys"
@@ -239,11 +213,7 @@ configure_environment() {
         fi
     else
         echo -e "${YELLOW}⚠️  .env file already exists${NC}"
-        if prompt_user "Update database URL in .env file?"; then
-            sed -i "s|DATABASE_URL=.*|DATABASE_URL=postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME|g" .env
-            echo "Database URL updated in .env file."
-        fi
-        if prompt_user "Open .env file for editing?"; then
+        if prompt_user "Update .env file?"; then
             ${EDITOR:-nano} .env
         fi
     fi
@@ -394,14 +364,14 @@ start_application() {
 module.exports = {
   apps: [{
     name: '$APP_NAME',
-    script: 'dist/index.js',
+    script: 'server/index.ts',
     interpreter: 'node',
+    interpreter_args: '--loader tsx',
     instances: 'max',
     exec_mode: 'cluster',
     env: {
       NODE_ENV: 'production',
-      PORT: 5000,
-      DATABASE_URL: 'postgresql://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME'
+      PORT: 5000
     },
     log_file: '/var/log/$APP_NAME.log',
     error_file: '/var/log/$APP_NAME-error.log',
@@ -461,28 +431,28 @@ setup_backup() {
     sudo chown $USER:$USER /var/backups/$APP_NAME
     
     # Create backup script
-    cat > /home/$USER/backup-$APP_NAME.sh << EOF
+    cat > /home/$USER/backup-$APP_NAME.sh << 'EOF'
 #!/bin/bash
 
-BACKUP_DIR="/var/backups/$APP_NAME"
-DATE=\$(date +%Y%m%d_%H%M%S)
-APP_DIR="$APP_DIR"
+BACKUP_DIR="/var/backups/timesync-pro"
+DATE=$(date +%Y%m%d_%H%M%S)
+APP_DIR="/var/www/timesync-pro"
 
 # Database backup
-pg_dump $DB_NAME > "\$BACKUP_DIR/db_backup_\$DATE.sql"
+pg_dump timesync_pro > "$BACKUP_DIR/db_backup_$DATE.sql"
 
 # Application backup (excluding node_modules)
-tar -czf "\$BACKUP_DIR/app_backup_\$DATE.tar.gz" \\
-    --exclude="node_modules" \\
-    --exclude=".git" \\
-    --exclude="logs" \\
-    -C "/var/www" $APP_NAME
+tar -czf "$BACKUP_DIR/app_backup_$DATE.tar.gz" \
+    --exclude="node_modules" \
+    --exclude=".git" \
+    --exclude="logs" \
+    -C "/var/www" timesync-pro
 
 # Clean old backups (keep 30 days)
-find "\$BACKUP_DIR" -name "*.sql" -mtime +30 -delete
-find "\$BACKUP_DIR" -name "*.tar.gz" -mtime +30 -delete
+find "$BACKUP_DIR" -name "*.sql" -mtime +30 -delete
+find "$BACKUP_DIR" -name "*.tar.gz" -mtime +30 -delete
 
-echo "Backup completed: \$DATE"
+echo "Backup completed: $DATE"
 EOF
     
     chmod +x /home/$USER/backup-$APP_NAME.sh
@@ -512,15 +482,14 @@ final_status() {
     
     echo -e "\n${GREEN}🎉 Deployment completed successfully!${NC}"
     echo -e "${BLUE}Application URL: https://$DOMAIN${NC}"
-    echo -e "${BLUE}Database: postgresql://$DB_USER@localhost:5432/$DB_NAME${NC}"
     echo -e "${BLUE}PM2 Dashboard: pm2 monit${NC}"
     echo -e "${BLUE}Logs: pm2 logs $APP_NAME${NC}"
     
     echo -e "\n${YELLOW}Next Steps:${NC}"
-    echo "1. Configure your QuickBooks integration in .env"
-    echo "2. Set up Google OAuth credentials in .env"
+    echo "1. Configure your QuickBooks integration"
+    echo "2. Set up Google OAuth credentials"
     echo "3. Import your business data"
-    echo "4. Test the application functionality"
+    echo "4. Train your team on the system"
     
     echo -e "\n${YELLOW}Useful Commands:${NC}"
     echo "- Restart app: pm2 restart $APP_NAME"
@@ -528,7 +497,6 @@ final_status() {
     echo "- Monitor: pm2 monit"
     echo "- Database backup: /home/$USER/backup-$APP_NAME.sh"
     echo "- SSL renewal: sudo certbot renew"
-    echo "- Database access: psql -U $DB_USER -d $DB_NAME"
 }
 
 # Main deployment function
