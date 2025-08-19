@@ -5,17 +5,23 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { QuickBooksService } from "./services/quickbooks-service";
 import { dataImportService } from "./services/data-import-service";
-import { enhancedSyncScheduler } from "./services/sync-scheduler-enhanced";
+import { SyncScheduler } from "./services/sync-scheduler";
 import { presenceService } from "./services/presence-service";
 import { getUserId, getUserEmail, getUserFirstName, getUserLastName, getUserPicture } from "./types/auth";
 import bcrypt from "bcrypt";
 
 // Initialize services
 const quickbooksService = new QuickBooksService();
+const syncScheduler = new SyncScheduler();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+  
+  // START SYNC SCHEDULER IMMEDIATELY FOR PRODUCTION
+  console.log('🚀 Starting sync scheduler on server boot...');
+  syncScheduler.start();
+  console.log('✅ Sync scheduler enabled for production');
 
   // Auth routes - Production authentication required
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -131,39 +137,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sync control routes
+  // Sync control routes - PRODUCTION CRITICAL
   app.get('/api/sync/status', async (req, res) => {
     try {
-      const status = await enhancedSyncScheduler.getScheduleStatus();
-      
-      // Get integrations data directly from database
-      let integrations_data = [{
-        provider: 'quickbooks',
-        isActive: true, // Set to true for testing sync functionality
-        lastSyncAt: new Date().toISOString(),
-        syncStatus: 'success'
-      }];
-      
-      // Mock recent activity logs
-      const recentLogs = [];
-      
-      res.json({
-        ...status,
-        integrations: integrations_data,
-        recentLogs
-      });
+      const status = syncScheduler.getStatus();
+      res.json(status);
     } catch (error) {
       console.error("Error getting sync status:", error);
       res.status(500).json({ message: "Failed to get sync status" });
     }
   });
 
+  // Enable sync scheduler immediately on startup - PRODUCTION FIX
+  app.post('/api/sync/start', async (req, res) => {
+    try {
+      console.log('🚀 Starting sync scheduler for production...');
+      syncScheduler.start();
+      res.json({ 
+        message: "Sync scheduler started successfully",
+        status: "running",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error starting sync scheduler:", error);
+      res.status(500).json({ message: "Failed to start sync scheduler" });
+    }
+  });
+
   app.post('/api/sync/trigger-data', async (req, res) => {
     try {
-      console.log('Data import sync triggered');
-      await enhancedSyncScheduler.triggerDataSync();
-      
-      // Return enhanced response with sync status
+      console.log('🔄 Data import sync triggered');
+      await syncScheduler.triggerDataSync();
       res.json({ 
         message: "Data import sync triggered successfully",
         status: "triggered",
@@ -175,10 +179,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/sync/trigger-quickbooks', async (req, res) => {
+  app.post('/api/quickbooks/trigger-sync', async (req, res) => {
     try {
-      await enhancedSyncScheduler.triggerQuickBooksSync();
-      res.json({ message: "QuickBooks sync triggered successfully" });
+      console.log('🔄 QuickBooks sync triggered manually');
+      await syncScheduler.triggerQuickBooksSync();
+      res.json({ message: "QuickBooks sync triggered successfully", timestamp: new Date().toISOString() });
     } catch (error) {
       console.error("Error triggering QuickBooks sync:", error);
       res.status(500).json({ message: "Failed to trigger QuickBooks sync" });
@@ -210,8 +215,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const duration = Date.now() - startTime;
         const dataVolume = 25 + Math.floor(Math.random() * 50);
         
-        // Record sync operation for smart recommendations
-        await enhancedSyncScheduler.recordSyncOperation('quickbooks', duration, true, dataVolume);
+        // Record sync operation
+        console.log(`📊 Sync completed: ${duration}ms, ${dataVolume} records`);
         
         console.log('✅ QuickBooks sync simulation completed');
         
@@ -537,6 +542,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve development authorization page
   app.get('/quickbooks/dev-auth', (req, res) => {
     res.sendFile('quickbooks-dev-auth.html', { root: '.' });
+  });
+
+  // QuickBooks development status check
+  app.get('/api/quickbooks/dev-status', (req, res) => {
+    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+    const redirectUri = replitDomain 
+      ? `https://${replitDomain}/quickbooks/callback`
+      : 'https://wemakemarin.com/quickbooks/callback';
+    
+    res.json({
+      environment: process.env.QBO_ENV || 'production',
+      clientId: process.env.QBO_CLIENT_ID?.substring(0, 15) + '...',
+      companyId: process.env.QBO_COMPANY_ID,
+      redirectUri: redirectUri,
+      domain: replitDomain,
+      baseUrl: process.env.QBO_BASE_URL,
+      hasAccessToken: !!process.env.QBO_ACCESS_TOKEN,
+      hasRefreshToken: !!process.env.QBO_REFRESH_TOKEN,
+      timestamp: new Date().toISOString()
+    });
   });
 
   // Generate development authorization URL

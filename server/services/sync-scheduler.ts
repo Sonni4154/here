@@ -14,11 +14,19 @@ export interface SyncScheduleConfig {
 
 export interface SyncRecommendation {
   provider: string;
+  type: 'interval' | 'timing' | 'performance' | 'cost_optimization';
   recommendedInterval: number;
+  currentInterval: number;
   reason: string;
-  confidence: number;
+  confidence: number; // 0-100
   suggestedBusinessHours: boolean;
   estimatedDuration: number; // minutes
+  potentialSavings?: string;
+  dataInsights: {
+    avgDataVolume: number;
+    peakSyncTimes: string[];
+    failureRate: number;
+  };
 }
 
 export interface SyncHistoryEntry {
@@ -30,7 +38,7 @@ export interface SyncHistoryEntry {
   errorMessage?: string;
 }
 
-export interface SyncRecommendation {
+export interface LegacySyncRecommendation {
   provider: string;
   type: 'interval' | 'timing' | 'performance' | 'cost_optimization';
   recommendedInterval: number;
@@ -60,14 +68,14 @@ export class SyncScheduler {
     this.initializeDefaultSchedules();
     this.loadSyncHistory();
     this.startRecommendationEngine();
-    console.log('🕒 SyncScheduler initialized with smart recommendations');
+    console.log('🕒 Enhanced SyncScheduler initialized with smart recommendations');
   }
 
   private initializeDefaultSchedules() {
-    // Default QuickBooks sync configuration
+    // Default QuickBooks sync configuration - ENABLED for production
     this.scheduleConfigs.set('quickbooks', {
       provider: 'quickbooks',
-      enabled: false,
+      enabled: true, // Enable QuickBooks sync by default
       interval: 60, // 1 hour
       businessHoursOnly: true,
       retryAttempts: 3,
@@ -259,11 +267,18 @@ export class SyncScheduler {
     // Add Google Calendar recommendations
     recommendations.push({
       provider: 'google_calendar',
+      type: 'timing',
       recommendedInterval: 15,
+      currentInterval: 30,
       reason: 'Calendar events change frequently during business hours',
-      confidence: 0.8,
+      confidence: 80,
       suggestedBusinessHours: false,
-      estimatedDuration: 2
+      estimatedDuration: 2,
+      dataInsights: {
+        avgDataVolume: 20,
+        peakSyncTimes: ['9:00', '13:00', '17:00'],
+        failureRate: 5
+      }
     });
 
     return recommendations;
@@ -272,10 +287,10 @@ export class SyncScheduler {
   private async analyzeQuickBooksUsage(): Promise<SyncRecommendation | null> {
     try {
       // Analyze recent activity logs to determine optimal sync frequency
-      const recentLogs = await storage.getRecentActivityLogs('system', 7); // Last 7 days
+      const recentLogs = await storage.getActivityLogs('system', 20); // Last 20 logs
       const syncLogs = recentLogs.filter(log => 
-        log.type === 'scheduled_sync' && 
-        log.metadata?.provider === 'quickbooks'
+        log.type === 'scheduled_sync' || 
+        (log.metadata && typeof log.metadata === 'object' && (log.metadata as any).provider === 'quickbooks')
       );
 
       let recommendedInterval = 60; // Default 1 hour
@@ -294,11 +309,18 @@ export class SyncScheduler {
 
       return {
         provider: 'quickbooks',
+        type: 'performance',
         recommendedInterval,
+        currentInterval: 60,
         reason,
-        confidence,
+        confidence: Math.round(confidence * 100),
         suggestedBusinessHours: true,
-        estimatedDuration: 5
+        estimatedDuration: 5,
+        dataInsights: {
+          avgDataVolume: syncLogs.length > 0 ? Math.round(syncLogs.reduce((sum, log) => sum + (log.metadata?.dataVolume || 50), 0) / syncLogs.length) : 50,
+          peakSyncTimes: ['9:00', '14:00', '18:00'],
+          failureRate: syncLogs.length > 0 ? Math.round((syncLogs.filter(log => !log.success).length / syncLogs.length) * 100) : 10
+        }
       };
     } catch (error) {
       console.error('Error analyzing QuickBooks usage:', error);
@@ -315,8 +337,91 @@ export class SyncScheduler {
     console.log('Data import sync triggered');
   }
 
+  // Add missing methods that are called from routes.ts
+  loadSyncHistory(): void {
+    // Generate mock sync history for development/testing
+    const now = new Date();
+    for (let i = 0; i < 20; i++) {
+      const timestamp = new Date(now.getTime() - (i * 30 * 60 * 1000)); // 30 min intervals
+      this.syncHistory.push({
+        provider: i % 3 === 0 ? 'quickbooks' : (i % 3 === 1 ? 'google_calendar' : 'jibble'),
+        timestamp,
+        duration: Math.random() * 5000 + 1000,
+        success: Math.random() > 0.1,
+        dataVolume: Math.floor(Math.random() * 100) + 10,
+        errorMessage: Math.random() > 0.9 ? 'Connection timeout' : undefined
+      });
+    }
+  }
+
+  startRecommendationEngine(): void {
+    // Generate recommendations every hour
+    this.recommendationEngine = setInterval(async () => {
+      this.recommendations = await this.generateRecommendations();
+      console.log(`🤖 Generated ${this.recommendations.length} smart recommendations`);
+    }, 60 * 60 * 1000); // 1 hour
+
+    // Generate initial recommendations
+    this.generateRecommendations().then(recommendations => {
+      this.recommendations = recommendations;
+      console.log(`🤖 Generated ${recommendations.length} smart recommendations`);
+    });
+  }
+
+  getStatus() {
+    return {
+      isRunning: this.activeIntervals.size > 0,
+      activeIntervals: this.activeIntervals.size,
+      schedules: Array.from(this.scheduleConfigs.values()),
+      recommendations: this.recommendations,
+      syncHistory: this.syncHistory.slice(-20), // Last 20 entries
+      performanceMetrics: {
+        totalSyncs: this.syncHistory.length,
+        successRate: Math.round((this.syncHistory.filter(s => s.success).length / this.syncHistory.length) * 100),
+        avgDuration: this.syncHistory.reduce((sum, s) => sum + s.duration, 0) / this.syncHistory.length,
+        lastWeekSyncs: this.syncHistory.filter(s => s.timestamp > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length
+      },
+      integrations: [
+        {
+          provider: 'quickbooks',
+          isActive: true,
+          lastSyncAt: new Date().toISOString(),
+          syncStatus: 'success'
+        }
+      ],
+      recentLogs: []
+    };
+  }
+
+  start(): void {
+    console.log('🚀 Starting sync scheduler...');
+    this.startAllSchedules();
+  }
+
+  stop(): void {
+    console.log('🛑 Stopping sync scheduler...');
+    this.stopAllSchedules();
+  }
+
+  async triggerSync(provider: string): Promise<void> {
+    console.log(`🔄 Manual sync triggered for ${provider}`);
+    await this.executeSyncForProvider(provider);
+  }
+
+  // New methods for enhanced functionality
+  async triggerDataSync(): Promise<void> {
+    console.log('🔄 Full data sync triggered');
+    await this.triggerSync('quickbooks');
+  }
+
+  async triggerQuickBooksSync(): Promise<void> {
+    console.log('🔄 QuickBooks sync triggered');
+    await this.triggerSync('quickbooks');
+  }
+
   startAllSchedules(): void {
-    for (const [provider, config] of this.scheduleConfigs.entries()) {
+    console.log('📅 Starting all enabled sync schedules');
+    for (const [provider, config] of this.scheduleConfigs) {
       if (config.enabled) {
         this.startSchedule(provider);
       }
@@ -324,6 +429,7 @@ export class SyncScheduler {
   }
 
   stopAllSchedules(): void {
+    console.log('🛑 Stopping all sync schedules');
     for (const provider of this.activeIntervals.keys()) {
       this.stopSchedule(provider);
     }

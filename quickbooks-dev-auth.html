@@ -67,7 +67,7 @@
         </div>
 
         <div class="warning">
-            <strong>⚠️ Development Mode:</strong> This process uses your production redirect URI but will give you fresh tokens for development testing.
+            <strong>⚠️ Development Mode:</strong> This process uses your development redirect URI for testing. Make sure the QuickBooks app has the development domain configured.
         </div>
 
         <div class="step">
@@ -82,7 +82,7 @@
             <p>Click the generated authorization URL, complete the QuickBooks authorization, and copy the callback URL from your browser's address bar.</p>
             <p>The callback URL will look like:</p>
             <div class="auth-url">
-                https://wemakemarin.com/quickbooks/callback?code=<strong>Q0116...</strong>&realmId=<strong>9130354674010826</strong>&state=dev_manual_auth_...
+                https://054d2a3f-de93-43b0-a8dc-53ade5c1fa79-00-28ngf53nf2i1b.kirk.replit.dev/quickbooks/callback?code=<strong>Q0116...</strong>&realmId=<strong>9130354674010826</strong>&state=dev_manual_auth_...
             </div>
         </div>
 
@@ -186,7 +186,7 @@
                     body: JSON.stringify({
                         code: code,
                         realmId: realmId,
-                        redirectUri: 'https://wemakemarin.com/quickbooks/callback'
+                        redirectUri: `https://${window.location.hostname}/quickbooks/callback`
                     })
                 })
                 .then(response => response.json())
