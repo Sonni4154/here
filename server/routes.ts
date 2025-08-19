@@ -535,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QuickBooks Integration routes
   // QuickBooks connect endpoint
   // Initial Authorization Route - One-time setup to get fresh tokens
-  app.get('/quickbooks/initial-auth', async (req, res) => {
+  app.get('/api/quickbooks/initial-auth', async (req, res) => {
     try {
       console.log('🚀 Starting QuickBooks Initial Authorization');
       console.log('Environment:', process.env.QBO_ENV);
