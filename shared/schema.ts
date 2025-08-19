@@ -45,9 +45,41 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true),
   passwordHash: varchar("password_hash"), // For password login
   googleCalendarId: varchar("google_calendar_id"), // For calendar sync
+  // NextAuth Google OAuth fields
+  googleId: varchar("google_id"),
+  googleAccessToken: text("google_access_token"),
+  googleRefreshToken: text("google_refresh_token"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// NextAuth accounts table for OAuth providers
+export const accounts = pgTable("accounts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: varchar("type").notNull(),
+  provider: varchar("provider").notNull(),
+  providerAccountId: varchar("provider_account_id").notNull(),
+  refreshToken: text("refresh_token"),
+  accessToken: text("access_token"),
+  expiresAt: integer("expires_at"),
+  tokenType: varchar("token_type"),
+  scope: varchar("scope"),
+  idToken: text("id_token"),
+  sessionState: varchar("session_state"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// NextAuth verification tokens
+export const verificationTokens = pgTable("verification_tokens", {
+  identifier: varchar("identifier").notNull(),
+  token: varchar("token").notNull(),
+  expires: timestamp("expires").notNull(),
+}, (table) => [
+  index("verification_tokens_identifier_idx").on(table.identifier),
+  index("verification_tokens_token_idx").on(table.token)
+]);
 
 // Employee schedules table
 export const employeeSchedules = pgTable("employee_schedules", {

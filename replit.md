@@ -119,7 +119,7 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Health Check System**: Comprehensive health checks for database, QuickBooks, sync scheduler, and system resources
 - **Alert Thresholds**: Smart alerting for high failure rates, stalled syncs, and API errors
 - **Performance Monitoring**: API response times, memory usage, sync job durations, and success rates
-- **Configuration Fixed**: Separated QBO_REDIRECT_URI (OAuth callback) from QBO_WEBHOOK_URI (webhook endpoint)
+- **QuickBooks URI Configuration Fixed (August 2025)**: Properly separated OAuth callback (`/quickbooks/callback`) from webhook endpoint (`/quickbooks/webhook`) with distinct environment variables (`QBO_REDIRECT_URI` vs `QBO_WEBHOOK_URI`)
 - **Monitoring Endpoints**: `/api/monitoring/metrics`, `/api/monitoring/health`, `/api/monitoring/report`
 - **Production Ready**: Comprehensive monitoring infrastructure for sync jobs and system performance
 

@@ -61,15 +61,24 @@ export class QuickBooksService {
     this.environment = 'production'; // Always use production for www.wemakemarin.com
     this.baseUrl = 'https://quickbooks.api.intuit.com'; // Production API URL
     
+    // ✅ FIXED: Use separate OAuth callback URI from environment or construct properly
+    const redirectUri = process.env.QBO_REDIRECT_URI || 
+      (isProduction 
+        ? 'https://www.wemakemarin.com/quickbooks/callback'  // OAuth callback
+        : 'http://localhost:5000/quickbooks/callback');
+
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({
       clientId: this.clientId,
       clientSecret: this.clientSecret,
       environment: this.environment,
-      redirectUri: isProduction 
-        ? 'https://www.wemakemarin.com/quickbooks/callback'
-        : 'http://localhost:5000/quickbooks/callback'
+      redirectUri: redirectUri
     });
+
+    console.log('🔧 QuickBooks OAuth Configuration:');
+    console.log(`   Environment: ${this.environment}`);
+    console.log(`   OAuth Callback: ${redirectUri}`);
+    console.log(`   Webhook URL: ${process.env.QBO_WEBHOOK_URI || (isProduction ? 'https://www.wemakemarin.com/quickbooks/webhook' : 'http://localhost:5000/quickbooks/webhook')}`);
   }
 
   // Generate OAuth authorization URL using Intuit OAuth Client

@@ -605,13 +605,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      // Production OAuth flow
-      const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
+      // ✅ FIXED: Use proper OAuth callback (separate from webhook)
+      const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
       const tokens = await quickbooksService.exchangeCodeForTokens(
         code as string, 
         redirectUri, 
         realmId as string
       );
+
+      console.log('🔧 QuickBooks OAuth callback processed:', { redirectUri, realmId });
 
       // Store integration
       await storage.upsertIntegration({
@@ -719,23 +721,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // QuickBooks webhook endpoint  
+  // ✅ FIXED: QuickBooks webhook endpoint (separate from OAuth callback)
   app.post('/quickbooks/webhook', async (req, res) => {
     try {
       const signature = req.headers['intuit-signature'] as string;
       const payload = JSON.stringify(req.body);
       
-      // Verify webhook signature
+      console.log('📥 QuickBooks webhook received:', { 
+        entities: req.body?.eventNotifications?.[0]?.dataChangeEvent?.entities || 'unknown',
+        realmId: req.body?.eventNotifications?.[0]?.realmId || 'unknown'
+      });
+      
+      // Verify webhook signature with HMAC-SHA256
       if (!quickbooksService.verifyWebhookSignature(payload, signature)) {
-        console.error('Invalid QuickBooks webhook signature');
+        console.error('❌ Invalid QuickBooks webhook signature');
         return res.status(401).json({ message: 'Invalid signature' });
       }
 
-      // Process webhook payload
+      // Process webhook payload for real-time data sync
       await quickbooksService.processWebhook(req.body);
       
+      console.log('✅ QuickBooks webhook processed successfully');
       res.status(200).json({ message: 'Webhook processed successfully' });
     } catch (error) {
-      console.error('Error processing QuickBooks webhook:', error);
+      console.error('❌ Error processing QuickBooks webhook:', error);
       res.status(500).json({ message: 'Failed to process webhook' });
     }
   });
@@ -1772,23 +1781,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Authentication routes
+  // NextAuth authentication routes
+  app.use('/api/auth/*', async (req, res) => {
+    const { ExpressAuth } = await import('@auth/express');
+    const { authConfig } = await import('./auth/nextauth-config');
+    
+    return ExpressAuth(req, res, authConfig);
+  });
+
+  // Get current user session
   app.get('/api/auth/user', async (req, res) => {
     try {
-      // Mock user for development
-      const mockUser = {
-        id: 'dev_user_123',
-        firstName: 'Spencer',
-        lastName: 'Reiser',
-        email: 'spencer@marinpestcontrol.com',
-        role: 'admin',
-        profileImageUrl: null
-      };
+      const { getServerSession } = await import('next-auth');
+      const { authConfig } = await import('./auth/nextauth-config');
       
-      res.json(mockUser);
+      const session = await getServerSession(authConfig);
+      
+      if (!session || !session.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      res.json(session.user);
     } catch (error) {
       console.error('Error fetching user:', error);
-      res.status(401).json({ error: 'Unauthorized' });
+      res.status(500).json({ error: 'Authentication error' });
     }
   });
 
