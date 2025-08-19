@@ -1,0 +1,48 @@
+{msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Deprecated sandbox analytics API used by plugin: developer-apps-subscription-ui {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+warn @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+value @ appf-intuit-logging.12facdd9b5b3878a6274.js:1
+i._executeAction @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+Promise.then
+i.handleAction @ 614.284f7dea8ace4103d91b.js:1
+n._doExecution @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+n.triggerExecutions @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+Promise.then
+sendEvents @ 614.284f7dea8ace4103d91b.js:1
+$n @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+n.onWidgetReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+s.onReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+value @ BaseWidget.min.js:1
+value @ BaseWidget.min.js:1
+handleWidgetReady @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+(anonymous) @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2Understand this warning
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Shell - application bootstrapped successfully! {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 aalstepup cookie {msgProps: {…}, appProps: null, context: {…}, queued: true, flushLogsImmediately: false, …}
+appf-intuit-performance.8664001a0a687b46de4e.js:1 No end time provided for PAGE_LOAD:/app/connect/oauth2
+e.pageInitiated @ appf-intuit-performance.8664001a0a687b46de4e.js:1
+r.pageInitiated @ AppInitializer.5f295ebf95ba5af648b8.js:1
+n._doExecution @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ 614.284f7dea8ace4103d91b.js:1
+n.triggerExecutions @ 614.284f7dea8ace4103d91b.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+Promise.then
+sendEvents @ AppInitializer.5f295ebf95ba5af648b8.js:1
+$n @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ AppInitializer.5f295ebf95ba5af648b8.js:1
+n.onWidgetReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+s.onReady @ AppInitializer.5f295ebf95ba5af648b8.js:1
+(anonymous) @ 543.06b6e9f0fec2e351c5c7.js:1
+value @ BaseWidget.min.js:1
+value @ BaseWidget.min.js:1
+handleWidgetReady @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2
+(anonymous) @ developer-apps-subscription-ui-landing-1_0_0.2de9181f864c9de5.js:2Understand this warning
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 Verify AAL 25 Response: true userAuthId: 9130354661988036; channel: c2qb; region: US; clientId: ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN; {msgProps: null, appProps: null, context: {…}, queued: false, flushLogsImmediately: false, …}
+appf-intuit-logging.12facdd9b5b3878a6274.js:1 AAL compliant in connection workflow for app:  clientId: ABsZIbsFlAirINSbOkhdPN4U4KP3eeLKSQTt6g80hK4xTcEjBN;, applying PreAuth decision {msgProps: null, appProps: null

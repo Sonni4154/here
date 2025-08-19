@@ -543,11 +543,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/quickbooks/generate-dev-auth-url', async (req, res) => {
     try {
       const { default: OAuthClient } = await import('intuit-oauth');
+      // Use appropriate redirect URI based on environment
+      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+      const redirectUri = replitDomain 
+        ? `https://${replitDomain}/quickbooks/callback`
+        : 'https://wemakemarin.com/quickbooks/callback';
+      
+      console.log('🔍 Environment debug:');
+      console.log('   REPLIT_DOMAINS:', process.env.REPLIT_DOMAINS);
+      console.log('   Extracted domain:', replitDomain);
+      console.log('🔧 Using redirect URI for dev auth:', redirectUri);
+      
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
         clientSecret: process.env.QBO_CLIENT_SECRET!,
         environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
-        redirectUri: 'https://wemakemarin.com/quickbooks/callback',
+        redirectUri: redirectUri,
       });
 
       const authUrl = oauthClient.authorizeUri({
@@ -589,11 +600,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Realm ID:', realmId);
       
       const { default: OAuthClient } = await import('intuit-oauth');
+      
+      // Use appropriate redirect URI based on environment
+      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+      const defaultRedirectUri = replitDomain 
+        ? `https://${replitDomain}/quickbooks/callback`
+        : process.env.QBO_REDIRECT_URI!;
+      
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
         clientSecret: process.env.QBO_CLIENT_SECRET!,
         environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
-        redirectUri: redirectUri || process.env.QBO_REDIRECT_URI!,
+        redirectUri: redirectUri || defaultRedirectUri,
       });
 
       // Exchange code for tokens
@@ -633,11 +651,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Redirect URI:', process.env.QBO_REDIRECT_URI);
 
       const { default: OAuthClient } = await import('intuit-oauth');
+      
+      // Use appropriate redirect URI based on environment
+      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+      const redirectUri = replitDomain 
+        ? `https://${replitDomain}/quickbooks/callback`
+        : process.env.QBO_REDIRECT_URI!;
+      
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
         clientSecret: process.env.QBO_CLIENT_SECRET!,
         environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
-        redirectUri: process.env.QBO_REDIRECT_URI!,
+        redirectUri: redirectUri,
       });
 
       const authUrl = oauthClient.authorizeUri({
