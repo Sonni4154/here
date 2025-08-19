@@ -1,49 +1,12 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { FileText, UserPlus, FolderSync } from "lucide-react";
+import { FileText, UserPlus } from "lucide-react";
 import CreateInvoiceModal from "@/components/modals/create-invoice-modal";
+import UnifiedSyncStatus from "@/components/sync/unified-sync-status";
 
 export default function QuickActions() {
   const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const syncMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest('POST', '/api/sync/quickbooks');
-    },
-    onSuccess: () => {
-      toast({
-        title: "FolderSync Completed",
-        description: "Successfully synced with QuickBooks",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/activity'] });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "FolderSync Failed",
-        description: error.message || "Failed to sync with QuickBooks",
-        variant: "destructive",
-      });
-    },
-  });
 
   const actions = [
     {
@@ -62,15 +25,6 @@ export default function QuickActions() {
       iconColor: "text-green-600",
       onClick: () => window.location.href = "/customers",
     },
-    {
-      title: "FolderSync Data",
-      description: "Manual sync with QuickBooks",
-      icon: FolderSync,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-      onClick: () => syncMutation.mutate(),
-      loading: syncMutation.isPending,
-    },
   ];
 
   return (
@@ -87,11 +41,10 @@ export default function QuickActions() {
                 variant="ghost"
                 className="w-full justify-start h-auto p-3"
                 onClick={action.onClick}
-                disabled={action.loading}
               >
                 <div className="flex items-center space-x-3 w-full">
                   <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                    <action.icon className={`w-5 h-5 ${action.iconColor} ${action.loading ? 'animate-spin' : ''}`} />
+                    <action.icon className={`w-5 h-5 ${action.iconColor}`} />
                   </div>
                   <div className="text-left">
                     <div className="font-medium text-slate-900">{action.title}</div>
@@ -100,6 +53,14 @@ export default function QuickActions() {
                 </div>
               </Button>
             ))}
+          </div>
+          
+          {/* QuickBooks Sync Status */}
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-slate-700">QuickBooks Sync</span>
+            </div>
+            <UnifiedSyncStatus variant="button" showLabel={true} size="sm" />
           </div>
         </CardContent>
       </Card>

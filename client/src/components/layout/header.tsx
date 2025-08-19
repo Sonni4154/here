@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Bell, Plus, CheckCircle, Clock, AlertCircle, Calendar } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import CreateInvoiceModal from "@/components/modals/create-invoice-modal";
-import SyncButton from "@/components/sync/sync-button";
+import UnifiedSyncStatus from "@/components/sync/unified-sync-status";
 
 interface HeaderProps {
   title: string;
@@ -16,18 +14,6 @@ export default function Header({ title, description }: HeaderProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const { data: integrations } = useQuery({
-    queryKey: ['/api/integrations'],
-  });
-
-  const { data: syncStatus } = useQuery({
-    queryKey: ['/api/sync/status'],
-    refetchInterval: 10000,
-  });
-
-  const quickbooksIntegration = Array.isArray(integrations) ? integrations.find((i: any) => i.provider === 'quickbooks') : undefined;
-  const isQuickBooksConnected = quickbooksIntegration?.connected;
-  
   // Mock notifications for now
   const notifications = [
     { id: 1, title: "QuickBooks Sync Complete", description: "Synchronized 150 customers and 89 products", time: "2 minutes ago", type: "success" },
@@ -39,34 +25,22 @@ export default function Header({ title, description }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-white shadow-sm border-b border-slate-200">
+      <header className="bg-black shadow-sm border-b border-gray-800">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+            <h1 className="text-2xl font-semibold text-white">{title}</h1>
             {description && (
-              <p className="text-slate-600">{description}</p>
+              <p className="text-gray-300">{description}</p>
             )}
           </div>
           <div className="flex items-center space-x-4">
-            {/* QuickBooks Sync Status */}
-            {isQuickBooksConnected ? (
-              <Badge variant="secondary" className="bg-green-900 text-green-100 border-green-700">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                QuickBooks Connected
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="bg-amber-900 text-amber-100 border-amber-700">
-                <Clock className="w-3 h-3 mr-1" />
-                QuickBooks Disconnected
-              </Badge>
-            )}
-
-            <SyncButton />
+            {/* Unified QuickBooks Sync Status */}
+            <UnifiedSyncStatus variant="badge" showLabel={true} />
             
             {/* Notifications */}
             <Popover open={showNotifications} onOpenChange={setShowNotifications}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative">
+                <Button variant="ghost" size="sm" className="relative text-white hover:bg-gray-800">
                   <Bell className="w-4 h-4" />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -109,7 +83,7 @@ export default function Header({ title, description }: HeaderProps) {
             {/* Create Button */}
             <Button 
               onClick={() => setShowCreateModal(true)}
-              className="bg-primary hover:bg-blue-600"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Invoice

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCw, Settings as SettingsIcon, ExternalLink, Database, FileSpreadsheet, Calendar, AlertCircle, CheckCircle, Plus, Trash2 } from "lucide-react";
 import { SiQuickbooks, SiGoogle, SiMicrosoft, SiPostgresql } from "react-icons/si";
+import UnifiedSyncStatus from "@/components/sync/unified-sync-status";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -219,33 +220,24 @@ export default function Settings() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                {getIntegrationStatus('quickbooks') === 'Connected' ? (
-                  <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Manage your QuickBooks Online connection and sync settings
+                  </p>
+                  {getIntegrationStatus('quickbooks') === 'Connected' && (
                     <Button
                       onClick={() => initialDataPull.mutate()}
                       disabled={initialDataPull.isPending}
-                      size="sm"
-                    >
-                      <Database className="w-4 h-4 mr-2" />
-                      {initialDataPull.isPending ? "Pulling Data..." : "Pull Data"}
-                    </Button>
-                    <Button
-                      onClick={() => syncQuickBooks.mutate()}
-                      disabled={syncQuickBooks.isPending}
                       variant="outline"
                       size="sm"
                     >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      {syncQuickBooks.isPending ? "Syncing..." : "Sync Now"}
+                      <Database className="w-4 h-4 mr-2" />
+                      {initialDataPull.isPending ? "Pulling Data..." : "Pull Initial Data"}
                     </Button>
-                  </>
-                ) : (
-                  <Button onClick={() => window.location.href = '/quickbooks/connect'}>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Connect QuickBooks
-                  </Button>
-                )}
+                  )}
+                </div>
+                <UnifiedSyncStatus variant="button" showLabel={true} size="sm" />
               </div>
             </CardContent>
           </Card>
