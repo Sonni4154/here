@@ -171,7 +171,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/sync/status', async (req, res) => {
     try {
       const status = await syncScheduler.getScheduleStatus();
-      res.json(status);
+      
+      // Get integrations data for sync status - use mock data for development
+      const integrations = [{
+        provider: 'quickbooks',
+        isActive: false, // Will be true after QuickBooks connection
+        lastSyncAt: null,
+        syncStatus: 'pending'
+      }];
+      
+      // Mock recent activity logs
+      const recentLogs = [];
+      
+      res.json({
+        ...status,
+        integrations,
+        recentLogs
+      });
     } catch (error) {
       console.error("Error getting sync status:", error);
       res.status(500).json({ message: "Failed to get sync status" });
@@ -180,8 +196,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/sync/trigger-data', async (req, res) => {
     try {
+      console.log('Data import sync triggered');
       await syncScheduler.triggerDataImportSync();
-      res.json({ message: "Data import sync triggered successfully" });
+      
+      // Return enhanced response with sync status
+      res.json({ 
+        message: "Data import sync triggered successfully",
+        status: "triggered",
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error("Error triggering data sync:", error);
       res.status(500).json({ message: "Failed to trigger data sync" });
@@ -195,6 +218,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error triggering QuickBooks sync:", error);
       res.status(500).json({ message: "Failed to trigger QuickBooks sync" });
+    }
+  });
+
+  // QuickBooks specific sync endpoint that the frontend calls
+  app.post('/api/integrations/quickbooks/sync', async (req, res) => {
+    try {
+      const userId = 'dev_user_123';
+      
+      // Check if we have QuickBooks connection
+      const integrations = await storage.getIntegrations(userId);
+      const qbIntegration = integrations.find(i => i.provider === 'quickbooks');
+      
+      if (!qbIntegration || !qbIntegration.isActive) {
+        return res.status(400).json({ 
+          message: "QuickBooks not connected. Please connect to QuickBooks first.",
+          needsConnection: true
+        });
+      }
+
+      // Trigger QuickBooks sync
+      console.log('🔄 Starting QuickBooks sync...');
+      await quickbooksService.fullSync(userId);
+      
+      res.json({ 
+        message: "QuickBooks sync completed successfully",
+        status: "success",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error syncing QuickBooks:", error);
+      res.status(500).json({ 
+        message: "Failed to sync with QuickBooks",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
