@@ -749,6 +749,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Dashboard Calendar Integration - Google Calendar Events
+  app.get('/api/calendar/events', async (req, res) => {
+    try {
+      const { week } = req.query;
+      
+      // Mock calendar events with real Google Calendar structure for development
+      const mockEvents = [
+        {
+          id: '1',
+          title: 'Insect Control - Johnson Residence',
+          start: new Date().toISOString(),
+          end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+          calendar: '57d4687457176ca4e4b211910e7a69c19369d08081871d9f8ab54d234114c991@group.calendar.google.com',
+          customer: {
+            name: 'Sarah Johnson',
+            phone: '(415) 555-0123',
+            address: '123 Main St, San Rafael, CA'
+          },
+          technician: 'Spencer Reiser',
+          status: 'scheduled',
+          serviceType: 'Insect Control',
+          notes: 'Customer mentioned wasp nest near front door'
+        },
+        {
+          id: '2',
+          title: 'Rodent Control - Smith Property',
+          start: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+          end: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+          calendar: '3fc1d11fe5330c3e1c4693570419393a1d74036ef1b4cb866dd337f8c8cc6c8e@group.calendar.google.com',
+          customer: {
+            name: 'Mike Smith',
+            phone: '(415) 555-0456',
+            address: '456 Oak Ave, Novato, CA'
+          },
+          technician: 'Boden Haines',
+          status: 'scheduled',
+          serviceType: 'Rodent Control'
+        }
+      ];
+
+      res.json(mockEvents);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      res.status(500).json({ error: 'Failed to fetch calendar events' });
+    }
+  });
+
+  // Work Queue API for technician task management
+  app.get('/api/work-queue', async (req, res) => {
+    try {
+      const mockQueue = [
+        {
+          id: 'wq1',
+          customer: 'Johnson Residence',
+          address: '123 Main St, San Rafael, CA',
+          phone: '(415) 555-0123',
+          serviceType: 'Insect Control',
+          scheduledTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          arrivalWindow: '10:00 AM - 12:00 PM',
+          technician: 'Spencer Reiser',
+          priority: 'high' as const,
+          status: 'pending' as const,
+          estimatedDuration: 90,
+          specialInstructions: 'Customer mentioned wasp nest near front door. Allergic to bee stings - use caution.'
+        },
+        {
+          id: 'wq2',
+          customer: 'Smith Property',
+          address: '456 Oak Ave, Novato, CA',
+          phone: '(415) 555-0456',
+          serviceType: 'Rodent Control',
+          scheduledTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+          arrivalWindow: '1:00 PM - 3:00 PM',
+          technician: 'Boden Haines',
+          priority: 'medium' as const,
+          status: 'pending' as const,
+          estimatedDuration: 120
+        },
+        {
+          id: 'wq3',
+          customer: 'Martinez Home',
+          address: '789 Pine St, Mill Valley, CA',
+          phone: '(415) 555-0789',
+          serviceType: 'Trap Check',
+          scheduledTime: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+          arrivalWindow: '3:00 PM - 5:00 PM',
+          technician: 'Jorge Sisneros',
+          priority: 'low' as const,
+          status: 'pending' as const,
+          estimatedDuration: 45
+        }
+      ];
+
+      res.json(mockQueue);
+    } catch (error) {
+      console.error('Error fetching work queue:', error);
+      res.status(500).json({ error: 'Failed to fetch work queue' });
+    }
+  });
+
+  // Service completion endpoint for checklist data
+  app.post('/api/service-completions', async (req, res) => {
+    try {
+      const completionData = req.body;
+      
+      console.log('📋 Service completion received:', {
+        eventId: completionData.eventId,
+        customer: completionData.customer?.name,
+        technician: completionData.technician,
+        completedSteps: completionData.checklist?.filter((item: any) => item.completed).length
+      });
+
+      // Here you would save to database and update calendar
+      // For now, simulate successful completion
+      
+      res.json({ 
+        message: 'Service completion recorded successfully',
+        id: completionData.eventId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error recording service completion:', error);
+      res.status(500).json({ error: 'Failed to record service completion' });
+    }
+  });
+
 
 
   // QuickBooks disconnect endpoint

@@ -87,7 +87,7 @@ function Router() {
 
         {/* Protected routes */}
         <Route path="/">
-          {() => <ProtectedRoute component={Dashboard} />}
+          {() => <ProtectedRoute component={TeamDashboard} />}
         </Route>
         
         <Route path="/dashboard">
