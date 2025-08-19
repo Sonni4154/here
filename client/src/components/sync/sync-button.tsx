@@ -45,7 +45,7 @@ export default function SyncButton() {
 
   const quickbooksSyncMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/sync/quickbooks', {
+      return await apiRequest('/api/integrations/quickbooks/sync', {
         method: 'POST',
       });
     },
@@ -53,19 +53,32 @@ export default function SyncButton() {
       queryClient.invalidateQueries({ queryKey: ["/api/sync/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
       toast({
         title: "Sync Complete",
         description: "QuickBooks data has been synchronized successfully.",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Sync Failed",
-        description: error instanceof Error ? error.message : "Failed to sync with QuickBooks",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      if (error?.needsConnection) {
+        toast({
+          title: "QuickBooks Not Connected",
+          description: "Please connect to QuickBooks first using the Connect button.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sync Failed",
+          description: error instanceof Error ? error.message : "Failed to sync with QuickBooks",
+          variant: "destructive",
+        });
+      }
     },
   });
+
+  const connectToQuickBooks = () => {
+    window.open('/quickbooks/connect', '_blank');
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -134,19 +147,31 @@ export default function SyncButton() {
                   </div>
                   <div className="flex items-center space-x-2">
                     {getStatusBadge(integration.syncStatus)}
-                    {integration.provider === 'quickbooks' && integration.isActive && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => quickbooksSyncMutation.mutate()}
-                        disabled={isSyncing}
-                      >
-                        {isSyncing ? (
-                          <RefreshCw className="w-3 h-3 animate-spin" />
+                    {integration.provider === 'quickbooks' && (
+                      <div className="flex space-x-2">
+                        {!integration.isActive ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={connectToQuickBooks}
+                          >
+                            Connect
+                          </Button>
                         ) : (
-                          'Sync Now'
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => quickbooksSyncMutation.mutate()}
+                            disabled={isSyncing}
+                          >
+                            {isSyncing ? (
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                            ) : (
+                              'Sync Now'
+                            )}
+                          </Button>
                         )}
-                      </Button>
+                      </div>
                     )}
                   </div>
                 </div>
