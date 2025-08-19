@@ -1143,57 +1143,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.getUser(userId);
       
-      // Return mock enhanced punch data for now
-      const mockEntries = [
-        {
-          id: "entry-1",
-          userId: userId,
-          punchType: 'in',
-          punchTime: new Date().toISOString(),
-          notes: "Punching in for insect spray at Garcia residence",
-          nextDuty: "Insect Control - Interior/Exterior Spray",
-          requiresAdjustment: false,
-          location: JSON.stringify({ lat: 38.0293, lng: -122.1017 }),
-          ipAddress: "192.168.1.100",
-          userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
-          dailyTotalHours: 7.5,
-          weeklyTotalHours: 32.0,
-          payStatus: 'pending',
-          user: {
-            firstName: user?.firstName || "John",
-            lastName: user?.lastName || "Doe",
-            role: user?.role || "employee"
-          },
-          customer: {
-            name: "Garcia Family - Residential"
-          }
-        },
-        {
-          id: "entry-2",
-          userId: userId,
-          punchType: 'out',
-          punchTime: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-          notes: "Completed spray treatment, no issues",
-          nextDuty: "Travel to next location",
-          requiresAdjustment: false,
-          location: JSON.stringify({ lat: 38.0293, lng: -122.1017 }),
-          ipAddress: "192.168.1.100",
-          userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
-          dailyTotalHours: 6.5,
-          weeklyTotalHours: 31.0,
-          payStatus: 'pending',
-          user: {
-            firstName: user?.firstName || "John",
-            lastName: user?.lastName || "Doe", 
-            role: user?.role || "employee"
-          },
-          customer: {
-            name: "Martinez Property - Commercial"
-          }
-        }
-      ];
+      // Get clock entries from database
+      const entries = user?.role === 'admin' 
+        ? await storage.getAllClockEntries() 
+        : await storage.getClockEntries(userId);
       
-      res.json(mockEntries);
+      res.json(entries);
     } catch (error) {
       console.error("Error fetching punch entries:", error);
       res.status(500).json({ message: "Failed to fetch punch entries" });

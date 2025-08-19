@@ -499,11 +499,45 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Clock entry operations
-  async getClockEntries(userId: string, period?: string): Promise<ClockEntry[]> {
-    let query = db.select().from(clockEntries).where(eq(clockEntries.userId, userId));
-    
-    // Add period filtering logic here when needed
-    return query.orderBy(desc(clockEntries.clockIn));
+  async getClockEntries(userId: string, period?: string): Promise<any[]> {
+    try {
+      const entries = await db.select({
+        id: clockEntries.id,
+        userId: clockEntries.userId,
+        customerId: clockEntries.customerId,
+        punchType: sql<string>`COALESCE(${clockEntries.punchType}, 'in')`,
+        punchTime: sql<Date>`COALESCE(${clockEntries.punchTime}, ${clockEntries.clockIn})`,
+        notes: sql<string>`COALESCE(${clockEntries.notes}, 'Notes for your punchclock...')`,
+        nextDuty: sql<string>`COALESCE(${clockEntries.nextDuty}, '')`,
+        requiresAdjustment: sql<boolean>`COALESCE(${clockEntries.requiresAdjustment}, false)`,
+        location: clockEntries.location,
+        ipAddress: sql<string>`COALESCE(${clockEntries.ipAddress}, '127.0.0.1')`,
+        userAgent: sql<string>`COALESCE(${clockEntries.userAgent}, 'Unknown')`,
+        dailyTotalHours: sql<number>`COALESCE(${clockEntries.dailyTotalHours}, 0)`,
+        weeklyTotalHours: sql<number>`COALESCE(${clockEntries.weeklyTotalHours}, 0)`,
+        payStatus: sql<string>`COALESCE(${clockEntries.payStatus}, 'pending')`,
+        createdAt: clockEntries.createdAt,
+        user: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role
+        },
+        customer: {
+          name: customers.name
+        }
+      })
+      .from(clockEntries)
+      .leftJoin(users, eq(clockEntries.userId, users.id))
+      .leftJoin(customers, eq(clockEntries.customerId, customers.id))
+      .where(eq(clockEntries.userId, userId))
+      .orderBy(desc(sql`COALESCE(${clockEntries.punchTime}, ${clockEntries.clockIn})`))
+      .limit(50);
+      
+      return entries;
+    } catch (error) {
+      console.error('Error fetching clock entries for user:', error);
+      return [];
+    }
   }
 
   async getActiveClockEntry(userId: string): Promise<ClockEntry | undefined> {
@@ -530,6 +564,56 @@ export class DatabaseStorage implements IStorage {
       .where(eq(clockEntries.id, id))
       .returning();
     return updatedEntry;
+  }
+
+  async getAllClockEntries(): Promise<any[]> {
+    try {
+      const entries = await db.select({
+        id: clockEntries.id,
+        userId: clockEntries.userId,
+        customerId: clockEntries.customerId,
+        punchType: sql<string>`COALESCE(${clockEntries.punchType}, 'in')`,
+        punchTime: sql<Date>`COALESCE(${clockEntries.punchTime}, ${clockEntries.clockIn})`,
+        notes: sql<string>`COALESCE(${clockEntries.notes}, 'Notes for your punchclock...')`,
+        nextDuty: sql<string>`COALESCE(${clockEntries.nextDuty}, '')`,
+        requiresAdjustment: sql<boolean>`COALESCE(${clockEntries.requiresAdjustment}, false)`,
+        location: clockEntries.location,
+        ipAddress: sql<string>`COALESCE(${clockEntries.ipAddress}, '127.0.0.1')`,
+        userAgent: sql<string>`COALESCE(${clockEntries.userAgent}, 'Unknown')`,
+        dailyTotalHours: sql<number>`COALESCE(${clockEntries.dailyTotalHours}, 0)`,
+        weeklyTotalHours: sql<number>`COALESCE(${clockEntries.weeklyTotalHours}, 0)`,
+        payStatus: sql<string>`COALESCE(${clockEntries.payStatus}, 'pending')`,
+        createdAt: clockEntries.createdAt,
+        user: {
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role
+        },
+        customer: {
+          name: customers.name
+        }
+      })
+      .from(clockEntries)
+      .leftJoin(users, eq(clockEntries.userId, users.id))
+      .leftJoin(customers, eq(clockEntries.customerId, customers.id))
+      .orderBy(desc(sql`COALESCE(${clockEntries.punchTime}, ${clockEntries.clockIn})`))
+      .limit(100);
+      
+      return entries;
+    } catch (error) {
+      console.error('Error fetching all clock entries:', error);
+      return [];
+    }
+  }
+
+  async flagClockEntry(id: string, flag: string): Promise<void> {
+    try {
+      await db.update(clockEntries)
+        .set({ adminFlags: [flag] })
+        .where(eq(clockEntries.id, id));
+    } catch (error) {
+      console.error('Error flagging clock entry:', error);
+    }
   }
 
   // Get upcoming schedules for calendar sync
