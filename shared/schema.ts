@@ -9,6 +9,7 @@ import {
   decimal,
   integer,
   boolean,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -323,7 +324,10 @@ export const integrations = pgTable("integrations", {
   lastSyncAt: timestamp("last_sync_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  // Unique constraint on userId and provider combination
+  uniqueIndex("unique_user_provider").on(table.userId, table.provider)
+]);
 
 // Database connections table for external PostgreSQL databases
 export const databaseConnections = pgTable("database_connections", {

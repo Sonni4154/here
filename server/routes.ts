@@ -619,15 +619,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create simulated QuickBooks integration for development
         const userId = 'dev_user_123';
         
-        await storage.upsertIntegration({
-          userId,
-          provider: 'quickbooks',
-          accessToken: 'dev_simulated_token_' + Date.now(),
-          refreshToken: 'dev_simulated_refresh_' + Date.now(),
-          realmId: realmId as string,
-          isActive: true,
-          lastSyncAt: new Date()
-        });
+        // Check for existing integration first
+        const existingIntegration = await storage.getIntegration(userId, 'quickbooks');
+        if (existingIntegration) {
+          await storage.updateIntegration(existingIntegration.id, {
+            isActive: true,
+            lastSyncAt: new Date()
+          });
+        } else {
+          await storage.createIntegration({
+            userId,
+            provider: 'quickbooks',
+            accessToken: 'dev_simulated_token_' + Date.now(),
+            refreshToken: 'dev_simulated_refresh_' + Date.now(),
+            realmId: realmId as string,
+            isActive: true,
+            lastSyncAt: new Date()
+          });
+        }
 
         console.log('✅ Simulated QuickBooks integration created for development');
         return res.redirect('/products?qb_success=simulated_connection');
@@ -654,15 +663,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('✅ Tokens exchanged successfully');
 
       // Store integration
-      await storage.upsertIntegration({
-        userId,
-        provider: 'quickbooks',
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        realmId: tokens.realmId,
-        isActive: true,
-        lastSyncAt: new Date()
-      });
+      const existingIntegration = await storage.getIntegration(userId, 'quickbooks');
+      if (existingIntegration) {
+        await storage.updateIntegration(existingIntegration.id, {
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          realmId: tokens.realmId,
+          isActive: true,
+          lastSyncAt: new Date()
+        });
+      } else {
+        await storage.createIntegration({
+          userId,
+          provider: 'quickbooks',
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          realmId: tokens.realmId,
+          isActive: true,
+          lastSyncAt: new Date()
+        });
+      }
 
       console.log('✅ Integration stored successfully');
 
@@ -687,16 +707,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🧪 Creating simulated QuickBooks connection...');
       const userId = 'dev_user_123';
       
-      // Create simulated QuickBooks integration
-      await storage.upsertIntegration({
-        userId,
-        provider: 'quickbooks',
-        accessToken: 'dev_simulated_token_' + Date.now(),
-        refreshToken: 'dev_simulated_refresh_' + Date.now(),
-        realmId: 'dev_realm_' + Date.now(),
-        isActive: true,
-        lastSyncAt: new Date()
-      });
+      // Check if integration already exists
+      const existingIntegration = await storage.getIntegration(userId, 'quickbooks');
+      
+      if (existingIntegration) {
+        console.log('✅ Simulated QuickBooks connection already exists');
+        
+        // Update it to be active
+        await storage.updateIntegration(existingIntegration.id, {
+          isActive: true,
+          lastSyncAt: new Date()
+        });
+      } else {
+        // Create new simulated QuickBooks integration
+        await storage.createIntegration({
+          userId,
+          provider: 'quickbooks',
+          accessToken: 'dev_simulated_token_' + Date.now(),
+          refreshToken: 'dev_simulated_refresh_' + Date.now(),
+          realmId: 'dev_realm_' + Date.now(),
+          isActive: true,
+          lastSyncAt: new Date()
+        });
+      }
 
       // Import test data to simulate successful sync
       console.log('📊 Importing test data...');

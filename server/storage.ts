@@ -388,19 +388,37 @@ export class DatabaseStorage implements IStorage {
     return integration;
   }
 
-  async upsertIntegration(integration: InsertIntegration): Promise<Integration> {
+  async createIntegration(integration: InsertIntegration): Promise<Integration> {
     const [newIntegration] = await db
       .insert(integrations)
       .values(integration)
-      .onConflictDoUpdate({
-        target: [integrations.userId, integrations.provider],
-        set: {
-          ...integration,
-          updatedAt: new Date(),
-        },
-      })
       .returning();
     return newIntegration;
+  }
+
+  async updateIntegration(id: string, updates: Partial<InsertIntegration>): Promise<Integration> {
+    const [updatedIntegration] = await db
+      .update(integrations)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(integrations.id, id))
+      .returning();
+    return updatedIntegration;
+  }
+
+  async upsertIntegration(integration: InsertIntegration): Promise<Integration> {
+    // Try to find existing integration first
+    const existing = await this.getIntegration(integration.userId, integration.provider);
+    
+    if (existing) {
+      // Update existing integration
+      return this.updateIntegration(existing.id, integration);
+    } else {
+      // Create new integration
+      return this.createIntegration(integration);
+    }
   }
 
   // Activity log operations
