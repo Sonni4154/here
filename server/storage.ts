@@ -517,7 +517,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createClockEntry(clockEntry: InsertClockEntry): Promise<ClockEntry> {
+    console.log('Creating clock entry:', clockEntry);
     const [newEntry] = await db.insert(clockEntries).values(clockEntry).returning();
+    console.log('Created clock entry:', newEntry);
     return newEntry;
   }
 

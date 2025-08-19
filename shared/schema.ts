@@ -355,13 +355,26 @@ export const clockEntries = pgTable("clock_entries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   customerId: varchar("customer_id").references(() => customers.id),
-  clockIn: timestamp("clock_in").notNull(),
-  clockOut: timestamp("clock_out"),
-  totalHours: decimal("total_hours", { precision: 5, scale: 2 }),
-  status: varchar("status", { length: 20 }).default("active"), // active, completed
-  location: varchar("location"), // JSON string for GPS coordinates
-  notes: text("notes"),
+  punchType: varchar("punch_type").notNull(), // 'in', 'out', 'break_in', 'break_out', 'lunch_in', 'lunch_out'
+  punchTime: timestamp("punch_time").notNull(),
+  location: text("location"), // GPS coordinates as JSON
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"), // To detect mobile vs desktop
+  notes: text("notes").default("Notes for your punchclock..."),
+  nextDuty: varchar("next_duty"), // Next assigned duty description
+  requiresAdjustment: boolean("requires_adjustment").default(false),
+  adjustmentRequested: boolean("adjustment_requested").default(false),
+  adjustmentEmailSent: boolean("adjustment_email_sent").default(false),
+  adjustmentReason: text("adjustment_reason"),
+  originalPunchTime: timestamp("original_punch_time"), // Store original before adjustments
+  adjustedBy: varchar("adjusted_by").references(() => users.id),
+  adjustedAt: timestamp("adjusted_at"),
+  adminFlags: text("admin_flags").array(), // 'suspicious', 'overtime', 'no_calendar_event', 'weekend', 'after_hours'
   calendarEventId: varchar("calendar_event_id"), // Google Calendar event ID
+  paired: boolean("paired").default(false), // Whether this punch has been paired with an opposite punch
+  dailyTotalHours: decimal("daily_total_hours", { precision: 5, scale: 2 }), // Updated when punch is completed
+  weeklyTotalHours: decimal("weekly_total_hours", { precision: 5, scale: 2 }), // Updated when punch is completed
+  payStatus: varchar("pay_status").default('pending'), // 'pending', 'approved', 'paid', 'void', 'flagged'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

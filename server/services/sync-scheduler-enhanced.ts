@@ -466,11 +466,13 @@ export class EnhancedSyncScheduler {
   }
 
   startAllSchedules(): void {
+    // Enable and start all schedules
     for (const [provider, config] of this.scheduleConfigs.entries()) {
-      if (config.enabled) {
-        this.startSchedule(provider);
-      }
+      config.enabled = true;
+      this.scheduleConfigs.set(provider, config);
+      this.startSchedule(provider);
     }
+    console.log('🚀 Enabled and started all sync schedules');
   }
 
   stopAllSchedules(): void {

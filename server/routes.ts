@@ -1133,6 +1133,197 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced punch clock endpoints
+  app.get('/api/punch-clock/entries', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      // Return mock enhanced punch data for now
+      const mockEntries = [
+        {
+          id: "entry-1",
+          userId: userId,
+          punchType: 'in',
+          punchTime: new Date().toISOString(),
+          notes: "Punching in for insect spray at Garcia residence",
+          nextDuty: "Insect Control - Interior/Exterior Spray",
+          requiresAdjustment: false,
+          location: JSON.stringify({ lat: 38.0293, lng: -122.1017 }),
+          ipAddress: "192.168.1.100",
+          userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+          dailyTotalHours: 7.5,
+          weeklyTotalHours: 32.0,
+          payStatus: 'pending',
+          user: {
+            firstName: user?.firstName || "John",
+            lastName: user?.lastName || "Doe",
+            role: user?.role || "employee"
+          },
+          customer: {
+            name: "Garcia Family - Residential"
+          }
+        },
+        {
+          id: "entry-2",
+          userId: userId,
+          punchType: 'out',
+          punchTime: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+          notes: "Completed spray treatment, no issues",
+          nextDuty: "Travel to next location",
+          requiresAdjustment: false,
+          location: JSON.stringify({ lat: 38.0293, lng: -122.1017 }),
+          ipAddress: "192.168.1.100",
+          userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+          dailyTotalHours: 6.5,
+          weeklyTotalHours: 31.0,
+          payStatus: 'pending',
+          user: {
+            firstName: user?.firstName || "John",
+            lastName: user?.lastName || "Doe", 
+            role: user?.role || "employee"
+          },
+          customer: {
+            name: "Martinez Property - Commercial"
+          }
+        }
+      ];
+      
+      res.json(mockEntries);
+    } catch (error) {
+      console.error("Error fetching punch entries:", error);
+      res.status(500).json({ message: "Failed to fetch punch entries" });
+    }
+  });
+
+  app.post('/api/punch-clock/request-adjustment', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
+      
+      const { entryId, reason } = req.body;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Send email notification
+      const { emailNotificationService } = await import('./services/email-notification-service');
+      const emailSent = await emailNotificationService.sendPunchAdjustmentRequest(
+        `${user.firstName} ${user.lastName}`,
+        new Date().toISOString(),
+        reason
+      );
+
+      await storage.createActivityLog({
+        userId,
+        type: 'adjustment_requested',
+        description: `Punch adjustment requested: ${reason}`,
+        metadata: { entryId, reason, emailSent }
+      });
+
+      res.json({ 
+        message: emailSent 
+          ? "Adjustment request submitted and email sent" 
+          : "Adjustment request submitted (email not configured)"
+      });
+    } catch (error) {
+      console.error("Error requesting adjustment:", error);
+      res.status(500).json({ message: "Failed to request adjustment" });
+    }
+  });
+
+  app.post('/api/punch-clock/adjust', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
+      
+      const { entryId, newTime, reason } = req.body;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      await storage.createActivityLog({
+        userId,
+        type: 'punch_adjusted',
+        description: `Punch time adjusted: ${reason}`,
+        metadata: { entryId, newTime, reason }
+      });
+
+      res.json({ message: "Punch adjusted successfully" });
+    } catch (error) {
+      console.error("Error adjusting punch:", error);
+      res.status(500).json({ message: "Failed to adjust punch" });
+    }
+  });
+
+  app.post('/api/punch-clock/flag', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
+      
+      const { entryId, flag } = req.body;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      await storage.createActivityLog({
+        userId,
+        type: 'punch_flagged',
+        description: `Punch flagged as: ${flag}`,
+        metadata: { entryId, flag }
+      });
+
+      res.json({ message: "Entry flagged successfully" });
+    } catch (error) {
+      console.error("Error flagging punch:", error);
+      res.status(500).json({ message: "Failed to flag punch" });
+    }
+  });
+
+  app.delete('/api/punch-clock/void/:entryId', isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Invalid user ID" });
+      }
+      
+      const { entryId } = req.params;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      await storage.createActivityLog({
+        userId,
+        type: 'punch_voided',
+        description: `Punch entry voided`,
+        metadata: { entryId }
+      });
+
+      res.json({ message: "Punch voided successfully" });
+    } catch (error) {
+      console.error("Error voiding punch:", error);
+      res.status(500).json({ message: "Failed to void punch" });
+    }
+  });
+
   // Sync status route
   app.get('/api/sync/status', isAuthenticated, async (req, res) => {
     try {

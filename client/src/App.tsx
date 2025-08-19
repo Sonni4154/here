@@ -27,6 +27,7 @@ import CollaborationDashboard from "@/pages/collaboration";
 import ProductivityDashboard from "@/pages/productivity-dashboard";
 import TeamDashboard from "@/pages/team-dashboard";
 import SyncSchedulerPage from "@/pages/sync-scheduler";
+import PunchClockLogsPage from "@/pages/punch-clock-logs";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
 import { RouterErrorBoundary } from "@/components/router/error-boundary";
@@ -167,6 +168,10 @@ function Router() {
         
         <Route path="/sync-scheduler">
           {() => <ProtectedRoute component={SyncSchedulerPage} />}
+        </Route>
+        
+        <Route path="/punch-clock-logs">
+          {() => <ProtectedRoute component={PunchClockLogsPage} />}
         </Route>
 
         {/* Integration callback routes */}
