@@ -418,8 +418,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customer routes
   app.get('/api/customers', async (req: any, res) => {
     try {
-      // Mock customers for development  
-      res.json([]);
+      const userId = getUserId(req) || 'dev_user_123';
+      const customers = await storage.getCustomers(userId);
+      res.json(customers);
     } catch (error) {
       console.error("Error fetching customers:", error);
       res.status(500).json({ message: "Failed to fetch customers" });
@@ -450,8 +451,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product routes
   app.get('/api/products', async (req: any, res) => {
     try {
-      // Mock products for development
-      res.json([]);
+      const userId = getUserId(req) || 'dev_user_123';
+      const products = await storage.getProducts(userId);
+      res.json(products);
     } catch (error) {
       console.error("Error fetching products:", error);
       res.status(500).json({ message: "Failed to fetch products" });

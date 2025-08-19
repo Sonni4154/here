@@ -117,10 +117,10 @@ export default function SyncScheduler() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-slate-100 text-slate-800';
+      case 'high': return 'bg-red-900 text-red-100';
+      case 'medium': return 'bg-yellow-900 text-yellow-100';
+      case 'low': return 'bg-green-900 text-green-100';
+      default: return 'bg-slate-800 text-slate-100';
     }
   };
 

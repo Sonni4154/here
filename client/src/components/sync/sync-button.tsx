@@ -96,13 +96,13 @@ export default function SyncButton() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'success':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Synced</Badge>;
+        return <Badge variant="default" className="bg-green-900 text-green-100">Synced</Badge>;
       case 'error':
-        return <Badge variant="destructive">Error</Badge>;
+        return <Badge variant="destructive" className="bg-red-900 text-red-100">Error</Badge>;
       case 'syncing':
-        return <Badge variant="outline" className="text-blue-600">Syncing</Badge>;
+        return <Badge variant="outline" className="bg-blue-900 text-blue-100 border-blue-700">Syncing</Badge>;
       default:
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary" className="bg-slate-800 text-slate-100">Pending</Badge>;
     }
   };
 
