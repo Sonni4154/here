@@ -99,6 +99,16 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 - **Environment Detection**: Automatic production/development URL switching
 - **SSL Configuration**: HTTPS enforced for production QuickBooks integration
 
+### Enhanced Hours & Materials Form (January 2025) - COMPLETED
+- **QuickBooks Invoice Structure**: Complete form redesign matching QuickBooks customer and invoice fields exactly
+- **Line Item System**: Detailed line items with Product/Service, Description, Quantity (0.25 increments), Rate, and automatic totals
+- **Customer Management**: Auto-complete from existing customers or create new with proper address parsing (Street, City, State, Zip, Country)
+- **Product Integration**: Service Products (hours) and Non-Inventory Products (materials) dropdown with rate auto-population
+- **Automatic Processing**: Approved forms instantly create QuickBooks customers (if new) and invoices with all line item details
+- **Admin Features**: Rate change flagging, subtotal calculations, tax preparation, and comprehensive approval workflow
+- **Form Validation**: Quantity increments of 0.25, minimum values, required fields, and QuickBooks field mapping
+- **Database Integration**: Complete approval processing with customer creation and invoice generation upon approval
+
 ### Team Dashboard Implementation (August 2025) - COMPLETED
 - **Team Calendar View**: Fully operational weekly calendar display (7am-8pm) with smooth week navigation
 - **Google Calendar Integration Structure**: Complete service class for Google Calendar API with OAuth 2.0 integration

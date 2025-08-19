@@ -20,6 +20,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Team Dashboard", href: "/team-dashboard", icon: Users },
   { name: "Time Tracking", href: "/time-tracking", icon: Clock },
+  { name: "Hours & Materials", href: "/hours-materials", icon: FileText },
   { name: "Clock In/Out", href: "/clock", icon: Timer },
   { name: "Punchclock Logs", href: "/punch-clock-logs", icon: Settings },
   { name: "Products", href: "/products", icon: Package },

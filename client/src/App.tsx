@@ -10,6 +10,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import TimeTracking from "@/pages/time-tracking";
 import MarinJobForm from "@/pages/marin-job-form";
+import HoursAndMaterialsForm from "@/pages/hours-materials-form";
 
 import Clock from "@/pages/clock";
 import Invoices from "@/pages/invoices";
@@ -101,6 +102,10 @@ function Router() {
         
         <Route path="/marin-job-form">
           {() => <ProtectedRoute component={MarinJobForm} />}
+        </Route>
+        
+        <Route path="/hours-materials">
+          {() => <ProtectedRoute component={HoursAndMaterialsForm} />}
         </Route>
         
 

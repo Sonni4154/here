@@ -2112,38 +2112,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function processHoursAndMaterialsApproval(approval: any) {
     try {
       // Convert hours & materials to QuickBooks customer/invoice
-      const qbData = approval.data;
+      const formData = approval.data;
+      
+      console.log(`Processing Hours & Materials approval ${approval.id} for ${formData.customerName}`);
+      
+      // Create full customer address
+      const fullAddress = `${formData.customerStreetAddress}, ${formData.customerCity}, ${formData.customerState} ${formData.customerZip}, ${formData.customerCountry}`;
       
       // Create customer if doesn't exist
-      let customer = await storage.getCustomerByName?.(qbData.customerName);
+      let customer = await storage.getCustomerByName(formData.customerName);
       if (!customer) {
+        console.log(`Creating new customer: ${formData.customerName}`);
         customer = await storage.createCustomer({
-          name: qbData.customerName,
-          email: qbData.customerEmail || '',
-          phone: qbData.customerPhone || '',
-          address: qbData.customerAddress || '',
-          notes: `Created from H&M approval ${approval.id}`
+          name: formData.customerName,
+          email: formData.customerEmail || '',
+          phone: formData.customerPhone || '',
+          address: fullAddress,
+          notes: `Created from Hours & Materials form - Approval ${approval.id}`
         });
+      } else {
+        console.log(`Using existing customer: ${formData.customerName}`);
       }
 
-      // Create invoice
-      await storage.createInvoice({
+      // Create invoice with line items
+      const invoiceData = {
         customerId: customer.id,
-        invoiceNumber: `HM-${approval.id}`,
-        amount: parseFloat(approval.totalAmount || '0'),
+        customerName: customer.name,
+        date: new Date(),
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        items: formData.lineItems.map((item: any) => ({
+          description: `${item.productService} - ${item.description}`,
+          quantity: parseFloat(item.quantity),
+          price: parseFloat(item.rate),
+          total: parseFloat(item.quantity) * parseFloat(item.rate)
+        })),
+        subtotal: parseFloat(formData.subtotal || '0'),
+        tax: 0, // Will be calculated by QuickBooks
+        total: parseFloat(formData.subtotal || '0'),
         status: 'pending',
-        description: `Hours and Materials - ${qbData.serviceType || 'Service'}`,
+        notes: formData.notes || `Created from Hours & Materials form by ${approval.submittedBy}`,
         metadata: {
           approvalId: approval.id,
-          hoursWorked: qbData.hoursWorked,
-          materialsUsed: qbData.materialsUsed,
-          technician: approval.submittedBy
+          submittedBy: approval.submittedBy,
+          formType: 'Hours & Materials',
+          originalSubmissionDate: approval.submitDate
         }
-      });
+      };
 
-      console.log(`Processed H&M approval ${approval.id} -> Created invoice`);
+      const invoice = await storage.createInvoice(invoiceData);
+      
+      console.log(`Created invoice ${invoice.id} for customer ${customer.name} - Total: $${invoiceData.total}`);
+
+      // TODO: Sync to QuickBooks Online via API
+      // This would create the customer and invoice in QuickBooks
+      // const qbInvoice = await quickbooksService.createInvoice(invoiceData);
+      
+      return { customer, invoice };
     } catch (error) {
-      console.error('Error processing H&M approval:', error);
+      console.error('Error processing Hours & Materials approval:', error);
+      throw error;
     }
   }
 
