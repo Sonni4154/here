@@ -115,6 +115,21 @@ export default function Products() {
     }
   });
 
+  const simulateQuickBooks = useMutation({
+    mutationFn: () => apiRequest("/api/integrations/quickbooks/simulate-connection", { method: "POST" }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({ 
+        title: "QuickBooks Simulation Created", 
+        description: data.note || "Development connection established with test data" 
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Simulation failed", description: error.message, variant: "destructive" });
+    }
+  });
+
   // Filter products based on search and filters
   const filteredProducts = (products as any[]).filter((product: any) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -178,15 +193,25 @@ export default function Products() {
                   Sync Items
                 </Button>
               ) : (
-                <Button
-                  onClick={() => {
-                    console.log('Starting QuickBooks connection...');
-                    window.location.href = '/quickbooks/connect';
-                  }}
-                  size="sm"
-                >
-                  Connect QuickBooks
-                </Button>
+                <>
+                  <Button
+                    onClick={() => {
+                      console.log('Starting QuickBooks connection...');
+                      window.location.href = '/quickbooks/connect';
+                    }}
+                    size="sm"
+                  >
+                    Connect QuickBooks
+                  </Button>
+                  <Button
+                    onClick={() => simulateQuickBooks.mutate()}
+                    disabled={simulateQuickBooks.isPending}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {simulateQuickBooks.isPending ? "Creating..." : "Dev Test"}
+                  </Button>
+                </>
               )}
             </div>
           </div>

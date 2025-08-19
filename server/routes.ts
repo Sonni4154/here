@@ -197,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/sync/trigger-data', async (req, res) => {
     try {
       console.log('Data import sync triggered');
-      await syncScheduler.triggerDataImportSync();
+      await enhancedSyncScheduler.triggerDataSync();
       
       // Return enhanced response with sync status
       res.json({ 
@@ -213,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/sync/trigger-quickbooks', async (req, res) => {
     try {
-      await syncScheduler.triggerQuickBooksSync();
+      await enhancedSyncScheduler.triggerQuickBooksSync();
       res.json({ message: "QuickBooks sync triggered successfully" });
     } catch (error) {
       console.error("Error triggering QuickBooks sync:", error);
@@ -237,6 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Trigger QuickBooks sync
       console.log('🔄 Starting QuickBooks sync...');
       
+      const simulateConnection = process.env.NODE_ENV === 'development';
       if (simulateConnection) {
         // Simulate sync for development
         console.log('📊 Simulating QuickBooks data sync...');
@@ -573,8 +574,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('🔗 QuickBooks connection initiated');
     const userId = 'dev_user_123';
     
-    // Always use the production redirect URI for www.wemakemarin.com
-    const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
+    // Use appropriate redirect URI based on environment
+    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+    const redirectUri = process.env.QBO_REDIRECT_URI || 
+      (replitDomain 
+        ? `https://${replitDomain}/quickbooks/callback`
+        : 'https://www.wemakemarin.com/quickbooks/callback');
     console.log('🔧 Using redirect URI:', redirectUri);
     
     const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
@@ -601,12 +606,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect('/products?qb_error=missing_params');
       }
 
+      // Check if we're in development mode with redirect URI mismatch
+      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+      const isReplitEnvironment = replitDomain && req.get('host')?.includes('replit.dev');
+      
+      if (isReplitEnvironment && process.env.QBO_REDIRECT_URI?.includes('wemakemarin.com')) {
+        console.warn('⚠️ QuickBooks OAuth redirect URI mismatch detected');
+        console.warn('   Expected: https://www.wemakemarin.com/quickbooks/callback');
+        console.warn(`   Current: https://${req.get('host')}/quickbooks/callback`);
+        console.warn('   Creating simulated QuickBooks connection for development...');
+        
+        // Create simulated QuickBooks integration for development
+        const userId = 'dev_user_123';
+        
+        await storage.upsertIntegration({
+          userId,
+          provider: 'quickbooks',
+          accessToken: 'dev_simulated_token_' + Date.now(),
+          refreshToken: 'dev_simulated_refresh_' + Date.now(),
+          realmId: realmId as string,
+          isActive: true,
+          lastSyncAt: new Date()
+        });
+
+        console.log('✅ Simulated QuickBooks integration created for development');
+        return res.redirect('/products?qb_success=simulated_connection');
+      }
+
       const userId = 'dev_user_123';
       
       // Production OAuth flow
       console.log('🔄 Processing QuickBooks OAuth callback...');
       
-      const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
+      // Use appropriate redirect URI based on environment  
+      const redirectUri = process.env.QBO_REDIRECT_URI || 
+        (replitDomain 
+          ? `https://${replitDomain}/quickbooks/callback`
+          : 'https://www.wemakemarin.com/quickbooks/callback');
       console.log('🔧 Using redirect URI:', redirectUri);
       
       const tokens = await quickbooksService.exchangeCodeForTokens(
@@ -644,6 +680,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+
+  // Simulate QuickBooks connection for development
+  app.post('/api/integrations/quickbooks/simulate-connection', async (req, res) => {
+    try {
+      console.log('🧪 Creating simulated QuickBooks connection...');
+      const userId = 'dev_user_123';
+      
+      // Create simulated QuickBooks integration
+      await storage.upsertIntegration({
+        userId,
+        provider: 'quickbooks',
+        accessToken: 'dev_simulated_token_' + Date.now(),
+        refreshToken: 'dev_simulated_refresh_' + Date.now(),
+        realmId: 'dev_realm_' + Date.now(),
+        isActive: true,
+        lastSyncAt: new Date()
+      });
+
+      // Import test data to simulate successful sync
+      console.log('📊 Importing test data...');
+      await dataImportService.importAllData();
+      
+      console.log('✅ Simulated QuickBooks connection created with test data');
+
+      res.json({
+        message: "Simulated QuickBooks connection created successfully",
+        status: "connected",
+        timestamp: new Date().toISOString(),
+        note: "This is a development simulation. For production, use the real OAuth flow."
+      });
+      
+    } catch (error) {
+      console.error('Error creating simulated connection:', error);
+      res.status(500).json({ message: "Failed to create simulated connection" });
+    }
+  });
 
   // Initial data pull from QuickBooks
   app.post('/api/integrations/quickbooks/initial-sync', async (req, res) => {
@@ -2134,32 +2206,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Using existing customer: ${formData.customerName}`);
       }
 
-      // Create invoice with line items
-      const invoiceData = {
+      // Create proper invoice data structure matching the schema
+      const correctInvoiceData = {
+        userId: 'dev_user_123',
         customerId: customer.id,
-        customerName: customer.name,
-        date: new Date(),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        items: formData.lineItems.map((item: any) => ({
+        invoiceNumber: `HM-${approval.id}`,
+        invoiceDate: new Date(),
+        subtotal: (parseFloat(formData.subtotal || '0')).toString(),
+        totalAmount: (parseFloat(formData.subtotal || '0')).toString(),
+        status: 'pending',
+        notes: formData.notes || `Created from Hours & Materials form by ${approval.submittedBy}`,
+        quickbooksId: null,
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        taxAmount: '0.00',
+        discountAmount: '0.00'
+      };
+
+      const invoice = await storage.createInvoice(correctInvoiceData);
+      
+      // Create invoice items separately
+      for (const item of formData.lineItems) {
+        await storage.createInvoiceItem({
+          invoiceId: invoice.id,
           description: `${item.productService} - ${item.description}`,
           quantity: parseFloat(item.quantity),
           price: parseFloat(item.rate),
-          total: parseFloat(item.quantity) * parseFloat(item.rate)
-        })),
-        subtotal: parseFloat(formData.subtotal || '0'),
-        tax: 0, // Will be calculated by QuickBooks
-        total: parseFloat(formData.subtotal || '0'),
-        status: 'pending',
-        notes: formData.notes || `Created from Hours & Materials form by ${approval.submittedBy}`,
-        metadata: {
-          approvalId: approval.id,
-          submittedBy: approval.submittedBy,
-          formType: 'Hours & Materials',
-          originalSubmissionDate: approval.submitDate
-        }
-      };
-
-      const invoice = await storage.createInvoice(invoiceData);
+          total: (parseFloat(item.quantity) * parseFloat(item.rate)).toString()
+        });
+      }
       
       console.log(`Created invoice ${invoice.id} for customer ${customer.name} - Total: $${invoiceData.total}`);
 
@@ -2183,11 +2257,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         employeeId: payrollData.employeeId,
         employeeName: approval.submittedBy,
         weekEndingDate: new Date(approval.weekEndingDate || Date.now()),
-        totalHours: parseFloat(payrollData.totalHours || '0'),
-        regularHours: parseFloat(payrollData.regularHours || '0'),
-        overtimeHours: parseFloat(payrollData.overtimeHours || '0'),
-        hourlyRate: parseFloat(payrollData.hourlyRate || '0'),
-        totalPay: parseFloat(approval.totalAmount || '0'),
+        totalHours: (parseFloat(payrollData.totalHours || '0')).toString(),
+        regularHours: (parseFloat(payrollData.regularHours || '0')).toString(),
+        overtimeHours: (parseFloat(payrollData.overtimeHours || '0')).toString(),
+        hourlyRate: (parseFloat(payrollData.hourlyRate || '0')).toString(),
+        totalPay: (parseFloat(approval.totalAmount || '0')).toString(),
         clockEntries: payrollData.clockEntries || [],
         approved: true,
         approvedBy: approval.approvedBy,

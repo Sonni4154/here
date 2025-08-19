@@ -62,10 +62,14 @@ export class QuickBooksService {
     this.baseUrl = 'https://quickbooks.api.intuit.com'; // Production API URL
     
     // ✅ FIXED: Use separate OAuth callback URI from environment or construct properly
+    // For Replit development, use the .replit.app domain 
+    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
     const redirectUri = process.env.QBO_REDIRECT_URI || 
-      (isProduction 
-        ? 'https://www.wemakemarin.com/quickbooks/callback'  // OAuth callback
-        : 'http://localhost:5000/quickbooks/callback');
+      (replitDomain 
+        ? `https://${replitDomain}/quickbooks/callback`  // Replit environment
+        : isProduction 
+          ? 'https://www.wemakemarin.com/quickbooks/callback'  // Production
+          : 'http://localhost:5000/quickbooks/callback');  // Local development
 
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({
@@ -78,6 +82,8 @@ export class QuickBooksService {
     console.log('🔧 QuickBooks OAuth Configuration:');
     console.log(`   Environment: ${this.environment}`);
     console.log(`   OAuth Callback: ${redirectUri}`);
+    console.log(`   Replit Domain: ${replitDomain || 'not available'}`);
+    console.log(`   QBO_REDIRECT_URI env: ${process.env.QBO_REDIRECT_URI || 'not set'}`);
     console.log(`   Webhook URL: ${process.env.QBO_WEBHOOK_URI || (isProduction ? 'https://www.wemakemarin.com/quickbooks/webhook' : 'http://localhost:5000/quickbooks/webhook')}`);
   }
 
@@ -95,6 +101,14 @@ export class QuickBooksService {
   // Exchange authorization code for tokens using Intuit OAuth Client
   async exchangeCodeForTokens(code: string, redirectUri: string, realmId: string): Promise<QuickBooksTokens> {
     try {
+      console.log('🔄 Token exchange attempt:', {
+        codeLength: code.length,
+        redirectUri,
+        realmId,
+        environment: this.environment,
+        clientIdLength: this.clientId.length
+      });
+
       // Create a new OAuth client with the correct redirect URI for token exchange
       const tokenClient = new OAuthClient({
         clientId: this.clientId,
@@ -127,10 +141,25 @@ export class QuickBooksService {
         realmId: authResponse.token.realmId || realmId
       };
     } catch (error: any) {
-      console.error('Error exchanging code for tokens:', error);
+      console.error('❌ Error exchanging code for tokens:', {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        data: error.data,
+        authResponse: error.authResponse,
+        intuit_tid: error.intuit_tid,
+        code: code.substring(0, 20) + '...',
+        redirectUri: redirectUri
+      });
       console.error('OAuth Client environment:', this.environment);
       console.error('OAuth Client ID:', this.clientId.substring(0, 10) + '...');
-      throw new Error(`Failed to exchange authorization code for tokens: ${error.message}`);
+      
+      // More detailed error message based on error type
+      if (error.status === 400) {
+        throw new Error(`QuickBooks OAuth Error (400): The authorization code may be invalid or expired. Original error: ${error.message}`);
+      } else {
+        throw new Error(`Failed to exchange authorization code for tokens: ${error.message}`);
+      }
     }
   }
 
