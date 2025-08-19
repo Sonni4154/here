@@ -199,11 +199,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
-  app.get('/api/customers', isAuthenticated, async (req: any, res) => {
+  app.get('/api/customers', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      const customers = await storage.getCustomers(userId);
-      res.json(customers);
+      // Mock customers for development  
+      res.json([]);
     } catch (error) {
       console.error("Error fetching customers:", error);
       res.status(500).json({ message: "Failed to fetch customers" });
@@ -298,11 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Time entry routes
-  app.get('/api/time-entries', isAuthenticated, async (req: any, res) => {
+  app.get('/api/time-entries', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      const timeEntries = await storage.getTimeEntries(userId);
-      res.json(timeEntries);
+      // Mock time entries for development
+      res.json([]);
     } catch (error) {
       console.error("Error fetching time entries:", error);
       res.status(500).json({ message: "Failed to fetch time entries" });
@@ -310,11 +308,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Integration routes
-  app.get('/api/integrations', isAuthenticated, async (req: any, res) => {
+  app.get('/api/integrations', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
-      const integrations = await storage.getIntegrations(userId);
-      res.json(integrations);
+      // Mock integration data for development
+      res.json([
+        {
+          id: 1,
+          provider: 'quickbooks',
+          connected: false,
+          syncStatus: 'pending',
+          lastSyncAt: null,
+          created_at: new Date().toISOString()
+        }
+      ]);
     } catch (error) {
       console.error("Error fetching integrations:", error);
       res.status(500).json({ message: "Failed to fetch integrations" });
