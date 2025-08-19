@@ -2,9 +2,7 @@
 
 ## Overview
 
-The Internal Dashboard is a comprehensive business management platform for Marin Pest Control featuring role-based access control (admin/employee), advanced employee management, time tracking with enhanced punch clock functionality, customer management with trapping program tracking, QuickBooks 2-way synchronization with PostgreSQL database integration, Google Calendar multi-calendar integration for employee scheduling and task assignment, photo upload capability for job documentation, automated workflow triggers, and dual authentication system supporting both password login and Google OAuth. The system includes full employee contact management with pay rate tracking, weekly performance summaries, rodent trapping program management, and intelligent automation that processes business events in real-time.
-
-The system is built as a modern web application with a React frontend, Express.js backend, and PostgreSQL database, specifically designed for internal team use with role-based navigation and comprehensive employee lifecycle management.
+The Internal Dashboard is a comprehensive business management platform for Marin Pest Control. It features role-based access control, advanced employee and customer management (including trapping programs), QuickBooks 2-way synchronization, Google Calendar integration for scheduling, photo upload for job documentation, automated workflow triggers, and dual authentication. The system supports full employee lifecycle management, detailed time tracking, and intelligent automation for real-time business event processing. Its primary purpose is to streamline internal operations and enhance productivity for Marin Pest Control.
 
 ## User Preferences
 
@@ -14,161 +12,97 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 - **Framework**: React 18 with TypeScript
-- **UI Library**: Shadcn/UI components built on Radix UI primitives
-- **Styling**: Tailwind CSS with CSS variables for theming
-- **Routing**: Wouter for client-side routing
-- **State Management**: TanStack Query (React Query) for server state management
+- **UI Library**: Shadcn/UI (Radix UI primitives)
+- **Styling**: Tailwind CSS
+- **Routing**: Wouter
+- **State Management**: TanStack Query
 - **Form Handling**: React Hook Form with Zod validation
-- **Build Tool**: Vite for development and production builds
+- **Build Tool**: Vite
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ES modules
-- **Database ORM**: Drizzle ORM for type-safe database operations
-- **Authentication**: Replit Auth with OpenID Connect integration
+### Backend
+- **Runtime**: Node.js with Express.js
+- **Language**: TypeScript
+- **Database ORM**: Drizzle ORM
+- **Authentication**: Replit Auth with OpenID Connect
 - **Session Management**: Express sessions with PostgreSQL storage
-- **API Design**: RESTful API endpoints with structured error handling
+- **API Design**: RESTful API
 
-### Database Design
-- **Database**: PostgreSQL via Neon serverless
+### Database
+- **Type**: PostgreSQL (Neon serverless)
 - **Schema Management**: Drizzle migrations
-- **Core Tables**: 
-  - Users (authentication integration)
-  - Sessions (required for Replit Auth)
-  - Customers, Products, Invoices, InvoiceItems
-  - Integrations (third-party service connections)
-  - ActivityLogs (audit trail)
-  - WorkflowTriggers, WorkflowExecutions, WorkflowActionTemplates (automation engine)
+- **Core Data**: Users, Sessions, Customers, Products, Invoices, InvoiceItems, Integrations, ActivityLogs, Workflow Triggers/Executions
 
 ### Authentication & Authorization
-- **Provider**: Replit OpenID Connect authentication
-- **Session Storage**: PostgreSQL-backed sessions with connect-pg-simple
-- **Security**: HTTP-only cookies with secure flags for production
+- **Provider**: Replit OpenID Connect
+- **Session Storage**: PostgreSQL-backed sessions
+- **Security**: HTTP-only cookies
 - **User Management**: Automatic user creation and profile management
 
-### Third-Party Integrations
-- **QuickBooks**: OAuth 2.0 integration for accounting data synchronization
-- **JotForm**: API integration for form submission processing
-- **Google Calendar**: OAuth 2.0 for employee scheduling and task management with two-way sync, automatic clock in/out calendar events
-- **Google Workspace**: OAuth 2.0 for Sheets, Docs, and Drive access
-- **Sync Strategy**: Manual and automated data synchronization with conflict resolution
-
 ### Design & Branding
-- **Theme**: Dark purple color scheme (HSL 263, 50%, 6% background)
-- **Logo**: Marin Pest Control logo integrated throughout the application
-- **Brand Colors**: Red (#FF6B6B), Blue (#74C0FC), Cream (#F5F3E0) from company logo
-- **Layout**: Sidebar navigation with company branding and comprehensive menu structure
+- **Theme**: Dark purple color scheme (HSL 263, 50%, 6%)
+- **Logo**: Marin Pest Control logo integrated
+- **Brand Colors**: Red, Blue, Cream
+- **Layout**: Sidebar navigation
 
 ### Photo Upload System
-- **Job Photos**: Before, after, and material/receipt photo uploads
-- **Integration**: Photos linked to time entries, material entries, and clock entries
-- **Metadata**: GPS coordinates, descriptions, and file metadata tracking
-- **UI**: Tabbed interface in time tracking with drag-and-drop file upload
-- **Storage**: Database schema ready for cloud storage integration (AWS S3, Google Cloud Storage)
+- **Capability**: Upload job-related photos (before/after, materials)
+- **Integration**: Photos linked to time and material entries
+- **Metadata**: GPS coordinates, descriptions
+- **Storage**: Database schema ready for cloud storage (e.g., S3)
 
 ### Business Data Integration
-- **Customer Database**: Real customer data from Marin Pest Control CSV files (466 customers)
-- **Service Catalog**: Complete product/service catalog with 89 items including pest control services, materials, and hardware
-- **Technician Management**: Employee records for Spencer Reiser, Boden Haines, Jorge Sisneros, and Tristan Ford
-- **Business Form**: Comprehensive job entry form matching actual business operations and JotForm structure
-- **Service Types**: Full range of services including Insect Spraying, Wasp/Hornet Removal, Exclusion, Remediation, Trapping
-- **Materials Tracking**: Hardware cloth, silicone, traps, disinfectants, and specialized pest control materials
+- **Pre-loaded Data**: Existing customer data (466 customers) and product/service catalog (89 items) from Marin Pest Control
+- **Employee Management**: Records for technicians
+- **Form Structure**: Matches business operations and JotForm structure
+- **Service Types**: Comprehensive range of pest control services
+- **Materials Tracking**: Specialized pest control materials
 
 ### Automated Workflow System
-- **Workflow Engine**: Event-driven automation that responds to form submissions, time tracking, and status changes
-- **Default Triggers**: Pre-configured workflows for job processing, material approval, clock events, and QuickBooks sync
-- **Action Types**: Notifications, integrations, data processing, scheduling, and analytics updates
-- **Execution Tracking**: Complete audit trail of workflow runs with success/failure tracking and retry logic
-- **Smart Conditions**: Time windows, data validation, and user-specific trigger conditions
-- **Real-time Processing**: Immediate workflow execution on business events with comprehensive error handling
+- **Engine**: Event-driven automation for form submissions, time tracking, status changes
+- **Actions**: Notifications, integrations, data processing, scheduling
+- **Execution Tracking**: Audit trail with success/failure and retry logic
+- **Conditions**: Time windows, data validation, user-specific triggers
+- **Processing**: Real-time execution with error handling
 
 ### Automated Data Synchronization
-- **Scheduled QuickBooks Sync**: Automated hourly sync of customers, products, and invoices
-- **Initial Data Pull**: One-click import of existing QuickBooks data for immediate content population
-- **Background Processing**: Non-blocking sync operations with detailed logging and error handling
-- **Sync Status Monitoring**: Real-time sync status display with manual trigger capabilities
-- **User-Controlled Automation**: Enable/disable automated sync with one-click toggle controls
+- **QuickBooks Sync**: Hourly automated sync of customers, products, and invoices
+- **Initial Data Pull**: One-click import from QuickBooks
+- **Processing**: Non-blocking background operations with logging
+- **Monitoring**: Real-time status display and manual trigger
 
-## Production Configuration
+### Form Enhancements
+- **QuickBooks Integration**: Hours & Materials form redesigned for QuickBooks invoice structure with line items, customer auto-complete, and product integration.
+- **Validation**: Strict validation for quantities and required fields.
+- **Approval Workflow**: Integrated approval for QuickBooks invoice generation.
 
-### Domain Setup
-- **Production Domain**: www.wemakemarin.com
-- **QuickBooks Callback URL**: https://www.wemakemarin.com/quickbooks/callback
-- **Environment Detection**: Automatic production/development URL switching
-- **SSL Configuration**: HTTPS enforced for production QuickBooks integration
+### Team Dashboard
+- **Calendar View**: Weekly calendar (7am-8pm) with navigation and Google Calendar integration.
+- **Work Queue**: Task assignment with customer details.
+- **Checklists**: Operational 12-step insect control checklist with conditional logic and progress tracking.
+- **Color Coding**: Service type visualization on calendar.
+- **Note System**: MM/DD/YY:Technician:Name format with bidirectional calendar sync.
+- **Responsiveness**: Mobile-responsive interface with dark theme.
 
-### Enhanced Hours & Materials Form (January 2025) - COMPLETED
-- **QuickBooks Invoice Structure**: Complete form redesign matching QuickBooks customer and invoice fields exactly
-- **Line Item System**: Detailed line items with Product/Service, Description, Quantity (0.25 increments), Rate, and automatic totals
-- **Customer Management**: Auto-complete from existing customers or create new with proper address parsing (Street, City, State, Zip, Country)
-- **Product Integration**: Service Products (hours) and Non-Inventory Products (materials) dropdown with rate auto-population
-- **Automatic Processing**: Approved forms instantly create QuickBooks customers (if new) and invoices with all line item details
-- **Admin Features**: Rate change flagging, subtotal calculations, tax preparation, and comprehensive approval workflow
-- **Form Validation**: Quantity increments of 0.25, minimum values, required fields, and QuickBooks field mapping
-- **Database Integration**: Complete approval processing with customer creation and invoice generation upon approval
+### Monitoring & Error Tracking
+- **Services**: Sentry integration for error tracking, comprehensive monitoring for sync jobs, API requests, and system health.
+- **QuickBooks Webhook Security**: HMAC-SHA256 verification and request idempotency.
+- **Health Checks**: For database, QuickBooks, sync scheduler.
+- **Performance Monitoring**: API response times, memory usage, sync job durations.
 
-### Team Dashboard Implementation (August 2025) - COMPLETED
-- **Team Calendar View**: Fully operational weekly calendar display (7am-8pm) with smooth week navigation
-- **Google Calendar Integration Structure**: Complete service class for Google Calendar API with OAuth 2.0 integration
-- **Work Queue Management**: Active task assignment system with customer contact details and service scheduling
-- **Insect Control Checklist**: Fully functional 12-step workflow with conditional logic, form validation, and progress tracking
-- **Real-time Updates**: Working checklist completion tracking with timestamps and strikethrough completed jobs
-- **Service Type Color Coding**: Operational visual calendar organization by service category (Insect Control, Rodent Control, etc.)
-- **Note System Architecture**: Implemented MM/DD/YY:Technician:Name format with bidirectional calendar sync capability
-- **Mobile-Responsive Interface**: Complete dark theme integration matching Marin Pest Control branding
-- **Authentication Resolution**: All API endpoints standardized under `/api` prefix with development access enabled
-- **Error Handling**: Comprehensive fallback mechanisms for robust application stability
-
-### Comprehensive Monitoring & Error Tracking (August 2025) - COMPLETED
-- **Error Tracking Service**: Complete error tracking with Sentry integration (when DSN configured) and console fallback
-- **Monitoring Service**: Real-time metrics tracking for sync jobs, API requests, punch clock activities, and system health
-- **QuickBooks Webhook Security**: Enhanced webhook verification using HMAC-SHA256 with timing-safe comparison
-- **Request Idempotency**: Request-Id middleware for idempotent QuickBooks operations and webhook processing
-- **Health Check System**: Comprehensive health checks for database, QuickBooks, sync scheduler, and system resources
-- **Alert Thresholds**: Smart alerting for high failure rates, stalled syncs, and API errors
-- **Performance Monitoring**: API response times, memory usage, sync job durations, and success rates
-- **QuickBooks URI Configuration Fixed (August 2025)**: Properly separated OAuth callback (`/quickbooks/callback`) from webhook endpoint (`/quickbooks/webhook`) with distinct environment variables (`QBO_REDIRECT_URI` vs `QBO_WEBHOOK_URI`)
-- **Monitoring Endpoints**: `/api/monitoring/metrics`, `/api/monitoring/health`, `/api/monitoring/report`
-- **Production Ready**: Comprehensive monitoring infrastructure for sync jobs and system performance
-
-### Enhanced OAuth-Intuit Integration (January 2025) - UPDATED AUGUST 2025
-- **Official Intuit OAuth Library**: Upgraded to `intuit-oauth` package for robust OAuth 2.0 handling
-- **Node-QuickBooks Integration**: Added `node-quickbooks` for enhanced API interactions and callback-based methods
-- **Comprehensive Webhook System**: Full webhook handler with signature verification using HMAC-SHA256
-- **Real-time Data Sync**: Webhook processing for Customer, Item, and Invoice entity changes (Create/Update/Delete)
-- **Enhanced Token Management**: Automatic token refresh with proper credential storage and validation
-- **Production Webhook URL**: https://www.wemakemarin.com/quickbooks/webhook
-- **API Documentation**: Complete endpoint documentation with 25+ routes covering all integrations
-- **Authentication Resolved**: Removed authentication barriers for development and production compatibility
-- **Production Ready**: All QuickBooks endpoints configured for production environment with proper client credentials
-
-### QuickBooks Integration Settings
-- **Production Client ID**: ABcxWWL62bJFQd43vWFkko728BJLReocAxJKfeeemZtXfVAO1S
-- **Development Client ID**: ABsZIbsFlA... (configured in Replit Secrets)
-- **Callback Route**: `/quickbooks/callback` (production) and `/api/integrations/quickbooks/callback` (development)
-- **OAuth Scope**: com.intuit.quickbooks.accounting
-- **Integration Features**: Customer sync, product catalog, invoice management, real-time webhooks
-- **Environment Detection**: Automatic production/development mode switching based on NODE_ENV
-- **API URLs**: Production (https://quickbooks.api.intuit.com) vs Sandbox (https://sandbox-quickbooks.api.intuit.com)
-- **Status**: Fully configured with credentials (QBO_CLIENT_ID, QBO_CLIENT_SECRET, QBO_WEBHOOK_VERIFIER)
-- **Sync Functionality**: Ready for OAuth connection and automated data synchronization
-
-### GitHub Integration Preparation
-- **Repository Structure**: Complete project organization for version control
-- **Deployment Scripts**: Automated deployment with interactive configuration
-- **Environment Management**: Comprehensive .env configuration with examples
-- **Production Ready**: PM2 process management, Nginx configuration, SSL setup
-- **Documentation**: Complete README.md with setup instructions and API documentation
+### OAuth-Intuit Integration
+- **Libraries**: `intuit-oauth` and `node-quickbooks` for robust OAuth 2.0 and API interactions.
+- **Webhooks**: Full webhook handler with signature verification for real-time data sync (Customer, Item, Invoice).
+- **Token Management**: Automatic token refresh.
 
 ### Google Calendar Integration
-- **Clock Events**: Automatic calendar event creation for employee clock in/out activities
-- **Company Calendar**: Centralized calendar for all employee time tracking events
-- **Real-time Updates**: Calendar events updated when employees clock out with actual duration
-- **Event Details**: Events include employee name, customer information, location, and notes
-- **Color Coding**: Green for clock in, red for clock out, blue for scheduled events
-- **OAuth Integration**: Secure Google OAuth 2.0 authentication for calendar access
+- **Clock Events**: Automatic calendar event creation for employee clock in/out.
+- **Centralized Calendar**: For time tracking events.
+- **Updates**: Real-time updates with actual durations.
+- **Details**: Events include employee name, customer, location, notes.
+- **Color Coding**: Green (clock in), red (clock out), blue (scheduled).
+- **Authentication**: Secure Google OAuth 2.0.
 
 ## External Dependencies
 
@@ -179,26 +113,25 @@ Authentication: Dual system supporting both password login and Google OAuth for 
 
 ### Authentication Services
 - **Replit Auth**: Primary authentication provider
-- **OpenID Connect**: Authentication protocol implementation
+- **OpenID Connect**: Authentication protocol
 
 ### Third-Party APIs
 - **QuickBooks Online API**: Accounting data integration
-- **JotForm API**: Form management and submission handling
-- **Google APIs**: Workspace integration (Sheets, Docs, Drive)
+- **JotForm API**: Form management
+- **Google APIs**: Calendar, Workspace (Sheets, Docs, Drive)
 
 ### UI & Styling
 - **Radix UI**: Accessible component primitives
-- **Tailwind CSS**: Utility-first styling framework
+- **Tailwind CSS**: Utility-first styling
 - **Lucide Icons**: Icon library
-- **React Icons**: Additional icon sets (Google, QuickBooks)
+- **React Icons**: Additional icon sets
 
 ### Development Tools
 - **Vite**: Build tool and development server
-- **TypeScript**: Type safety and development experience
-- **TanStack Query**: Server state management and caching
+- **TypeScript**: Language
+- **TanStack Query**: Server state management
 - **React Hook Form**: Form state management
 - **Zod**: Runtime type validation
 
 ### Deployment
 - **Replit**: Primary hosting platform
-- **Environment Variables**: Configuration management for API keys and database URLs
