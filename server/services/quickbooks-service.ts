@@ -55,11 +55,13 @@ export class QuickBooksService {
     this.clientId = process.env.QBO_CLIENT_ID!;
     this.clientSecret = process.env.QBO_CLIENT_SECRET!;
     this.webhookVerifierToken = process.env.QBO_WEBHOOK_VERIFIER!;
-    this.environment = (process.env.QBO_ENV as 'production' | 'sandbox') || 'production';
-    this.baseUrl = process.env.QBO_BASE_URL || 'https://quickbooks.api.intuit.com';
+    // PRODUCTION ONLY - Force production environment
+    this.environment = 'production';
+    // PRODUCTION ONLY - Use production QuickBooks API
+    this.baseUrl = 'https://quickbooks.api.intuit.com';
     
-    // Use definitive redirect URI from environment
-    const redirectUri = process.env.QBO_REDIRECT_URI!;
+    // PRODUCTION ONLY - Force production redirect URI
+    const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
 
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({
@@ -170,7 +172,11 @@ export class QuickBooksService {
         redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback'
       });
       
-      // Set the refresh token and call refresh
+      // Use the refresh token directly
+      refreshClient.token = {
+        refresh_token: refreshToken,
+      };
+      
       const authResponse = await refreshClient.refresh();
       
       if (!authResponse.token) {
@@ -219,8 +225,32 @@ export class QuickBooksService {
       throw new Error('QuickBooks integration not found or inactive');
     }
 
-    if (!integration.accessToken) {
-      throw new Error('No access token found');
+    // If no access token, try to refresh using refresh token
+    if (!integration.accessToken && !integration.refreshToken) {
+      throw new Error('QuickBooks token expired and refresh failed');
+    }
+    
+    if (!integration.accessToken && integration.refreshToken) {
+      console.log('No access token found, attempting refresh...');
+      try {
+        const refreshedTokens = await this.refreshAccessToken(integration.refreshToken);
+        
+        // Update stored tokens
+        await storage.upsertIntegration({
+          userId,
+          provider: 'quickbooks',
+          accessToken: refreshedTokens.access_token,
+          refreshToken: refreshedTokens.refresh_token,
+          realmId: integration.realmId || refreshedTokens.realmId,
+          isActive: true,
+          lastSyncAt: new Date()
+        });
+        
+        return refreshedTokens.access_token;
+      } catch (refreshError) {
+        console.error('Failed to refresh QuickBooks token:', refreshError);
+        throw new Error('QuickBooks token expired and refresh failed');
+      }
     }
 
     try {

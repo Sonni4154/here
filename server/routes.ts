@@ -723,11 +723,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('🔗 QuickBooks connection initiated');
     const userId = 'dev_user_123';
     
-    // Use appropriate redirect URI based on environment
-    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-    const redirectUri = replitDomain 
-      ? `https://${replitDomain}/quickbooks/callback`
-      : process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
+    // PRODUCTION ONLY - Use production redirect URI
+    const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
     console.log('🔧 Using redirect URI:', redirectUri);
     
     const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
@@ -763,8 +760,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const oauthClient = new OAuthClient({
             clientId: process.env.QBO_CLIENT_ID!,
             clientSecret: process.env.QBO_CLIENT_SECRET!,
-            environment: process.env.QBO_ENV as 'sandbox' | 'production' || 'production',
-            redirectUri: process.env.QBO_REDIRECT_URI!,
+            environment: 'production',
+            redirectUri: 'https://www.wemakemarin.com/quickbooks/callback',
           });
 
           // Exchange code for tokens
@@ -2578,6 +2575,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error sending denial emails:', error);
     }
   }
+
+  // Production QuickBooks auth page
+  app.get('/quickbooks-auth', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'quickbooks-auth-production.html'));
+  });
+
+  app.get('/quickbooks-setup', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'quickbooks-auth-production.html'));
+  });
 
   const httpServer = createServer(app);
   return httpServer;

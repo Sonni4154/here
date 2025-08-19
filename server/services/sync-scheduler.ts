@@ -238,7 +238,7 @@ export class SyncScheduler {
     switch (provider) {
       case 'quickbooks':
         const integration = await storage.getIntegration(userId, 'quickbooks');
-        if (integration?.accessToken) {
+        if (integration && integration.isActive && (integration.accessToken || integration.refreshToken)) {
           await this.quickbooksService.fullSync(userId);
         } else {
           throw new Error('QuickBooks not connected');

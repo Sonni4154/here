@@ -50,7 +50,8 @@ export default function SyncButton() {
 
   const quickbooksSyncMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/integrations/quickbooks/sync', {
+      // Use the correct endpoint that matches the working backend
+      return await apiRequest('/api/quickbooks/trigger-sync', {
         method: 'POST',
       });
     },
@@ -82,7 +83,7 @@ export default function SyncButton() {
   });
 
   const connectToQuickBooks = () => {
-    // Use same window to avoid popup blockers
+    // Use same window to avoid popup blockers - fix for development domain
     window.location.href = '/quickbooks/connect';
   };
 
@@ -142,7 +143,7 @@ export default function SyncButton() {
           <div>
             <h3 className="font-medium text-slate-900 mb-2">Integration Status</h3>
             <div className="space-y-2">
-              {(integrations || []).map((integration: any) => (
+              {Array.isArray(integrations) ? integrations.map((integration: any) => (
                 <div key={integration.provider} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     {getStatusIcon(integration.syncStatus)}
@@ -185,7 +186,7 @@ export default function SyncButton() {
                     )}
                   </div>
                 </div>
-              ))}
+              ))) : null}
             </div>
           </div>
 
