@@ -542,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate development authorization URL
   app.post('/api/quickbooks/generate-dev-auth-url', async (req, res) => {
     try {
-      const OAuthClient = require('intuit-oauth');
+      const { default: OAuthClient } = await import('intuit-oauth');
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
         clientSecret: process.env.QBO_CLIENT_SECRET!,
@@ -551,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const authUrl = oauthClient.authorizeUri({
-        scope: [OAuthClient.scopes.Accounting],
+        scope: ['com.intuit.quickbooks.accounting'],
         state: 'dev_manual_auth_' + Date.now(),
       });
 
@@ -588,7 +588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Code:', code.substring(0, 20) + '...');
       console.log('Realm ID:', realmId);
       
-      const OAuthClient = require('intuit-oauth');
+      const { default: OAuthClient } = await import('intuit-oauth');
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
         clientSecret: process.env.QBO_CLIENT_SECRET!,
@@ -632,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Client ID:', process.env.QBO_CLIENT_ID?.substring(0, 15) + '...');
       console.log('Redirect URI:', process.env.QBO_REDIRECT_URI);
 
-      const OAuthClient = require('intuit-oauth');
+      const { default: OAuthClient } = await import('intuit-oauth');
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
         clientSecret: process.env.QBO_CLIENT_SECRET!,
@@ -641,7 +641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const authUrl = oauthClient.authorizeUri({
-        scope: [OAuthClient.scopes.Accounting],
+        scope: ['com.intuit.quickbooks.accounting'],
         state: 'initial_auth_' + Date.now(),
       });
 
@@ -709,7 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('🎯 Processing initial authorization...');
         
         try {
-          const OAuthClient = require('intuit-oauth');
+          const { default: OAuthClient } = await import('intuit-oauth');
           const oauthClient = new OAuthClient({
             clientId: process.env.QBO_CLIENT_ID!,
             clientSecret: process.env.QBO_CLIENT_SECRET!,

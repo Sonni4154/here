@@ -1,5 +1,5 @@
 import express from 'express';
-const OAuthClient = require('intuit-oauth');
+import OAuthClient from 'intuit-oauth';
 
 const app = express();
 
@@ -20,7 +20,7 @@ console.log('Redirect URI:', process.env.QBO_REDIRECT_URI);
 app.get('/auth/quickbooks', (req, res) => {
   try {
     const authUrl = oauthClient.authorizeUri({
-      scope: [OAuthClient.scopes.Accounting],
+      scope: ['com.intuit.quickbooks.accounting'],
       state: 'initial_auth_' + Date.now(),
     });
     

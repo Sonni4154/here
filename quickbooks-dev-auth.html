@@ -98,7 +98,12 @@
 
     <script>
         function generateAuthUrl() {
-            fetch('/api/quickbooks/generate-dev-auth-url', {
+            // Use the correct backend port
+            const backendUrl = window.location.hostname.includes('replit.dev') 
+                ? `${window.location.protocol}//${window.location.hostname}` 
+                : `${window.location.protocol}//${window.location.hostname}:5000`;
+            
+            fetch(`${backendUrl}/api/quickbooks/generate-dev-auth-url`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -169,7 +174,11 @@
                 }
 
                 // Make the API call to exchange the code for tokens
-                fetch('/api/quickbooks/exchange-code', {
+                const backendUrl = window.location.hostname.includes('replit.dev') 
+                    ? `${window.location.protocol}//${window.location.hostname}` 
+                    : `${window.location.protocol}//${window.location.hostname}:5000`;
+                
+                fetch(`${backendUrl}/api/quickbooks/exchange-code`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
