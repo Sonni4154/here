@@ -571,12 +571,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QuickBooks connect endpoint
   app.get('/quickbooks/connect', (req: any, res) => {
     console.log('🔗 QuickBooks connection initiated');
-    const userId = 'dev_user_123'; // Use default user for development
-    const redirectUri = process.env.NODE_ENV === 'production' 
-      ? 'https://www.wemakemarin.com/quickbooks/callback'
-      : `${req.protocol}://${req.get('host')}/quickbooks/callback`;
+    const userId = 'dev_user_123';
+    
+    // Always use the production redirect URI for www.wemakemarin.com
+    const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
+    console.log('🔧 Using redirect URI:', redirectUri);
+    
     const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
-    console.log(`📋 Redirecting to: ${authUrl}`);
+    console.log(`📋 Redirecting to QuickBooks OAuth: ${authUrl}`);
     res.redirect(authUrl);
   });
 
@@ -585,35 +587,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QuickBooks callback route
   app.get('/quickbooks/callback', async (req: any, res) => {
     try {
-      const { code, realmId } = req.query;
+      console.log('🔄 QuickBooks OAuth callback received:', req.query);
+      const { code, realmId, error } = req.query;
+      
+      // Handle OAuth error responses from QuickBooks
+      if (error) {
+        console.error('QuickBooks OAuth error:', error);
+        return res.redirect('/products?qb_error=' + encodeURIComponent(error));
+      }
       
       if (!code || !realmId) {
-        return res.redirect('/sync-scheduler?error=missing_params');
+        console.error('Missing required parameters:', { code: !!code, realmId: !!realmId });
+        return res.redirect('/products?qb_error=missing_params');
       }
 
       const userId = 'dev_user_123';
       
-      // For development, simulate successful connection
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('🔄 Simulating QuickBooks connection for development...');
-        
-        // For development, we'll just mark it as connected in our mock data
-        console.log('✅ QuickBooks connection completed for development');
-
-        console.log('✅ QuickBooks connection simulated successfully');
-        res.redirect('/sync-scheduler?success=quickbooks');
-        return;
-      }
-
-      // ✅ FIXED: Use proper OAuth callback (separate from webhook)
+      // Production OAuth flow
+      console.log('🔄 Processing QuickBooks OAuth callback...');
+      
       const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
+      console.log('🔧 Using redirect URI:', redirectUri);
+      
       const tokens = await quickbooksService.exchangeCodeForTokens(
         code as string, 
         redirectUri, 
         realmId as string
       );
 
-      console.log('🔧 QuickBooks OAuth callback processed:', { redirectUri, realmId });
+      console.log('✅ Tokens exchanged successfully');
 
       // Store integration
       await storage.upsertIntegration({
@@ -626,13 +628,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastSyncAt: new Date()
       });
 
+      console.log('✅ Integration stored successfully');
+
       // Start initial sync
       await quickbooksService.fullSync(userId);
 
-      res.redirect('/sync-scheduler?success=quickbooks');
+      console.log('✅ Initial sync completed');
+      res.redirect('/products?qb_success=connected');
+      
     } catch (error) {
       console.error('QuickBooks callback error:', error);
-      res.redirect('/sync-scheduler?error=quickbooks');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.redirect('/products?qb_error=' + encodeURIComponent(errorMessage));
     }
   });
 

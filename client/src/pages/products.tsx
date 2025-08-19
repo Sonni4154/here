@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +35,32 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Handle QuickBooks OAuth callback status
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const qbSuccess = urlParams.get('qb_success');
+    const qbError = urlParams.get('qb_error');
+    
+    if (qbSuccess === 'connected') {
+      toast({
+        title: "QuickBooks Connected",
+        description: "Successfully connected to QuickBooks Online",
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Invalidate integrations query to refresh status
+      queryClient.invalidateQueries({ queryKey: ["/api/integrations"] });
+    } else if (qbError) {
+      toast({
+        title: "QuickBooks Connection Failed", 
+        description: `Error: ${decodeURIComponent(qbError)}`,
+        variant: "destructive"
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast, queryClient]);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -122,7 +148,50 @@ export default function Products() {
         <p className="text-muted-foreground mt-1">Manage your catalog with QuickBooks integration</p>
       </div>
 
-
+      {/* QuickBooks Integration Status */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`w-3 h-3 rounded-full ${isQuickBooksConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <div>
+                <p className="font-medium">
+                  QuickBooks Integration {isQuickBooksConnected ? 'Connected' : 'Not Connected'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {isQuickBooksConnected 
+                    ? 'Sync products and services with QuickBooks'
+                    : 'Connect to QuickBooks to sync product catalog'
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              {isQuickBooksConnected ? (
+                <Button
+                  onClick={() => syncQuickBooks.mutate()}
+                  disabled={syncQuickBooks.isPending}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Sync Items
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => {
+                    console.log('Starting QuickBooks connection...');
+                    window.location.href = '/quickbooks/connect';
+                  }}
+                  size="sm"
+                >
+                  Connect QuickBooks
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Search and Filters */}
       <Card className="mb-6">
