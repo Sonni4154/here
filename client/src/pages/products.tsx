@@ -55,7 +55,7 @@ export default function Products() {
 
   // Mutations
   const createProduct = useMutation({
-    mutationFn: (data: ProductFormData) => apiRequest("/api/products", "POST", data),
+    mutationFn: (data: ProductFormData) => apiRequest("/api/products", { method: "POST", body: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setIsCreateDialogOpen(false);
@@ -68,7 +68,7 @@ export default function Products() {
   });
 
   const syncQuickBooks = useMutation({
-    mutationFn: () => apiRequest("/api/integrations/quickbooks/sync", "POST"),
+    mutationFn: () => apiRequest("/api/integrations/quickbooks/sync", { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "QuickBooks sync completed" });
@@ -79,7 +79,7 @@ export default function Products() {
   });
 
   const deleteProduct = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/products/${id}`, "DELETE"),
+    mutationFn: (id: string) => apiRequest(`/api/products/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ title: "Product deleted successfully" });
@@ -122,47 +122,7 @@ export default function Products() {
         <p className="text-muted-foreground mt-1">Manage your catalog with QuickBooks integration</p>
       </div>
 
-      {/* QuickBooks Integration Status */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className={`w-3 h-3 rounded-full ${isQuickBooksConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <div>
-                <p className="font-medium">
-                  QuickBooks Integration {isQuickBooksConnected ? 'Connected' : 'Not Connected'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isQuickBooksConnected 
-                    ? 'Sync products and services with QuickBooks'
-                    : 'Connect to QuickBooks to sync product catalog'
-                  }
-                </p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              {isQuickBooksConnected ? (
-                <Button
-                  onClick={() => syncQuickBooks.mutate()}
-                  disabled={syncQuickBooks.isPending}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Sync Items
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => window.location.href = '/quickbooks/connect'}
-                  size="sm"
-                >
-                  Connect QuickBooks
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Search and Filters */}
       <Card className="mb-6">

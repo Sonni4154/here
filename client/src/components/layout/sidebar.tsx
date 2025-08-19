@@ -21,7 +21,7 @@ const navigation = [
   { name: "Time Tracking", href: "/time-tracking", icon: Clock },
   { name: "Clock In/Out", href: "/clock", icon: Timer },
   { name: "Punchclock Logs", href: "/punch-clock-logs", icon: Settings },
-  { name: "Materials", href: "/materials", icon: Package },
+  { name: "Products", href: "/products", icon: Package },
   { name: "Customers", href: "/customers", icon: Search },
   { name: "Invoice Search", href: "/invoices", icon: FileText },
   { name: "Sync Scheduler", href: "/sync-scheduler", icon: Calendar },

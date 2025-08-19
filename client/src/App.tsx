@@ -10,7 +10,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import TimeTracking from "@/pages/time-tracking";
 import MarinJobForm from "@/pages/marin-job-form";
-import Materials from "@/pages/materials";
+
 import Clock from "@/pages/clock";
 import Invoices from "@/pages/invoices";
 import Customers from "@/pages/customers";
@@ -102,9 +102,7 @@ function Router() {
           {() => <ProtectedRoute component={MarinJobForm} />}
         </Route>
         
-        <Route path="/materials">
-          {() => <ProtectedRoute component={Materials} />}
-        </Route>
+
         
         <Route path="/clock">
           {() => <ProtectedRoute component={Clock} />}
