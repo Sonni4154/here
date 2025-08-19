@@ -87,7 +87,7 @@ export default function SyncButton() {
     }
   };
 
-  const quickbooksIntegration = syncStatus?.integrations.find(i => i.provider === 'quickbooks');
+  const quickbooksIntegration = syncStatus?.integrations?.find(i => i.provider === 'quickbooks');
   const isSyncing = quickbooksIntegration?.syncStatus === 'syncing' || quickbooksSyncMutation.isPending;
 
   return (
@@ -113,7 +113,7 @@ export default function SyncButton() {
           <div>
             <h3 className="font-medium text-slate-900 mb-2">Integration Status</h3>
             <div className="space-y-2">
-              {syncStatus?.integrations.map((integration) => (
+              {syncStatus?.integrations?.map((integration) => (
                 <div key={integration.provider} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     {getStatusIcon(integration.syncStatus)}

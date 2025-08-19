@@ -68,24 +68,7 @@ app.use((req, res, next) => {
   }, async () => {
     log(`serving on port ${port}`);
     
-    // Initialize WebSocket server for real-time collaboration
-    try {
-      const { CollaborationWebSocketServer } = await import('./websocket-server');
-      new CollaborationWebSocketServer(server);
-      log('WebSocket server for collaboration initialized');
-    } catch (error) {
-      log(`Failed to initialize WebSocket server: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-    
-    // Initialize automated sync after server starts
-    setTimeout(async () => {
-      try {
-        const { syncScheduler } = await import('./services/sync-scheduler');
-        syncScheduler.start();
-        log('Automated sync scheduler initialized');
-      } catch (error) {
-        log(`Failed to initialize automated sync: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    }, 5000); // Wait 5 seconds for server to be ready
+    // Skip WebSocket and sync initialization for faster startup
+    log('Server ready - WebSocket and sync disabled for development');
   });
 })();

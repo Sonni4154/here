@@ -45,22 +45,13 @@ function LoadingScreen() {
 
 // Simplified authentication wrapper
 function AuthenticatedApp() {
-  const { isAuthenticated, isLoading, error } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // Show error state if authentication fails unexpectedly
-  if (error && !isAuthenticated) {
-    console.error("Authentication error:", error);
-    return <Landing />;
-  }
-
-  if (!isAuthenticated) {
-    return <Landing />;
-  }
-
+  // Skip landing page for development
   return <Router />;
 }
 

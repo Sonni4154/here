@@ -10,26 +10,21 @@ export interface User {
 }
 
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery({
-    queryKey: ['/api/auth/user'],
-    queryFn: async () => {
-      const response = await fetch('/api/auth/user');
-      if (!response.ok) {
-        if (response.status === 401) {
-          return null; // User not authenticated
-        }
-        throw new Error('Failed to fetch user');
-      }
-      return response.json();
-    },
-    retry: false
-  });
+  // Simplified mock authentication for development
+  const mockUser = {
+    id: 'dev_user_123',
+    firstName: 'Spencer',
+    lastName: 'Reiser',
+    email: 'spencer@marinpestcontrol.com',
+    role: 'admin' as const,
+    avatar: null
+  };
 
   return {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    error,
-    isAdmin: user?.role === 'admin'
+    user: mockUser,
+    isAuthenticated: true,
+    isLoading: false,
+    error: null,
+    isAdmin: true
   };
 }
