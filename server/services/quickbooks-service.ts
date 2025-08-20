@@ -55,10 +55,12 @@ export class QuickBooksService {
     this.clientId = process.env.QBO_CLIENT_ID!;
     this.clientSecret = process.env.QBO_CLIENT_SECRET!;
     this.webhookVerifierToken = process.env.QBO_WEBHOOK_VERIFIER!;
-    // PRODUCTION ONLY - Force production environment
-    this.environment = 'production';
-    // PRODUCTION ONLY - Use production QuickBooks API
-    this.baseUrl = 'https://quickbooks.api.intuit.com';
+    // Use environment variable to determine sandbox vs production
+    this.environment = (process.env.QBO_ENV as 'production' | 'sandbox') || 'production';
+    // Use appropriate API URL based on environment
+    this.baseUrl = this.environment === 'production' 
+      ? 'https://quickbooks.api.intuit.com'
+      : 'https://sandbox-quickbooks.api.intuit.com';
     
     // Dynamic redirect URI based on current environment
     const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;

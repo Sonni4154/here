@@ -747,12 +747,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle OAuth error responses from QuickBooks
       if (error) {
         console.error('QuickBooks OAuth error:', error);
-        return res.redirect('/products?qb_error=' + encodeURIComponent(error));
+        return res.redirect('/settings?qb_error=' + encodeURIComponent(error));
       }
       
       if (!code || !realmId) {
         console.error('Missing required parameters:', { code: !!code, realmId: !!realmId });
-        return res.redirect('/products?qb_error=missing_params');
+        console.error('Full query params:', req.query);
+        return res.redirect('/settings?qb_error=missing_params');
       }
 
       // Handle initial authorization flow for fresh tokens
@@ -767,19 +768,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('🔄 Attempting token exchange...');
           console.log('OAuth Configuration Debug:');
           console.log('- Client ID:', process.env.QBO_CLIENT_ID?.substring(0, 10) + '...');
-          console.log('- Environment:', 'production');
-          console.log('- Redirect URI:', 'https://www.wemakemarin.com/quickbooks/callback');
+          console.log('- Environment:', process.env.QBO_ENV || 'production');
+          console.log('- Redirect URI:', redirectUri);
           console.log('- Code length:', code.toString().length);
           console.log('- Code preview:', code.toString().substring(0, 20) + '...');
-          console.log('- State:', state);
+          console.log('- State:', req.query.state);
           console.log('- Realm ID:', realmId);
+          
+          // Use dynamic redirect URI for token exchange
+          const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+          const redirectUri = replitDomain 
+            ? `https://${replitDomain}/quickbooks/callback`
+            : 'https://www.wemakemarin.com/quickbooks/callback';
+          
+          console.log('🔧 Token exchange using redirect URI:', redirectUri);
           
           // Create OAuth client for token exchange  
           const oauthClient = new OAuthClient({
             clientId: process.env.QBO_CLIENT_ID!,
             clientSecret: process.env.QBO_CLIENT_SECRET!,
-            environment: 'production',
-            redirectUri: 'https://www.wemakemarin.com/quickbooks/callback'
+            environment: process.env.QBO_ENV as 'production' | 'sandbox' || 'production',
+            redirectUri: redirectUri
           });
           
           // Exchange code for tokens with detailed error handling
