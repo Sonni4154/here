@@ -188,7 +188,7 @@ export default function SyncButton() {
                     )}
                   </div>
                 </div>
-              ))) : null}
+              )) : null}
             </div>
           </div>
 
