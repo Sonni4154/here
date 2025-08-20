@@ -113,7 +113,7 @@ export default function IntegrationStatus() {
 
   // Merge with actual integrations
   const displayIntegrations = defaultIntegrations.map(defaultInt => {
-    const actualInt = integrations?.find((i: any) => i.provider === defaultInt.provider);
+    const actualInt = Array.isArray(integrations) ? integrations.find((i: any) => i.provider === defaultInt.provider) : undefined;
     return actualInt || defaultInt;
   });
 

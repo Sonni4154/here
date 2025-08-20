@@ -182,7 +182,7 @@ export default function Products() {
               </div>
             </div>
             <div className="flex space-x-2">
-              {isQuickBooksConnected ? (
+              {isQuickBooksConnected && (
                 <Button
                   onClick={() => syncQuickBooks.mutate()}
                   disabled={syncQuickBooks.isPending}
@@ -192,26 +192,6 @@ export default function Products() {
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Sync Items
                 </Button>
-              ) : (
-                <>
-                  <Button
-                    onClick={() => {
-                      console.log('Starting QuickBooks connection...');
-                      window.location.href = '/quickbooks/connect';
-                    }}
-                    size="sm"
-                  >
-                    Connect QuickBooks
-                  </Button>
-                  <Button
-                    onClick={() => simulateQuickBooks.mutate()}
-                    disabled={simulateQuickBooks.isPending}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {simulateQuickBooks.isPending ? "Creating..." : "Dev Test"}
-                  </Button>
-                </>
               )}
             </div>
           </div>

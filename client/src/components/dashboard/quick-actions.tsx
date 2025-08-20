@@ -55,13 +55,7 @@ export default function QuickActions() {
             ))}
           </div>
           
-          {/* QuickBooks Sync Status */}
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-700">QuickBooks Sync</span>
-            </div>
-            <UnifiedSyncStatus variant="button" showLabel={true} size="sm" />
-          </div>
+
         </CardContent>
       </Card>
 

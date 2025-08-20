@@ -170,19 +170,10 @@ export default function SyncButton() {
                   </div>
                   <div className="flex items-center space-x-2">
                     {getStatusBadge(integration.connected ? 'success' : integration.syncStatus)}
-                    {integration.provider === 'quickbooks' && (
+                    {integration.provider === 'quickbooks' && integration.connected && (
                       <div className="flex space-x-2">
-                        {!integration.connected ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={connectToQuickBooks}
-                          >
-                            Connect
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
+                        <Button
+                          size="sm"
                             variant="outline"
                             onClick={() => quickbooksSyncMutation.mutate()}
                             disabled={isSyncing}
@@ -193,7 +184,6 @@ export default function SyncButton() {
                               'Sync Now'
                             )}
                           </Button>
-                        )}
                       </div>
                     )}
                   </div>
