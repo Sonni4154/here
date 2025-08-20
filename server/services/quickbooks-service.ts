@@ -88,11 +88,22 @@ export class QuickBooksService {
   }
 
   // Generate OAuth authorization URL using Intuit OAuth Client
-  getAuthorizationUrl(userId: string, redirectUri: string): string {
+  getAuthorizationUrl(userId: string, redirectUri?: string): string {
     const scope = [OAuthClient.scopes.Accounting];
     const state = Buffer.from(JSON.stringify({ userId, timestamp: Date.now() })).toString('base64');
     
-    return this.oauthClient.authorizeUri({
+    // Always use production redirect URI
+    const productionRedirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
+    
+    // Create a temporary OAuth client with the correct redirect URI
+    const tempOAuthClient = new OAuthClient({
+      clientId: this.clientId,
+      clientSecret: this.clientSecret,
+      environment: this.environment,
+      redirectUri: productionRedirectUri
+    });
+    
+    return tempOAuthClient.authorizeUri({
       scope,
       state
     });

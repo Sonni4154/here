@@ -102,5 +102,5 @@ app.listen(PORT, () => {
   console.log(`\n🔗 To start authorization, visit:`);
   console.log(`http://localhost:${PORT}/auth/quickbooks`);
   console.log(`\nOr if running on Replit:`);
-  console.log(`https://054d2a3f-de93-43b0-a8dc-53ade5c1fa79-00-28ngf53nf2i1b.kirk.replit.dev:${PORT}/auth/quickbooks`);
+  console.log(`https://www.wemakemarin.com/auth/quickbooks`);
 });
