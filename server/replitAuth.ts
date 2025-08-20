@@ -38,8 +38,9 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production' || !!process.env.REPL_ID, // Use secure cookies in production and on Replit
       maxAge: sessionTtl,
+      sameSite: 'lax', // Important for auth redirects
     },
   });
 }
@@ -67,6 +68,7 @@ async function upsertUser(
 }
 
 export async function setupAuth(app: Express) {
+  // Trust proxy is crucial for HTTPS detection behind Replit's proxy
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
