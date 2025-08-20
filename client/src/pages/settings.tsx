@@ -257,10 +257,9 @@ export default function Settings() {
                     <Button
                       onClick={() => {
                         // Use the direct backend port for OAuth to avoid frontend router issues
-                        const backendUrl = window.location.hostname.includes('replit.dev') 
-                          ? `https://${window.location.hostname.replace('-00-', '-00-').replace('.replit.dev', '')}` 
-                          : `${window.location.protocol}//${window.location.host}`;
-                        window.open(`${backendUrl}/quickbooks/connect`, '_blank');
+                        // Use current domain without port for QuickBooks OAuth
+                        const baseUrl = `${window.location.protocol}//${window.location.host}`;
+                        window.open(`${baseUrl}/quickbooks/connect`, '_blank');
                       }}
                       variant="default"
                       size="sm"
