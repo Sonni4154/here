@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { RefreshCw, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
 
 interface SyncStatus {
   integrations?: Array<{
@@ -66,6 +67,17 @@ export default function SyncButton() {
       });
     },
     onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Authentication Required",
+          description: "You need to log in to access this feature. Redirecting...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       if (error?.needsConnection) {
         toast({
           title: "QuickBooks Not Connected",

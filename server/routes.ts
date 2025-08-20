@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enable sync scheduler immediately on startup - PRODUCTION FIX
-  app.post('/api/sync/start', async (req, res) => {
+  app.post('/api/sync/start', isAuthenticated, async (req, res) => {
     try {
       console.log('🚀 Starting sync scheduler for production...');
       syncScheduler.start();
@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/sync/trigger-data', async (req, res) => {
+  app.post('/api/sync/trigger-data', isAuthenticated, async (req, res) => {
     try {
       console.log('🔄 Data import sync triggered');
       await syncScheduler.triggerDataSync();
@@ -180,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/quickbooks/trigger-sync', async (req, res) => {
+  app.post('/api/quickbooks/trigger-sync', isAuthenticated, async (req, res) => {
     try {
       console.log('🔄 QuickBooks sync triggered manually');
       await syncScheduler.triggerQuickBooksSync();
