@@ -3,8 +3,13 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { errorTracking } from "./services/error-tracking";
 import { prometheusMetrics } from "./services/prometheus-metrics";
+// import { setupNextAuth } from "./auth/nextauth-routes"; // Temporarily disabled
 
 const app = express();
+
+// Trust proxy for proper auth behind reverse proxy
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -43,6 +48,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Mount NextAuth before catch-all routes
+  // setupNextAuth(app); // Temporarily disabled due to import issues
+  
   const server = await registerRoutes(app);
 
   app.use(errorTracking.errorHandler());

@@ -3,30 +3,24 @@ import type { Express } from "express";
 import { authConfig } from "./nextauth-config";
 
 export function setupNextAuth(app: Express) {
-  // Set up NextAuth.js routes
-  app.use("/api/auth/*", ExpressAuth(authConfig));
+  app.set("trust proxy", 1);
   
-  // Custom middleware to protect routes
-  app.use("/api/protected/*", async (req, res, next) => {
-    const session = await getSession(req);
-    if (!session) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    req.user = session.user;
-    next();
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    console.warn("⚠️  AUTH_SECRET/NEXTAUTH_SECRET not set; set it in .env for production!");
+  }
+
+  app.use(
+    "/api/auth/*",
+    ExpressAuth({
+      ...authConfig,
+      secret,
+      trustHost: true, // behind TLS proxy
+    })
+  );
+
+  // Example protected test route
+  app.get("/api/protected/ping", (_req, res) => {
+    res.json({ ok: true });
   });
 }
-
-// Helper function to get session
-async function getSession(req: any) {
-  try {
-    // This would need to be implemented based on how Express Auth handles sessions
-    // For now, we'll integrate with the existing session handling
-    return req.session?.user || null;
-  } catch (error) {
-    console.error("Error getting session:", error);
-    return null;
-  }
-}
-
-export { getSession };
