@@ -22,10 +22,7 @@ interface ProductCSVRow {
   'Category': string;
 }
 
-// Sample user ID for testing (replace with actual user ID in production)
-const SAMPLE_USER_ID = 'sample-user-001';
-
-export async function importCustomersFromCSV(userId: string = SAMPLE_USER_ID): Promise<void> {
+export async function importCustomersFromCSV(userId: string): Promise<void> {
   try {
     const csvPath = path.join(process.cwd(), 'attached_assets', 'customers_1754017513117.csv');
     const csvContent = readFileSync(csvPath, 'utf-8');

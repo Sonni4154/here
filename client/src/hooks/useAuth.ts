@@ -10,9 +10,9 @@ export interface User {
 }
 
 export function useAuth() {
-  // Simplified mock authentication for development
+  // Temporarily return a working auth state to prevent 401 loop
   const mockUser = {
-    id: 'dev_user_123',
+    id: 'temp_user_001',
     firstName: 'Spencer',
     lastName: 'Reiser',
     email: 'spencer@marinpestcontrol.com',
@@ -22,8 +22,8 @@ export function useAuth() {
 
   return {
     user: mockUser,
-    isAuthenticated: true,
     isLoading: false,
+    isAuthenticated: true,
     error: null,
     isAdmin: true
   };

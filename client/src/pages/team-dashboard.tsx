@@ -90,16 +90,20 @@ export default function TeamDashboard() {
   const [activeTab, setActiveTab] = useState<'calendar' | 'queue'>('calendar');
 
   // Fetch calendar events
-  const { data: events = [], isLoading: eventsLoading } = useQuery({
+  const { data: eventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ['/api/calendar/events', format(currentWeek, 'yyyy-MM-dd')],
     queryFn: () => fetch(`/api/calendar/events?week=${format(currentWeek, 'yyyy-MM-dd')}`).then(r => r.json()),
   });
+  
+  const events = Array.isArray(eventsData) ? eventsData : [];
 
   // Fetch work queue
-  const { data: workQueue = [], isLoading: queueLoading } = useQuery({
+  const { data: workQueueData, isLoading: queueLoading } = useQuery({
     queryKey: ['/api/work-queue'],
     queryFn: () => fetch('/api/work-queue').then(r => r.json()),
   });
+  
+  const workQueue = Array.isArray(workQueueData) ? workQueueData : [];
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Start on Monday
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));

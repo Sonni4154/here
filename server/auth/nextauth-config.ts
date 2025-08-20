@@ -1,7 +1,6 @@
-import { AuthConfig } from "@auth/express";
 import GoogleProvider from "next-auth/providers/google";
 
-export const authConfig: AuthConfig = {
+export const authConfig = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -9,23 +8,21 @@ export const authConfig: AuthConfig = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account, profile }) {
-      // Persist the OAuth access_token and/or the user id to the token right after signin
+    async jwt({ token, account, profile }: any) {
       if (account) {
         token.accessToken = account.access_token;
         token.id = profile?.sub;
       }
       return token;
     },
-    async session({ session, token }) {
-      // Send properties to the client, like an access_token and user id from a provider.
+    async session({ session, token }: any) {
       session.accessToken = token.accessToken;
       session.user.id = token.id;
       return session;
     },
   },
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
   },
   pages: {
     signIn: "/auth/signin",

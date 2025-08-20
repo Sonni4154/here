@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bell, Plus } from "lucide-react";
@@ -14,12 +15,8 @@ export default function Header({ title, description }: HeaderProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Mock notifications for now
-  const notifications = [
-    { id: 1, title: "QuickBooks Sync Complete", description: "Synchronized 150 customers and 89 products", time: "2 minutes ago", type: "success" },
-    { id: 2, title: "Calendar Update", description: "Team schedules updated for this week", time: "15 minutes ago", type: "info" },
-    { id: 3, title: "Low Material Stock", description: "Bait stations running low - consider restocking", time: "1 hour ago", type: "warning" },
-  ];
+  // Return empty notifications for now to prevent API calls
+  const notifications: any[] = [];
 
   const unreadCount = notifications.filter(n => n.type === 'warning' || n.type === 'success').length;
 

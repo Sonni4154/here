@@ -6,8 +6,8 @@ export class GoogleService {
   private redirectUri: string;
 
   constructor() {
-    this.clientId = process.env.GOOGLE_CLIENT_ID || process.env.GG_CLIENT_ID || 'default_client_id';
-    this.clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.GG_CLIENT_SECRET || 'default_client_secret';
+    this.clientId = process.env.GOOGLE_CLIENT_ID || process.env.GG_CLIENT_ID;
+    this.clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.GG_CLIENT_SECRET;
     this.redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/api/integrations/google/callback`;
   }
 

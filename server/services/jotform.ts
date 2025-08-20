@@ -5,7 +5,7 @@ export class JotFormService {
   private baseUrl = 'https://api.jotform.com';
 
   constructor() {
-    this.apiKey = process.env.JOTFORM_API_KEY || process.env.JF_API_KEY || 'default_api_key';
+    this.apiKey = process.env.JOTFORM_API_KEY || process.env.JF_API_KEY;
   }
 
   private async makeRequest(endpoint: string, method = 'GET', body?: any): Promise<any> {
