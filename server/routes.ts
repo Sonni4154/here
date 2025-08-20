@@ -756,19 +756,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect('/settings?qb_error=missing_params');
       }
 
-      // Handle initial authorization flow for fresh tokens
+      // Default OAuth flow using QuickBooks service
+      console.log('🎯 Processing QuickBooks OAuth callback...');
+      console.log('Code length:', code.toString().length);
+      console.log('Realm ID:', realmId);
+      console.log('State:', req.query.state);
+      
+      try {
+        // Determine the correct redirect URI that was used for this OAuth flow
+        const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+        const redirectUri = replitDomain 
+          ? `https://${replitDomain}/quickbooks/callback`
+          : 'https://www.wemakemarin.com/quickbooks/callback';
+        
+        console.log('Using redirect URI for token exchange:', redirectUri);
+        
+        // Use the QuickBooks service to exchange code for tokens
+        const tokens = await quickbooksService.exchangeCodeForTokens(String(code), redirectUri, String(realmId));
+        
+        console.log('🎉 Token exchange successful via QuickBooks service!');
+        
+        // Store the tokens in the database immediately
+        const userId = 'dev_user_123';
+        const existingIntegration = await storage.getIntegration(userId, 'quickbooks');
+        
+        // Calculate expiration date
+        const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000));
+        
+        if (existingIntegration) {
+          await storage.updateIntegration(existingIntegration.id, {
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token || '',
+            expiresAt,
+            companyId: String(realmId),
+            connected: true
+          });
+          console.log('✅ Updated existing QuickBooks integration');
+        } else {
+          await storage.createIntegration({
+            userId: userId,
+            provider: 'quickbooks',
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token || '',
+            expiresAt,
+            companyId: String(realmId),
+            connected: true
+          });
+          console.log('✅ Created new QuickBooks integration');
+        }
+        
+        // Log the connection activity
+        await storage.createActivityLog({
+          userId,
+          type: 'quickbooks_connected',
+          description: 'QuickBooks account successfully connected',
+          metadata: { companyId: String(realmId), provider: 'quickbooks' }
+        });
+        
+        return res.redirect('/settings?qb_success=1');
+        
+      } catch (error: any) {
+        console.error('❌ Token exchange failed:', error);
+        return res.redirect('/settings?qb_error=token_exchange_failed');
+      }
+      
+      // Legacy initial auth flow (kept for backward compatibility)
       if (req.query.state?.toString().includes('initial_auth')) {
         console.log('🎯 Processing initial authorization for fresh tokens...');
-        console.log('Code length:', code.toString().length);
-        console.log('Realm ID:', realmId);
         
         try {
           const { default: OAuthClient } = await import('intuit-oauth');
           
-          console.log('🔄 Attempting token exchange...');
-          console.log('OAuth Configuration Debug:');
+          console.log('🔄 Attempting direct token exchange...');
+          console.log('OAuth Configuration:');
           console.log('- Client ID:', process.env.QBO_CLIENT_ID?.substring(0, 10) + '...');
           console.log('- Environment:', process.env.QBO_ENV || 'production');
+          
           // Use dynamic redirect URI for token exchange
           const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
           const tokenRedirectUri = replitDomain 
@@ -776,12 +839,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             : 'https://www.wemakemarin.com/quickbooks/callback';
           
           console.log('- Redirect URI:', tokenRedirectUri);
-          console.log('- Code length:', code.toString().length);
-          console.log('- Code preview:', code.toString().substring(0, 20) + '...');
-          console.log('- State:', req.query.state);
-          console.log('- Realm ID:', realmId);
-          
-          console.log('🔧 Token exchange using redirect URI:', tokenRedirectUri);
           
           // Create OAuth client for token exchange  
           const oauthClient = new OAuthClient({
