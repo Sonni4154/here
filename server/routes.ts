@@ -844,7 +844,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log('Token test failed (non-critical):', testError);
           }
 
-          // Return success page instead of JSON
+          // Redirect to settings page with success message instead of showing HTML
+          console.log('✅ QuickBooks authorization successful, redirecting to settings');
+          res.redirect('/settings?qb_connected=true&company_id=' + encodeURIComponent(realmId as string));
+          return;
+          
+          // OLD CODE - Return success page instead of JSON
           const successHtml = `
             <!DOCTYPE html>
             <html>

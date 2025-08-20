@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,23 @@ export default function Settings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAddDatabase, setShowAddDatabase] = useState(false);
+
+  // Check for QuickBooks connection success in URL params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('qb_connected') === 'true') {
+      const companyId = urlParams.get('company_id');
+      toast({
+        title: "QuickBooks Connected!",
+        description: companyId 
+          ? `Successfully connected to QuickBooks (Company ID: ${companyId})`
+          : "Successfully connected to QuickBooks",
+        variant: "default",
+      });
+      // Clean up URL
+      window.history.replaceState({}, document.title, '/settings');
+    }
+  }, [toast]);
 
   // Queries
   const { data: integrations = [], isLoading } = useQuery({
