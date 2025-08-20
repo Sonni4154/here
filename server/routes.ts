@@ -724,8 +724,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('🔗 QuickBooks connection initiated');
     const userId = 'dev_user_123';
     
-    // PRODUCTION ONLY - Use production redirect URI
-    const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
+    // Use dynamic redirect URI based on current domain
+    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+    const redirectUri = replitDomain 
+      ? `https://${replitDomain}/quickbooks/callback`
+      : 'https://www.wemakemarin.com/quickbooks/callback';
     console.log('🔧 Using redirect URI:', redirectUri);
     
     const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);

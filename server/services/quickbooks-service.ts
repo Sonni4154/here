@@ -60,8 +60,11 @@ export class QuickBooksService {
     // PRODUCTION ONLY - Use production QuickBooks API
     this.baseUrl = 'https://quickbooks.api.intuit.com';
     
-    // PRODUCTION ONLY - Force production redirect URI
-    const redirectUri = 'https://www.wemakemarin.com/quickbooks/callback';
+    // Dynamic redirect URI based on current environment
+    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
+    const redirectUri = replitDomain 
+      ? `https://${replitDomain}/quickbooks/callback`
+      : 'https://www.wemakemarin.com/quickbooks/callback';
 
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({
