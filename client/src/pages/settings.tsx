@@ -258,8 +258,8 @@ export default function Settings() {
                       onClick={() => {
                         // Use the direct backend port for OAuth to avoid frontend router issues
                         const backendUrl = window.location.hostname.includes('replit.dev') 
-                          ? `https://${window.location.hostname.replace('-00-', '-00-').replace('.replit.dev', '')}:5000` 
-                          : `${window.location.protocol}//${window.location.host}:5000`;
+                          ? `https://${window.location.hostname.replace('-00-', '-00-').replace('.replit.dev', '')}` 
+                          : `${window.location.protocol}//${window.location.host}`;
                         window.open(`${backendUrl}/quickbooks/connect`, '_blank');
                       }}
                       variant="default"
