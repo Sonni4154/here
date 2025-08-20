@@ -816,8 +816,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect('/settings?qb_success=1');
         
       } catch (error: any) {
-        console.error('❌ Token exchange failed:', error);
-        return res.redirect('/settings?qb_error=token_exchange_failed');
+        console.error('❌ Token exchange failed:', {
+          message: error.message,
+          stack: error.stack,
+          status: error.status,
+          statusText: error.statusText,
+          response: error.response?.data || error.data
+        });
+        const errorMsg = encodeURIComponent(`Token exchange failed: ${error.message}`);
+        return res.redirect(`/settings?qb_error=${errorMsg}`);
       }
       
       // Legacy initial auth flow (kept for backward compatibility)

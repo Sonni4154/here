@@ -177,8 +177,8 @@ export class QuickBooksService {
         redirectUri: process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback'
       });
       
-      // Use the refresh token directly
-      refreshClient.token = {
+      // Use the refresh token directly by setting the token property
+      (refreshClient as any).token = {
         refresh_token: refreshToken,
       };
       
@@ -272,7 +272,7 @@ export class QuickBooksService {
       );
       
       // If successful, return current token
-      return integration.accessToken;
+      return integration.accessToken || '';
     } catch (error: any) {
       console.log('Token validation failed, attempting refresh...');
       
