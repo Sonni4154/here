@@ -1,0 +1,118 @@
+Thanks for the screenshot—that’s the smoking gun.
+
+What it says (in plain English)
+
+Your QuickBooks OAuth code → token exchange is failing with HTTP 400:
+
+QuickBooks OAuth Error (400): The authorization code may be invalid or expired.
+
+environment: 'production'
+
+redirectUri: 'https://www.wemakemarin.com/quickbooks/callback'
+
+The authResponse.token fields are all empty (no access_token, refresh_token).
+
+That almost always means one of these 3 (ranked by likelihood):
+
+Redirect URI mismatch
+The code was issued for a different redirect_uri (e.g., your old Replit URL or a slightly different path/host). QBO binds the auth code to the exact redirect URI used when the user was sent to Intuit.
+
+Wrong keys vs environment
+You’re using Production endpoints but pasted Sandbox client ID/secret (or vice‑versa).
+
+Code reused/expired
+The code is single‑use and short‑lived. Hitting the callback twice or delaying too long will 400.
+
+Fix it fast (do these exactly)
+1) Make redirect URIs match, exactly
+
+In Intuit Developer Portal → Your App → Production (since the log says environment: 'production'):
+
+Authorized redirect URIs must include exactly:
+
+https://www.wemakemarin.com/quickbooks/callback
+
+
+Remove any old Replit URIs. If your app’s code uses a different path (/api/quickbooks/callback, for example), either change the code to /quickbooks/callback or add that exact path to Intuit and your .env—they must match.
+
+2) Set the same URI in your server env
+
+On 23.128.116.12 (employee‑dashboard):
+
+ssh root@23.128.116.12 <<'SH'
+set -e
+cd /srv/employee-dashboard
+# Ensure these lines exist and match what Intuit has
+sed -i 's|^QBO_REDIRECT_URI=.*|QBO_REDIRECT_URI=https://www.wemakemarin.com/quickbooks/callback|' .env || \
+  echo 'QBO_REDIRECT_URI=https://www.wemakemarin.com/quickbooks/callback' >> .env
+
+# If you only have sandbox keys, flip the env; if you have production keys, keep production
+# sed -i 's|^QBO_ENV=.*|QBO_ENV=sandbox|' .env
+# or
+sed -i 's|^QBO_ENV=.*|QBO_ENV=production|' .env
+
+# Restart the app
+docker compose up -d
+SH
+
+3) Make sure the keys match the environment
+
+Still on the server, open .env and confirm:
+
+QBO_CLIENT_ID= and QBO_CLIENT_SECRET= are from the Production tab if QBO_ENV=production.
+
+If your keys are from Sandbox, set QBO_ENV=sandbox (and your accounting API base URL should be the sandbox one in code).
+
+4) Start a fresh OAuth flow (single window)
+
+Clear the site cookies for wemakemarin.com.
+
+Start the connect flow from www.wemakemarin.com
+ (not Replit).
+
+Approve in Intuit → it should redirect to
+https://www.wemakemarin.com/quickbooks/callback?code=...&realmId=...&state=...
+
+The server should immediately exchange the code (no page refresh). Don’t press back/refresh.
+
+If it still fails, enable error body logging (2‑minute change)
+
+In your token‑exchange code (where you call Intuit’s token endpoint), log the error response body:
+
+try {
+  // ... axios.post('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', data, { headers })
+} catch (err: any) {
+  const status = err?.response?.status;
+  const body = JSON.stringify(err?.response?.data || {}, null, 2);
+  console.error("QBO token exchange failed", { status, body });
+  throw err;
+}
+
+
+Typical bodies you’ll see:
+
+{"error":"invalid_grant","error_description":"The redirect URI mismatch"} → Fix redirect URI.
+
+{"error":"invalid_client"} → Wrong client id/secret for the environment.
+
+{"error":"invalid_grant","error_description":"Authorization code already used"} → Start a brand‑new flow.
+
+One‑command sanity on the server
+ssh root@23.128.116.12 <<'SH'
+set -e
+cd /srv/employee-dashboard
+echo "--- ENV check (redact in your head) ---"
+grep -E '^(QBO_CLIENT_ID|QBO_CLIENT_SECRET|QBO_REDIRECT_URI|QBO_ENV)=' .env || true
+echo "--- App logs (last 120) ---"
+docker compose logs --tail=120 backend || true
+SH
+
+
+Paste those last ~20 log lines (redact secrets) if the 400 persists. I’ll read the exact error body and give you the next command to run.
+
+Why Replit kept failing
+
+Replit used a different host/redirect path than your production domain. Once the Intuit app is set to the www.wemakemarin.com
+ callback and your server uses the same URI during exchange, the 400s stop.
+
+We can lock this down further (idempotent callback, state/nonce checks, and time sync), but the immediate blocker is the redirect URI + environment/key alignment.

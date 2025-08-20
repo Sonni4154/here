@@ -16,6 +16,9 @@ The Internal Dashboard is a comprehensive business management platform for Marin
 - ✓ Fixed variable declaration conflicts and type mismatches
 - ✓ Updated clock entry schema to match database structure
 - ✓ Server now running successfully with team dashboard accessible
+- ✓ **CRITICAL FIX**: Resolved QuickBooks OAuth redirect URI mismatch causing token exchange failures
+- ✓ Updated all redirect URIs to consistently use production domain (https://www.wemakemarin.com/quickbooks/callback)
+- ✓ Enhanced OAuth error logging for better debugging
 
 ## User Preferences
 

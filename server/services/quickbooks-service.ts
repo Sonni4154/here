@@ -62,11 +62,8 @@ export class QuickBooksService {
       ? 'https://quickbooks.api.intuit.com'
       : 'https://sandbox-quickbooks.api.intuit.com';
     
-    // Dynamic redirect URI based on current environment
-    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-    const redirectUri = replitDomain 
-      ? `https://${replitDomain}/quickbooks/callback`
-      : 'https://www.wemakemarin.com/quickbooks/callback';
+    // Always use production redirect URI to match QuickBooks app configuration
+    const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
 
     // Initialize Intuit OAuth Client
     this.oauthClient = new OAuthClient({

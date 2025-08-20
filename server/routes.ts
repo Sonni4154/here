@@ -547,17 +547,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // QuickBooks development status check
   app.get('/api/quickbooks/dev-status', (req, res) => {
-    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-    const redirectUri = replitDomain 
-      ? `https://${replitDomain}/quickbooks/callback`
-      : 'https://wemakemarin.com/quickbooks/callback';
+    const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
     
     res.json({
       environment: process.env.QBO_ENV || 'production',
       clientId: process.env.QBO_CLIENT_ID?.substring(0, 15) + '...',
       companyId: process.env.QBO_COMPANY_ID,
       redirectUri: redirectUri,
-      domain: replitDomain,
+      domain: 'www.wemakemarin.com',
       baseUrl: process.env.QBO_BASE_URL,
       hasAccessToken: !!process.env.QBO_ACCESS_TOKEN,
       hasRefreshToken: !!process.env.QBO_REFRESH_TOKEN,
@@ -569,15 +566,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/quickbooks/generate-dev-auth-url', async (req, res) => {
     try {
       const { default: OAuthClient } = await import('intuit-oauth');
-      // Use appropriate redirect URI based on environment
-      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-      const redirectUri = replitDomain 
-        ? `https://${replitDomain}/quickbooks/callback`
-        : 'https://wemakemarin.com/quickbooks/callback';
+      // Always use production redirect URI to match QuickBooks app configuration
+      const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
       
-      console.log('🔍 Environment debug:');
-      console.log('   REPLIT_DOMAINS:', process.env.REPLIT_DOMAINS);
-      console.log('   Extracted domain:', replitDomain);
       console.log('🔧 Using redirect URI for dev auth:', redirectUri);
       
       const oauthClient = new OAuthClient({
@@ -627,11 +618,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { default: OAuthClient } = await import('intuit-oauth');
       
-      // Use appropriate redirect URI based on environment
-      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-      const defaultRedirectUri = replitDomain 
-        ? `https://${replitDomain}/quickbooks/callback`
-        : process.env.QBO_REDIRECT_URI!;
+      // Always use production redirect URI to match QuickBooks app configuration
+      const defaultRedirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
       
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
@@ -678,11 +666,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { default: OAuthClient } = await import('intuit-oauth');
       
-      // Use appropriate redirect URI based on environment
-      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-      const redirectUri = replitDomain 
-        ? `https://${replitDomain}/quickbooks/callback`
-        : process.env.QBO_REDIRECT_URI!;
+      // Always use production redirect URI to match QuickBooks app configuration
+      const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
       
       const oauthClient = new OAuthClient({
         clientId: process.env.QBO_CLIENT_ID!,
@@ -724,11 +709,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('🔗 QuickBooks connection initiated');
     const userId = 'dev_user_123';
     
-    // Use dynamic redirect URI based on current domain
-    const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-    const redirectUri = replitDomain 
-      ? `https://${replitDomain}/quickbooks/callback`
-      : 'https://www.wemakemarin.com/quickbooks/callback';
+    // Always use production redirect URI to match QuickBooks app configuration
+    const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
     console.log('🔧 Using redirect URI:', redirectUri);
     
     const authUrl = quickbooksService.getAuthorizationUrl(userId, redirectUri);
@@ -763,11 +745,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('State:', req.query.state);
       
       try {
-        // Determine the correct redirect URI that was used for this OAuth flow
-        const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-        const redirectUri = replitDomain 
-          ? `https://${replitDomain}/quickbooks/callback`
-          : 'https://www.wemakemarin.com/quickbooks/callback';
+        // Always use production redirect URI for token exchange to match QuickBooks app configuration
+        const redirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
         
         console.log('Using redirect URI for token exchange:', redirectUri);
         
@@ -839,11 +818,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('- Client ID:', process.env.QBO_CLIENT_ID?.substring(0, 10) + '...');
           console.log('- Environment:', process.env.QBO_ENV || 'production');
           
-          // Use dynamic redirect URI for token exchange
-          const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-          const tokenRedirectUri = replitDomain 
-            ? `https://${replitDomain}/quickbooks/callback`
-            : 'https://www.wemakemarin.com/quickbooks/callback';
+          // Always use production redirect URI for token exchange
+          const tokenRedirectUri = process.env.QBO_REDIRECT_URI || 'https://www.wemakemarin.com/quickbooks/callback';
           
           console.log('- Redirect URI:', tokenRedirectUri);
           
@@ -1004,8 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if we're in development mode with redirect URI mismatch
-      const replitDomain = process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(',')[0] : null;
-      const isReplitEnvironment = replitDomain && req.get('host')?.includes('replit.dev');
+      const isReplitEnvironment = req.get('host')?.includes('replit.dev');
       
       if (isReplitEnvironment && process.env.QBO_REDIRECT_URI?.includes('wemakemarin.com')) {
         console.warn('⚠️ QuickBooks OAuth redirect URI mismatch detected');
