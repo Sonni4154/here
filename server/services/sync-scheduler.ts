@@ -317,9 +317,9 @@ export class SyncScheduler {
         suggestedBusinessHours: true,
         estimatedDuration: 5,
         dataInsights: {
-          avgDataVolume: syncLogs.length > 0 ? Math.round(syncLogs.reduce((sum, log) => sum + (log.metadata?.dataVolume || 50), 0) / syncLogs.length) : 50,
+          avgDataVolume: syncLogs.length > 0 ? Math.round(syncLogs.reduce((sum, log) => sum + ((log.metadata as any)?.dataVolume || 50), 0) / syncLogs.length) : 50,
           peakSyncTimes: ['9:00', '14:00', '18:00'],
-          failureRate: syncLogs.length > 0 ? Math.round((syncLogs.filter(log => !log.success).length / syncLogs.length) * 100) : 10
+          failureRate: syncLogs.length > 0 ? Math.round((syncLogs.filter(log => !(log.metadata as any)?.success).length / syncLogs.length) * 100) : 10
         }
       };
     } catch (error) {
@@ -328,9 +328,7 @@ export class SyncScheduler {
     }
   }
 
-  async triggerQuickBooksSync(): Promise<void> {
-    await this.executeSyncForProvider('quickbooks');
-  }
+
 
   async triggerDataImportSync(): Promise<void> {
     // Implement data import sync logic
@@ -421,7 +419,7 @@ export class SyncScheduler {
 
   startAllSchedules(): void {
     console.log('📅 Starting all enabled sync schedules');
-    for (const [provider, config] of this.scheduleConfigs) {
+    for (const [provider, config] of Array.from(this.scheduleConfigs.entries())) {
       if (config.enabled) {
         this.startSchedule(provider);
       }
@@ -430,7 +428,7 @@ export class SyncScheduler {
 
   stopAllSchedules(): void {
     console.log('🛑 Stopping all sync schedules');
-    for (const provider of this.activeIntervals.keys()) {
+    for (const provider of Array.from(this.activeIntervals.keys())) {
       this.stopSchedule(provider);
     }
   }
