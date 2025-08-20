@@ -25,6 +25,8 @@ export default function Header({ title, description }: HeaderProps) {
 
   return (
     <>
+      {/* Header temporarily removed due to buggy QuickBooks sync button */}
+      {/* 
       <header className="bg-black shadow-sm border-b border-gray-800">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
@@ -34,10 +36,8 @@ export default function Header({ title, description }: HeaderProps) {
             )}
           </div>
           <div className="flex items-center space-x-4">
-            {/* Unified QuickBooks Sync Status */}
             <UnifiedSyncStatus variant="badge" showLabel={true} />
             
-            {/* Notifications */}
             <Popover open={showNotifications} onOpenChange={setShowNotifications}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="relative text-white hover:bg-gray-800">
@@ -80,7 +80,6 @@ export default function Header({ title, description }: HeaderProps) {
               </PopoverContent>
             </Popover>
 
-            {/* Create Button */}
             <Button 
               onClick={() => setShowCreateModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -91,6 +90,7 @@ export default function Header({ title, description }: HeaderProps) {
           </div>
         </div>
       </header>
+      */}
 
       <CreateInvoiceModal 
         open={showCreateModal}
