@@ -367,19 +367,9 @@ export class QuickBooksService {
 
   // Sync products/items from QuickBooks
   async syncItems(userId: string): Promise<void> {
-
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/v3/company/${realmId}/query?query=SELECT * FROM Item MAXRESULTS 1000`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-
-      const items: QuickBooksItem[] = response.data.QueryResponse?.Item || [];
+      const response = await this.makeQuickBooksAPIRequest(userId, 'query?query=SELECT * FROM Item MAXRESULTS 1000');
+      const items: QuickBooksItem[] = response.QueryResponse?.Item || [];
 
       for (const qbItem of items) {
         // Create new product
@@ -410,20 +400,13 @@ export class QuickBooksService {
   // Full sync (customers and items)
   // Sync recent invoices (last N days)
   async syncRecentInvoices(userId: string, days: number = 30): Promise<{ count: number }> {
-    const integration = await storage.getIntegration(userId, 'quickbooks');
-    if (!integration || !integration.isActive) {
-      throw new Error('QuickBooks integration not found or inactive');
-    }
-
-    await this.setCredentials(integration);
-
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
     
     try {
-      const response = await this.makeRequest(
-        `/v3/companyinfo/${integration.realmId}/query?query=SELECT * FROM Invoice WHERE TxnDate >= '${cutoffDate.toISOString().split('T')[0]}' MAXRESULTS 1000`,
-        'GET'
+      const response = await this.makeQuickBooksAPIRequest(
+        userId,
+        `query?query=SELECT * FROM Invoice WHERE TxnDate >= '${cutoffDate.toISOString().split('T')[0]}' MAXRESULTS 1000`
       );
 
       const invoices = response.QueryResponse?.Invoice || [];
@@ -442,28 +425,6 @@ export class QuickBooksService {
     }
   }
 
-  // Add missing methods for production readiness
-  private async setCredentials(integration: any): Promise<void> {
-    // The intuit-oauth library doesn't use setToken method
-    // Authentication is handled through API calls directly
-  }
-
-  private async makeRequest(endpoint: string, method: string = 'GET', data?: any): Promise<any> {
-    const integration = await storage.getIntegration('current-user-id', 'quickbooks');
-    if (!integration) {
-      throw new Error('QuickBooks integration not found');
-    }
-
-    const url = `${this.baseUrl}${endpoint}`;
-    const headers = {
-      'Authorization': `Bearer ${integration.accessToken}`,
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    };
-
-    const response = await axios({ method, url, headers, data });
-    return response.data;
-  }
 
   private async processInvoice(qbInvoice: any, userId: string): Promise<void> {
     try {
@@ -503,17 +464,10 @@ export class QuickBooksService {
   }
 
   async syncInvoices(userId: string): Promise<void> {
-    const integration = await storage.getIntegration(userId, 'quickbooks');
-    if (!integration) {
-      throw new Error('QuickBooks integration not found');
-    }
-
-    await this.setCredentials(integration);
-    
     try {
-      const response = await this.makeRequest(
-        `/v3/company/${integration.realmId}/query?query=SELECT * FROM Invoice MAXRESULTS 1000`,
-        'GET'
+      const response = await this.makeQuickBooksAPIRequest(
+        userId,
+        'query?query=SELECT * FROM Invoice MAXRESULTS 1000'
       );
 
       const invoices = response.QueryResponse?.Invoice || [];
@@ -670,17 +624,13 @@ export class QuickBooksService {
 
   // Sync specific customer by ID
   private async syncSpecificCustomer(userId: string, customerId: string): Promise<void> {
-    const qb = await this.createQuickBooksClient(userId);
-    
-    return new Promise((resolve, reject) => {
-      qb.getCustomer(customerId, (err: any, customer: QuickBooksCustomer) => {
-        if (err) {
-          console.error('Error fetching customer:', err);
-          return reject(err);
-        }
-        
+    try {
+      const response = await this.makeQuickBooksAPIRequest(userId, `customers/${customerId}`);
+      const customer: QuickBooksCustomer = response.QueryResponse?.Customer?.[0] || response.Customer;
+      
+      if (customer) {
         // Upsert customer in our database
-        storage.createCustomer({
+        await storage.createCustomer({
           userId,
           name: customer.Name,
           companyName: customer.CompanyName || null,
@@ -690,52 +640,48 @@ export class QuickBooksService {
             [customer.BillAddr.Line1, customer.BillAddr.City, customer.BillAddr.CountrySubDivisionCode, customer.BillAddr.PostalCode]
               .filter(Boolean).join(', ') : null,
           quickbooksId: customer.Id
-        }).then(() => resolve()).catch(reject);
-      });
-    });
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing specific customer:', error);
+    }
   }
 
   // Sync specific item by ID
   private async syncSpecificItem(userId: string, itemId: string): Promise<void> {
-    const qb = await this.createQuickBooksClient(userId);
-    
-    return new Promise((resolve, reject) => {
-      qb.getItem(itemId, (err: any, item: QuickBooksItem) => {
-        if (err) {
-          console.error('Error fetching item:', err);
-          return reject(err);
-        }
-        
+    try {
+      const response = await this.makeQuickBooksAPIRequest(userId, `items/${itemId}`);
+      const item: QuickBooksItem = response.QueryResponse?.Item?.[0] || response.Item;
+      
+      if (item) {
         // Upsert product in our database
-        storage.createProduct({
+        await storage.createProduct({
           userId,
           name: item.Name,
           description: item.Description || null,
           unitPrice: item.UnitPrice?.toString() || '0',
-          type: item.Type || 'service',
+          type: item.Type?.toLowerCase() === 'service' ? 'service' : 'product',
           quickbooksId: item.Id
-        }).then(() => resolve()).catch(reject);
-      });
-    });
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing specific item:', error);
+    }
   }
 
   // Sync specific invoice by ID
   private async syncSpecificInvoice(userId: string, invoiceId: string): Promise<void> {
-    const qb = await this.createQuickBooksClient(userId);
-    
-    return new Promise((resolve, reject) => {
-      qb.getInvoice(invoiceId, (err: any, invoice: any) => {
-        if (err) {
-          console.error('Error fetching invoice:', err);
-          return reject(err);
-        }
-        
+    try {
+      const response = await this.makeQuickBooksAPIRequest(userId, `invoices/${invoiceId}`);
+      const invoice = response.QueryResponse?.Invoice?.[0] || response.Invoice;
+      
+      if (invoice) {
         // Process invoice data
-        this.processInvoice(invoice, userId)
-          .then(() => resolve())
-          .catch(reject);
-      });
-    });
+        await this.processInvoice(invoice, userId);
+      }
+    } catch (error) {
+      console.error('Error syncing specific invoice:', error);
+    }
   }
 
   // Handle entity deletions
