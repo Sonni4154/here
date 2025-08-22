@@ -1,6 +1,5 @@
 import axios from 'axios';
 import OAuthClient from 'intuit-oauth';
-import QuickBooks from 'node-quickbooks';
 import crypto from 'crypto';
 import { storage } from '../storage';
 
@@ -210,25 +209,45 @@ export class QuickBooksService {
     }
   }
 
-  // Create QuickBooks client instance with proper authentication
-  private async createQuickBooksClient(userId: string): Promise<any> {
+  // Make authenticated API requests to QuickBooks directly
+  private async makeQuickBooksAPIRequest(userId: string, endpoint: string, method: 'GET' | 'POST' | 'PUT' = 'GET', data?: any): Promise<any> {
     const integration = await storage.getIntegration(userId, 'quickbooks');
     if (!integration || !integration.isActive) {
       throw new Error('QuickBooks integration not found or inactive');
     }
 
     const accessToken = await this.getValidAccessToken(userId);
+    const realmId = integration.realmId;
     
-    return new QuickBooks(
-      this.clientId,
-      this.clientSecret,
-      accessToken,
-      false, // No token secret needed for OAuth 2.0
-      integration.realmId || '',
-      this.environment === 'sandbox',
-      true, // Enable debugging
-      4 // Minor version
-    );
+    if (!realmId) {
+      throw new Error('QuickBooks realm ID not found');
+    }
+
+    const url = `${this.baseUrl}/v3/company/${realmId}/${endpoint}`;
+    
+    try {
+      const response = await axios({
+        method,
+        url,
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        data,
+        timeout: 30000
+      });
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('QuickBooks API request failed:', {
+        endpoint,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      throw new Error(`QuickBooks API request failed: ${error.message}`);
+    }
   }
 
   // Get valid access token (refresh if needed)
@@ -313,26 +332,9 @@ export class QuickBooksService {
 
   // Sync customers from QuickBooks
   async syncCustomers(userId: string): Promise<void> {
-    const accessToken = await this.getValidAccessToken(userId);
-    const integration = await storage.getIntegration(userId, 'quickbooks');
-    const realmId = integration?.realmId;
-
-    if (!realmId) {
-      throw new Error('QuickBooks realm ID not found');
-    }
-
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/v3/company/${realmId}/query?query=SELECT * FROM Customer MAXRESULTS 1000`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-
-      const customers: QuickBooksCustomer[] = response.data.QueryResponse?.Customer || [];
+      const response = await this.makeQuickBooksAPIRequest(userId, 'query?query=SELECT * FROM Customer MAXRESULTS 1000');
+      const customers: QuickBooksCustomer[] = response.QueryResponse?.Customer || [];
 
       for (const qbCustomer of customers) {
         // Create new customer
@@ -358,20 +360,13 @@ export class QuickBooksService {
       });
 
     } catch (error: any) {
-      console.error('Error syncing customers:', error.response?.data || error.message);
+      console.error('Error syncing customers:', error.message);
       throw new Error('Failed to sync customers from QuickBooks');
     }
   }
 
   // Sync products/items from QuickBooks
   async syncItems(userId: string): Promise<void> {
-    const accessToken = await this.getValidAccessToken(userId);
-    const integration = await storage.getIntegration(userId, 'quickbooks');
-    const realmId = integration?.realmId;
-
-    if (!realmId) {
-      throw new Error('QuickBooks realm ID not found');
-    }
 
     try {
       const response = await axios.get(

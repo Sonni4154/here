@@ -28,6 +28,7 @@ The Internal Dashboard is a comprehensive business management platform for Marin
 - ✓ **PERFORMANCE**: Pages now populate correctly with optimized database queries
 - ✓ **DATABASE MIGRATION**: Updated DATABASE_URL to correct production database
 - ✓ **QUICKBOOKS SERVICES CLEANUP**: Removed conflicting old OAuth 1.0 service, fixed "refresh_expires_at" error
+- ✓ **QUICKBOOKS LIBRARY MODERNIZATION**: Replaced problematic node-quickbooks@2.0.46 with direct API calls, permanently fixed QBToken errors
 - ⚠️ **PENDING**: Environment variable refresh needed for new database connection
 
 ## User Preferences
