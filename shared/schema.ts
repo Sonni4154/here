@@ -270,7 +270,7 @@ export const products = pgTable("products", {
   quickbooksId: varchar("quickbooks_id").unique(),
   name: text("name").notNull(),
   description: text("description"),
-  type: varchar("type").notNull(), // 'product' or 'service'
+  type: varchar("type").notNull(), // 'product', 'service', or 'material'
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
   qtyOnHand: integer("qty_on_hand"),
   active: boolean("active").default(true),

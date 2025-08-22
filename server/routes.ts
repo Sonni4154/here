@@ -390,11 +390,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/customers', async (req: any, res) => {
     try {
       const userId = getUserId(req) || 'dev_user_123';
-      const customers = await storage.getCustomers(userId);
-      res.json(customers);
+      const { search } = req.query;
+      
+      if (search && typeof search === 'string') {
+        // Search customers by name, email, or company
+        const searchQuery = search.toLowerCase();
+        const allCustomers = await storage.getCustomers(userId);
+        const filtered = allCustomers.filter(c => 
+          c.name?.toLowerCase().includes(searchQuery) ||
+          c.email?.toLowerCase().includes(searchQuery) ||
+          c.companyName?.toLowerCase().includes(searchQuery)
+        );
+        res.json(filtered);
+      } else {
+        const customers = await storage.getCustomers(userId);
+        res.json(customers);
+      }
     } catch (error) {
       console.error("Error fetching customers:", error);
       res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.get('/api/customers/:id', async (req: any, res) => {
+    try {
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  app.put('/api/customers/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const updatedCustomer = await storage.updateCustomer(id, updates);
+      res.json(updatedCustomer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
+  // Customer notes routes
+  app.get('/api/customers/:customerId/notes', async (req, res) => {
+    try {
+      const notes = await storage.getCustomerNotes(req.params.customerId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching customer notes:", error);
+      res.status(500).json({ message: "Failed to fetch customer notes" });
+    }
+  });
+
+  app.post('/api/customers/:customerId/notes', async (req: any, res) => {
+    try {
+      const userId = getUserId(req) || 'dev_user_123';
+      const { content, isPrivate } = req.body;
+      const note = await storage.createCustomerNote({
+        customerId: req.params.customerId,
+        userId,
+        content,
+        isPrivate: isPrivate || false
+      });
+      res.json(note);
+    } catch (error) {
+      console.error("Error creating customer note:", error);
+      res.status(500).json({ message: "Failed to create customer note" });
     }
   });
 

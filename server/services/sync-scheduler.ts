@@ -232,7 +232,7 @@ export class SyncScheduler {
     return day >= 1 && day <= 5 && hour >= 7 && hour < 19;
   }
 
-  private async executeSyncForProvider(provider: string): Promise<void> {
+  async executeSyncForProvider(provider: string): Promise<void> {
     const userId = 'dev_user_123'; // Default admin user
     
     switch (provider) {

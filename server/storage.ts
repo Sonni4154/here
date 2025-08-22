@@ -272,6 +272,11 @@ export class DatabaseStorage implements IStorage {
     return customer;
   }
 
+  async getCustomerByQuickbooksId(quickbooksId: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.quickbooksId, quickbooksId));
+    return customer;
+  }
+
   async createCustomer(customer: InsertCustomer): Promise<Customer> {
     const [newCustomer] = await db.insert(customers).values(customer).returning();
     return newCustomer;
@@ -290,6 +295,22 @@ export class DatabaseStorage implements IStorage {
     await db.delete(customers).where(eq(customers.id, id));
   }
 
+  // Customer notes operations
+  async getCustomerNotes(customerId: string): Promise<CustomerNote[]> {
+    const { customerNotes } = await import("@shared/schema");
+    return await db
+      .select()
+      .from(customerNotes)
+      .where(eq(customerNotes.customerId, customerId))
+      .orderBy(desc(customerNotes.createdAt));
+  }
+
+  async createCustomerNote(note: InsertCustomerNote): Promise<CustomerNote> {
+    const { customerNotes } = await import("@shared/schema");
+    const [newNote] = await db.insert(customerNotes).values(note).returning();
+    return newNote;
+  }
+
   // Product operations
   async getProducts(userId: string): Promise<Product[]> {
     // For development, return all products regardless of userId since imported data doesn't have userId assigned
@@ -298,6 +319,11 @@ export class DatabaseStorage implements IStorage {
 
   async getProduct(id: string): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async getProductByQuickbooksId(quickbooksId: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.quickbooksId, quickbooksId));
     return product;
   }
 

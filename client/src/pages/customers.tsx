@@ -38,6 +38,9 @@ export default function Customers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [noteContent, setNoteContent] = useState("");
 
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -79,6 +82,34 @@ export default function Customers() {
     },
     onError: (error: any) => {
       toast({ title: "Failed to delete customer", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateCustomer = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CustomerFormData }) => 
+      apiRequest(`/api/customers/${id}`, "PUT", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setIsEditDialogOpen(false);
+      setEditingCustomer(null);
+      form.reset();
+      toast({ title: "Customer updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update customer", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const createNote = useMutation({
+    mutationFn: ({ customerId, content, isPrivate }: { customerId: string; content: string; isPrivate: boolean }) => 
+      apiRequest(`/api/customers/${customerId}/notes`, "POST", { content, isPrivate }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers", selectedCustomer?.id, "notes"] });
+      setNoteContent("");
+      toast({ title: "Note added successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to add note", description: error.message, variant: "destructive" });
     }
   });
 
@@ -400,7 +431,26 @@ export default function Customers() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); }}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { 
+                          e.stopPropagation();
+                          setEditingCustomer(customer);
+                          form.reset({
+                            name: customer.name,
+                            companyName: customer.companyName || "",
+                            email: customer.email || "",
+                            phone: customer.phone || "",
+                            address: customer.address || "",
+                            city: customer.city || "",
+                            state: customer.state || "",
+                            zipCode: customer.zipCode || "",
+                            notes: customer.notes || ""
+                          });
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button 
@@ -610,16 +660,123 @@ export default function Customers() {
                     <CardTitle className="text-lg">Customer Notes</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {selectedCustomer.notes ? (
-                      <p className="text-muted-foreground whitespace-pre-wrap">{selectedCustomer.notes}</p>
-                    ) : (
-                      <p className="text-muted-foreground italic">No notes available</p>
-                    )}
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <Textarea
+                          placeholder="Add a note..."
+                          value={noteContent}
+                          onChange={(e) => setNoteContent(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button
+                          onClick={() => {
+                            if (noteContent.trim()) {
+                              createNote.mutate({
+                                customerId: selectedCustomer.id,
+                                content: noteContent,
+                                isPrivate: false
+                              });
+                            }
+                          }}
+                          disabled={!noteContent.trim() || createNote.isPending}
+                        >
+                          Add Note
+                        </Button>
+                      </div>
+                      {selectedCustomer.notes && (
+                        <div className="p-4 bg-muted rounded-lg">
+                          <p className="text-sm font-medium mb-1">General Notes</p>
+                          <p className="text-sm whitespace-pre-wrap">{selectedCustomer.notes}</p>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Customer Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogDescription>
+              Update customer information
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((data) => {
+              if (editingCustomer) {
+                updateCustomer.mutate({ id: editingCustomer.id, data });
+              }
+            })} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Customer Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Full name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Company name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateCustomer.isPending}>
+                  {updateCustomer.isPending ? "Updating..." : "Update Customer"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

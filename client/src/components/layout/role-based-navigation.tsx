@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   LayoutDashboard, 
   Clock, 
@@ -18,7 +19,8 @@ import {
   Upload,
   ChevronDown,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -77,6 +79,54 @@ const adminNavigationItems = [
 
 interface RoleBasedNavigationProps {
   userRole?: string;
+}
+
+// QuickBooks Sync Status Indicator Component
+function QuickBooksSyncIndicator() {
+  const { data: integrations = [] } = useQuery({
+    queryKey: ["/api/integrations"],
+    refetchInterval: 60000 // Refresh every minute
+  });
+
+  const { data: syncStatus } = useQuery({
+    queryKey: ["/api/sync/status"],
+    refetchInterval: 30000 // Refresh every 30 seconds
+  });
+
+  const quickbooksIntegration = (integrations as any[]).find((int: any) => int.provider === 'quickbooks');
+  const isConnected = quickbooksIntegration?.isActive;
+  const lastSyncAt = quickbooksIntegration?.lastSyncAt;
+  const isSyncing = syncStatus?.syncInProgress;
+
+  const getStatusColor = () => {
+    if (!isConnected) return "bg-red-500";
+    if (isSyncing) return "bg-yellow-500 animate-pulse";
+    return "bg-green-500";
+  };
+
+  const getStatusText = () => {
+    if (!isConnected) return "QuickBooks Not Connected";
+    if (isSyncing) return "Syncing...";
+    if (lastSyncAt) {
+      const lastSync = new Date(lastSyncAt);
+      const minutesAgo = Math.floor((Date.now() - lastSync.getTime()) / 60000);
+      if (minutesAgo < 1) return "QuickBooks Synced Just Now";
+      if (minutesAgo < 60) return `QuickBooks Synced ${minutesAgo}m ago`;
+      const hoursAgo = Math.floor(minutesAgo / 60);
+      return `QuickBooks Synced ${hoursAgo}h ago`;
+    }
+    return "QuickBooks Connected";
+  };
+
+  return (
+    <div className="flex items-center space-x-2">
+      <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
+      <span className="text-xs text-zinc-400">{getStatusText()}</span>
+      {isSyncing && (
+        <RefreshCw className="w-3 h-3 text-zinc-400 animate-spin" />
+      )}
+    </div>
+  );
 }
 
 export default function RoleBasedNavigation({ userRole = "admin" }: RoleBasedNavigationProps) {
@@ -181,6 +231,11 @@ export default function RoleBasedNavigation({ userRole = "admin" }: RoleBasedNav
               })}
             </div>
           )}
+        </div>
+
+        {/* QuickBooks Sync Status */}
+        <div className="px-4 py-3 border-t border-zinc-800">
+          <QuickBooksSyncIndicator />
         </div>
 
         {/* User Info & Logout */}

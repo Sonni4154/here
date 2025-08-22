@@ -336,9 +336,13 @@ export class QuickBooksService {
       const response = await this.makeQuickBooksAPIRequest(userId, 'query?query=SELECT * FROM Customer MAXRESULTS 1000');
       const customers: QuickBooksCustomer[] = response.QueryResponse?.Customer || [];
 
+      let created = 0, updated = 0, skipped = 0;
+
       for (const qbCustomer of customers) {
-        // Create new customer
-        const customer = await storage.createCustomer({
+        // Check if customer already exists by QuickBooks ID
+        const existingCustomer = await storage.getCustomerByQuickbooksId(qbCustomer.Id);
+        
+        const customerData = {
           userId,
           name: qbCustomer.Name,
           companyName: qbCustomer.CompanyName || null,
@@ -348,16 +352,33 @@ export class QuickBooksService {
             [qbCustomer.BillAddr.Line1, qbCustomer.BillAddr.City, qbCustomer.BillAddr.CountrySubDivisionCode, qbCustomer.BillAddr.PostalCode]
               .filter(Boolean).join(', ') : null,
           quickbooksId: qbCustomer.Id
-        });
+        };
+        
+        if (existingCustomer) {
+          // Update existing customer
+          await storage.updateCustomer(existingCustomer.id, customerData);
+          updated++;
+        } else {
+          // Create new customer
+          await storage.createCustomer(customerData);
+          created++;
+        }
       }
 
-      // Log sync activity
+      // Log sync activity with detailed stats
       await storage.createActivityLog({
         userId,
         type: 'quickbooks_sync',
-        description: `Synced ${customers.length} customers from QuickBooks`,
-        metadata: { customerCount: customers.length }
+        description: `QuickBooks sync: ${created} new, ${updated} updated, ${skipped} skipped customers`,
+        metadata: { 
+          customerCount: customers.length,
+          created,
+          updated,
+          skipped
+        }
       });
+      
+      console.log(`✅ Customer sync complete: ${created} created, ${updated} updated, ${skipped} skipped`);
 
     } catch (error: any) {
       console.error('Error syncing customers:', error.message);
@@ -371,25 +392,55 @@ export class QuickBooksService {
       const response = await this.makeQuickBooksAPIRequest(userId, 'query?query=SELECT * FROM Item MAXRESULTS 1000');
       const items: QuickBooksItem[] = response.QueryResponse?.Item || [];
 
+      let created = 0, updated = 0, skipped = 0;
+
       for (const qbItem of items) {
-        // Create new product
-        const product = await storage.createProduct({
+        // Check if product already exists by QuickBooks ID
+        const existingProduct = await storage.getProductByQuickbooksId(qbItem.Id);
+        
+        // Determine product type: service, material (non-inventory), or product
+        let productType = 'product';
+        if (qbItem.Type?.toLowerCase() === 'service') {
+          productType = 'service';
+        } else if (qbItem.Type?.toLowerCase() === 'noninventory' || qbItem.Type?.toLowerCase() === 'non-inventory') {
+          productType = 'material';
+        }
+        
+        const productData = {
           userId,
           name: qbItem.Name,
           description: qbItem.Description || null,
           unitPrice: qbItem.UnitPrice?.toString() || '0.00',
-          type: qbItem.Type.toLowerCase() === 'service' ? 'service' : 'product',
-          quickbooksId: qbItem.Id
-        });
+          type: productType,
+          quickbooksId: qbItem.Id,
+          qtyOnHand: qbItem.QtyOnHand || null
+        };
+        
+        if (existingProduct) {
+          // Update existing product
+          await storage.updateProduct(existingProduct.id, productData);
+          updated++;
+        } else {
+          // Create new product
+          await storage.createProduct(productData);
+          created++;
+        }
       }
 
-      // Log sync activity
+      // Log sync activity with detailed stats
       await storage.createActivityLog({
         userId,
         type: 'quickbooks_sync',
-        description: `Synced ${items.length} items from QuickBooks`,
-        metadata: { itemCount: items.length }
+        description: `QuickBooks sync: ${created} new, ${updated} updated, ${skipped} skipped items`,
+        metadata: { 
+          itemCount: items.length,
+          created,
+          updated,
+          skipped
+        }
       });
+      
+      console.log(`✅ Item sync complete: ${created} created, ${updated} updated, ${skipped} skipped`);
 
     } catch (error: any) {
       console.error('Error syncing items:', error.response?.data || error.message);

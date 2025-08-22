@@ -147,9 +147,13 @@ export default function Products() {
   const isQuickBooksConnected = quickbooksIntegration?.isActive;
 
   const getTypeBadge = (type: string) => {
-    return type === "service" 
-      ? <Badge variant="outline">Service</Badge>
-      : <Badge variant="secondary">Product</Badge>;
+    if (type === "service") {
+      return <Badge variant="outline">Service</Badge>;
+    } else if (type === "material") {
+      return <Badge className="bg-amber-500/10 text-amber-600">Material</Badge>;
+    } else {
+      return <Badge variant="secondary">Product</Badge>;
+    }
   };
 
   const onSubmit = (data: ProductFormData) => {
