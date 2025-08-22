@@ -27,6 +27,7 @@ The Internal Dashboard is a comprehensive business management platform for Marin
 - ✓ **FINAL DEDUPLICATION**: Removed 11 additional duplicates by email/phone, final count: 449 unique customers
 - ✓ **PERFORMANCE**: Pages now populate correctly with optimized database queries
 - ✓ **DATABASE MIGRATION**: Updated DATABASE_URL to correct production database
+- ✓ **QUICKBOOKS SERVICES CLEANUP**: Removed conflicting old OAuth 1.0 service, fixed "refresh_expires_at" error
 - ⚠️ **PENDING**: Environment variable refresh needed for new database connection
 
 ## User Preferences
