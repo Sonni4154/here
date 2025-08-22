@@ -667,6 +667,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // QuickBooks Auth Page Endpoint - Returns auth URL for frontend
+  app.get('/api/quickbooks/auth', async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || 'dev_user_123';
+      const quickbooksService = new QuickBooksService();
+      const authUrl = quickbooksService.getAuthorizationUrl(userId);
+      res.json({ authUrl });
+    } catch (error: any) {
+      console.error('Failed to generate auth URL:', error);
+      res.status(500).json({ error: 'Failed to generate authorization URL' });
+    }
+  });
+
+  // Refresh QuickBooks tokens endpoint
+  app.post('/api/quickbooks/refresh', async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || 'dev_user_123';
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      
+      if (!integration || !integration.refreshToken) {
+        return res.status(400).json({ 
+          error: 'No valid refresh token found. Please reauthorize QuickBooks.' 
+        });
+      }
+
+      const quickbooksService = new QuickBooksService();
+      const tokens = await quickbooksService.refreshTokens(integration.refreshToken);
+      
+      // Update integration with new tokens
+      await storage.updateIntegration(integration.id, {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresAt: new Date(Date.now() + (tokens.expires_in * 1000)),
+        updatedAt: new Date(),
+        isActive: true
+      });
+
+      console.log('✅ QuickBooks tokens refreshed successfully');
+      res.json({ success: true, message: 'Tokens refreshed successfully' });
+    } catch (error: any) {
+      console.error('❌ Failed to refresh QuickBooks tokens:', error);
+      res.status(500).json({ 
+        error: 'Failed to refresh tokens', 
+        details: error.message 
+      });
+    }
+  });
+
+  // Test QuickBooks connection
+  app.get('/api/quickbooks/test', async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || 'dev_user_123';
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      
+      if (!integration || !integration.accessToken) {
+        return res.status(401).json({ error: 'QuickBooks not connected' });
+      }
+
+      const quickbooksService = new QuickBooksService();
+      const companyInfo = await quickbooksService.getCompanyInfo(
+        integration.accessToken, 
+        integration.realmId
+      );
+      
+      res.json({ 
+        success: true, 
+        companyName: companyInfo.CompanyName,
+        companyId: integration.realmId 
+      });
+    } catch (error: any) {
+      console.error('Connection test failed:', error);
+      res.status(500).json({ error: 'Connection test failed' });
+    }
+  });
+
+  // Disconnect QuickBooks
+  app.post('/api/quickbooks/disconnect', async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || 'dev_user_123';
+      const integration = await storage.getIntegration(userId, 'quickbooks');
+      
+      if (integration) {
+        await storage.updateIntegration(integration.id, {
+          isActive: false,
+          accessToken: null,
+          refreshToken: null,
+          expiresAt: null,
+          updatedAt: new Date()
+        });
+      }
+      
+      res.json({ success: true, message: 'QuickBooks disconnected' });
+    } catch (error: any) {
+      console.error('Failed to disconnect:', error);
+      res.status(500).json({ error: 'Failed to disconnect QuickBooks' });
+    }
+  });
+
   // API endpoint to exchange authorization code for tokens
   app.post('/api/quickbooks/exchange-code', async (req, res) => {
     try {

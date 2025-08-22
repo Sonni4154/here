@@ -108,6 +108,46 @@ export class QuickBooksService {
     });
   }
 
+  // Refresh tokens using refresh token
+  async refreshTokens(refreshToken: string): Promise<QuickBooksTokens> {
+    try {
+      console.log('🔄 Attempting to refresh QuickBooks tokens');
+      
+      const tokenResponse = await this.oauthClient.refreshUsingToken(refreshToken);
+      
+      console.log('✅ Tokens refreshed successfully');
+      return {
+        access_token: tokenResponse.getToken().access_token,
+        refresh_token: tokenResponse.getToken().refresh_token,
+        token_type: tokenResponse.getToken().token_type || 'Bearer',
+        expires_in: tokenResponse.getToken().expires_in || 3600,
+        scope: tokenResponse.getToken().scope || '',
+        realmId: tokenResponse.getToken().realmId || ''
+      };
+    } catch (error: any) {
+      console.error('❌ Failed to refresh tokens:', error);
+      throw new Error(`Token refresh failed: ${error.message}`);
+    }
+  }
+
+  // Get company info to test connection
+  async getCompanyInfo(accessToken: string, realmId: string): Promise<any> {
+    try {
+      const url = `${this.baseUrl}/v3/company/${realmId}/companyinfo/${realmId}`;
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data.CompanyInfo;
+    } catch (error: any) {
+      console.error('Failed to get company info:', error.response?.data || error);
+      throw new Error('Failed to get company information');
+    }
+  }
+
   // Exchange authorization code for tokens using Intuit OAuth Client
   async exchangeCodeForTokens(code: string, redirectUri: string, realmId: string): Promise<QuickBooksTokens> {
     try {

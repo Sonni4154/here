@@ -30,6 +30,7 @@ import TeamDashboard from "@/pages/team-dashboard";
 import PendingApprovals from "@/pages/pending-approvals";
 import SyncSchedulerPage from "@/pages/sync-scheduler";
 import PunchClockLogsPage from "@/pages/punch-clock-logs";
+import QuickBooksAuth from "@/pages/quickbooks-auth";
 import { Suspense } from "react";
 import { RefreshCw } from "lucide-react";
 import { RouterErrorBoundary } from "@/components/router/error-boundary";
@@ -176,6 +177,10 @@ function Router() {
         
         <Route path="/punch-clock-logs">
           {() => <ProtectedRoute component={PunchClockLogsPage} />}
+        </Route>
+        
+        <Route path="/quickbooks-auth">
+          {() => <ProtectedRoute component={QuickBooksAuth} />}
         </Route>
         
         <Route path="/pending-approvals">
