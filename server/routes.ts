@@ -765,6 +765,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database test endpoint
+  app.get('/api/database/test', async (req: any, res) => {
+    try {
+      // Test database connection by running a simple query
+      const testResult = await storage.testConnection();
+      
+      res.json({
+        success: true,
+        message: 'Database connection successful',
+        database: process.env.PGDATABASE || 'unknown',
+        host: process.env.PGHOST || 'unknown',
+        port: process.env.PGPORT || 'unknown',
+        user: process.env.PGUSER || 'unknown',
+        timestamp: new Date().toISOString(),
+        ...testResult
+      });
+    } catch (error: any) {
+      console.error('Database test failed:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Database connection failed',
+        details: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // API endpoint to exchange authorization code for tokens
   app.post('/api/quickbooks/exchange-code', async (req, res) => {
     try {

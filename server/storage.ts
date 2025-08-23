@@ -213,6 +213,9 @@ export interface IStorage {
   // Email Notifications operations
   createEmailNotification(notification: InsertEmailNotification): Promise<EmailNotification>;
   getPendingEmailNotifications(): Promise<EmailNotification[]>;
+  
+  // Database test connection
+  testConnection(): Promise<{ tablesCount: number; usersCount: number; customersCount: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1126,6 +1129,32 @@ export class DatabaseStorage implements IStorage {
       } catch (error) {
         console.log(`Sample approval ${approval.id} may already exist`);
       }
+    }
+  }
+
+  // Test database connection
+  async testConnection(): Promise<{ tablesCount: number; usersCount: number; customersCount: number }> {
+    try {
+      const { sql } = await import('drizzle-orm');
+      
+      // Test basic query
+      const tablesResult = await db.execute(sql`
+        SELECT count(*) as count 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+      `);
+      
+      const usersResult = await db.select({ count: sql<number>`count(*)` }).from(users);
+      const customersResult = await db.select({ count: sql<number>`count(*)` }).from(customers);
+      
+      return {
+        tablesCount: Number(tablesResult.rows[0]?.count || 0),
+        usersCount: Number(usersResult[0]?.count || 0),
+        customersCount: Number(customersResult[0]?.count || 0)
+      };
+    } catch (error) {
+      console.error('Database test connection failed:', error);
+      throw error;
     }
   }
 }
