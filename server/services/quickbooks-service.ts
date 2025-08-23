@@ -159,26 +159,21 @@ export class QuickBooksService {
         clientIdLength: this.clientId.length
       });
 
-      // Create a new OAuth client with the correct redirect URI for token exchange
-      const tokenClient = new OAuthClient({
-        clientId: this.clientId,
-        clientSecret: this.clientSecret,
-        environment: this.environment,
-        redirectUri: redirectUri
-      });
+      // Use the main OAuth client to exchange the code
+      // This ensures consistency with the authorization flow
+      const authResponse = await this.oauthClient.createToken(code);
       
-      const authResponse = await tokenClient.createToken(code);
-      
-      console.log('OAuth Response:', {
+      console.log('✅ OAuth Response received:', {
         hasToken: !!authResponse.token,
         tokenType: authResponse.token?.token_type,
         hasAccessToken: !!authResponse.token?.access_token,
         hasRefreshToken: !!authResponse.token?.refresh_token,
-        realmId: authResponse.token?.realmId || realmId
+        realmId: authResponse.token?.realmId || realmId,
+        expiresIn: authResponse.token?.expires_in
       });
 
       if (!authResponse.token || !authResponse.token.access_token) {
-        console.error('Invalid token response:', authResponse);
+        console.error('❌ Invalid token response:', authResponse);
         throw new Error('No valid token received from QuickBooks');
       }
 

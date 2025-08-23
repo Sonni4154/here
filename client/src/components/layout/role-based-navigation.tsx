@@ -20,7 +20,9 @@ import {
   ChevronDown,
   ChevronRight,
   MessageSquare,
-  RefreshCw
+  RefreshCw,
+  Database,
+  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -82,8 +84,8 @@ interface RoleBasedNavigationProps {
   userRole?: string;
 }
 
-// QuickBooks Sync Status Indicator Component
-function QuickBooksSyncIndicator() {
+// System Status Indicators Component
+function SystemStatusIndicators() {
   const { data: integrations = [] } = useQuery({
     queryKey: ["/api/integrations"],
     refetchInterval: 60000 // Refresh every minute
@@ -94,38 +96,53 @@ function QuickBooksSyncIndicator() {
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
+  // Database status query
+  const { data: dbStatus, isError: dbError } = useQuery({
+    queryKey: ["/api/customers"],
+    refetchInterval: 120000, // Refresh every 2 minutes
+    retry: 1,
+    select: () => true // Just return true if the query succeeds
+  });
+
   const quickbooksIntegration = (integrations as any[]).find((int: any) => int.provider === 'quickbooks');
-  const isConnected = quickbooksIntegration?.isActive;
+  const isQBConnected = quickbooksIntegration?.isActive;
   const lastSyncAt = quickbooksIntegration?.lastSyncAt;
   const isSyncing = syncStatus?.syncInProgress;
 
-  const getStatusColor = () => {
-    if (!isConnected) return "bg-red-500";
+  const getQBStatusColor = () => {
+    if (!isQBConnected) return "bg-red-500";
     if (isSyncing) return "bg-yellow-500 animate-pulse";
     return "bg-green-500";
   };
 
-  const getStatusText = () => {
-    if (!isConnected) return "QuickBooks Not Connected";
-    if (isSyncing) return "Syncing...";
-    if (lastSyncAt) {
-      const lastSync = new Date(lastSyncAt);
-      const minutesAgo = Math.floor((Date.now() - lastSync.getTime()) / 60000);
-      if (minutesAgo < 1) return "QuickBooks Synced Just Now";
-      if (minutesAgo < 60) return `QuickBooks Synced ${minutesAgo}m ago`;
-      const hoursAgo = Math.floor(minutesAgo / 60);
-      return `QuickBooks Synced ${hoursAgo}h ago`;
-    }
-    return "QuickBooks Connected";
+  const getDBStatusColor = () => {
+    if (dbError) return "bg-red-500";
+    if (dbStatus) return "bg-green-500";
+    return "bg-yellow-500";
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-      <span className="text-xs text-zinc-400">{getStatusText()}</span>
-      {isSyncing && (
-        <RefreshCw className="w-3 h-3 text-zinc-400 animate-spin" />
-      )}
+    <div className="space-y-2">
+      {/* QuickBooks Status */}
+      <div className="flex items-center space-x-2">
+        <DollarSign className="w-3 h-3 text-zinc-400" />
+        <div className={`w-2 h-2 rounded-full ${getQBStatusColor()}`} />
+        <span className="text-xs text-zinc-400 truncate">
+          QuickBooks {isQBConnected ? (isSyncing ? "Syncing" : "Connected") : "Disconnected"}
+        </span>
+        {isSyncing && (
+          <RefreshCw className="w-3 h-3 text-zinc-400 animate-spin" />
+        )}
+      </div>
+      
+      {/* Database Status */}
+      <div className="flex items-center space-x-2">
+        <Database className="w-3 h-3 text-zinc-400" />
+        <div className={`w-2 h-2 rounded-full ${getDBStatusColor()}`} />
+        <span className="text-xs text-zinc-400 truncate">
+          Database {dbError ? "Error" : dbStatus ? "Connected" : "Checking"}
+        </span>
+      </div>
     </div>
   );
 }
@@ -234,9 +251,9 @@ export default function RoleBasedNavigation({ userRole = "admin" }: RoleBasedNav
           )}
         </div>
 
-        {/* QuickBooks Sync Status */}
+        {/* System Status Indicators */}
         <div className="px-4 py-3 border-t border-zinc-800">
-          <QuickBooksSyncIndicator />
+          <SystemStatusIndicators />
         </div>
 
         {/* User Info & Logout */}

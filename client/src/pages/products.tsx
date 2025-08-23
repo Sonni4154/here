@@ -134,7 +134,20 @@ export default function Products() {
   const filteredProducts = (products as any[]).filter((product: any) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (product.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === "all" || product.type === selectedType;
+    
+    // Handle QuickBooks type mapping for filtering
+    let productType = "product"; // default
+    const qbType = product.quickbooksType || product.type;
+    
+    if (qbType === "service" || qbType === "Service") {
+      productType = "service";
+    } else if (qbType === "non-inventory" || qbType === "NonInventory") {
+      productType = "material";
+    } else if (qbType === "inventory" || qbType === "Inventory") {
+      productType = "product";
+    }
+    
+    const matchesType = selectedType === "all" || productType === selectedType;
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     
     return matchesSearch && matchesType && matchesCategory;
@@ -146,12 +159,18 @@ export default function Products() {
   const quickbooksIntegration = (integrations as any[]).find((int: any) => int.provider === 'quickbooks');
   const isQuickBooksConnected = quickbooksIntegration?.isActive;
 
-  const getTypeBadge = (type: string) => {
-    if (type === "service") {
-      return <Badge variant="outline">Service</Badge>;
-    } else if (type === "material") {
-      return <Badge className="bg-amber-500/10 text-amber-600">Material</Badge>;
+  const getTypeBadge = (product: any) => {
+    // Check QuickBooks type first, then fall back to local type
+    const qbType = product.quickbooksType || product.type;
+    
+    if (qbType === "service" || qbType === "Service") {
+      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Service</Badge>;
+    } else if (qbType === "non-inventory" || qbType === "NonInventory") {
+      return <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">Material</Badge>;
+    } else if (qbType === "inventory" || qbType === "Inventory" || qbType === "product") {
+      return <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">Product</Badge>;
     } else {
+      // Default fallback
       return <Badge variant="secondary">Product</Badge>;
     }
   };
@@ -167,40 +186,6 @@ export default function Products() {
         <p className="text-muted-foreground mt-1">Manage your catalog with QuickBooks integration</p>
       </div>
 
-      {/* QuickBooks Integration Status */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className={`w-3 h-3 rounded-full ${isQuickBooksConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <div>
-                <p className="font-medium">
-                  QuickBooks Integration {isQuickBooksConnected ? 'Connected' : 'Not Connected'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isQuickBooksConnected 
-                    ? 'Sync products and services with QuickBooks'
-                    : 'Connect to QuickBooks to sync product catalog'
-                  }
-                </p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              {isQuickBooksConnected && (
-                <Button
-                  onClick={() => syncQuickBooks.mutate()}
-                  disabled={syncQuickBooks.isPending}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Sync Items
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Search and Filters */}
       <Card className="mb-6">
@@ -226,6 +211,7 @@ export default function Products() {
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="product">Products</SelectItem>
+                <SelectItem value="material">Materials</SelectItem>
                 <SelectItem value="service">Services</SelectItem>
               </SelectContent>
             </Select>
@@ -409,7 +395,7 @@ export default function Products() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3 className="text-lg font-semibold text-foreground">{product.name}</h3>
-                        {getTypeBadge(product.type)}
+                        {getTypeBadge(product)}
                         {product.category && (
                           <Badge variant="outline" className="text-xs">
                             {product.category}

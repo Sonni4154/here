@@ -1,0 +1,152 @@
+025-08-22 23:18:43.41
+bac0e20b
+User
+❌ Error exchanging code for tokens: {
+2025-08-22 23:18:43.41
+bac0e20b
+User
+message: 'Request failed with status code 400',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+status: 400,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+statusText: undefined,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+data: undefined,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+authResponse: AuthResponse {
+2025-08-22 23:18:43.41
+bac0e20b
+User
+token: Token {
+2025-08-22 23:18:43.41
+bac0e20b
+User
+realmId: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+token_type: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+access_token: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+refresh_token: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+expires_in: 0,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+x_refresh_token_expires_in: 0,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+id_token: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+latency: 60000,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+createdAt: 1755929923212
+2025-08-22 23:18:43.41
+bac0e20b
+User
+},
+2025-08-22 23:18:43.41
+bac0e20b
+User
+response: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+body: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+json: null,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+intuit_tid: ''
+2025-08-22 23:18:43.41
+bac0e20b
+User
+},
+2025-08-22 23:18:43.41
+bac0e20b
+User
+intuit_tid: '',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+code: 'XAB11755930522WJ3D5T...',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+redirectUri: 'https://www.wemakemarin.com/quickbooks/callback'
+2025-08-22 23:18:43.41
+bac0e20b
+User
+}
+2025-08-22 23:18:43.41
+bac0e20b
+User
+OAuth Client environment: production
+2025-08-22 23:18:43.41
+bac0e20b
+User
+OAuth Client ID: ABsZIbsFlA...
+2025-08-22 23:18:43.41
+bac0e20b
+User
+❌ Token exchange failed: {
+2025-08-22 23:18:43.41
+bac0e20b
+User
+message: 'QuickBooks OAuth Error (400): The authorization code may be invalid or expired. Original error: Request failed with status code 400',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+stack: 'Error: QuickBooks OAuth Error (400): The authorization code may be invalid or expired. Original error: Request failed with status code 400\n' +
+2025-08-22 23:18:43.41
+bac0e20b
+User
+' at QuickBooksService.exchangeCodeForTokens (file:///home/runner/workspace/dist/index.js:1768:19)\n' +
+2025-08-22 23:18:43.41
+bac0e20b
+User
+' at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+2025-08-22 23:18:43.41
+bac0e20b
+User
+' at async file:///home/runner/workspace/dist/index.js:5029:25',
+2025-08-22 23:18:43.41
+bac0e20b
+User
+status: undefined,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+statusText: undefined,
+2025-08-22 23:18:43.41
+bac0e20b
+User
+response: undefined
+2025-08-22 23:18:43.41
+bac0e20b
+User
+}

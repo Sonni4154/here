@@ -587,18 +587,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Integration routes
   app.get('/api/integrations', async (req: any, res) => {
     try {
-      // Mock integration data for development - check if connected via query param
-      const isConnected = req.query.connected === 'true';
-      res.json([
-        {
-          id: 1,
+      const userId = req.user?.claims?.sub || 'dev_user_123';
+      const integrations = await storage.getIntegrations(userId);
+      
+      // Format the response to match expected frontend structure
+      const formattedIntegrations = integrations.map(integration => ({
+        id: integration.id,
+        provider: integration.provider,
+        isActive: integration.isActive,
+        connected: integration.isActive, // For backward compatibility
+        syncStatus: integration.isActive ? 'success' : 'not_connected',
+        lastSyncAt: integration.lastSyncAt?.toISOString() || null,
+        expiresAt: integration.expiresAt?.toISOString() || null,
+        realmId: integration.realmId,
+        created_at: integration.createdAt?.toISOString() || new Date().toISOString()
+      }));
+      
+      // If no QuickBooks integration exists, return default structure
+      if (!formattedIntegrations.find(i => i.provider === 'quickbooks')) {
+        formattedIntegrations.push({
+          id: 'default-qb',
           provider: 'quickbooks',
-          connected: isConnected,
-          syncStatus: isConnected ? 'success' : 'pending',
-          lastSyncAt: isConnected ? new Date().toISOString() : null,
+          isActive: false,
+          connected: false,
+          syncStatus: 'not_connected',
+          lastSyncAt: null,
+          expiresAt: null,
+          realmId: null,
           created_at: new Date().toISOString()
-        }
-      ]);
+        });
+      }
+      
+      res.json(formattedIntegrations);
     } catch (error) {
       console.error("Error fetching integrations:", error);
       res.status(500).json({ message: "Failed to fetch integrations" });
@@ -948,40 +968,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('🎉 Token exchange successful via QuickBooks service!');
         
         // Store the tokens in the database immediately
-        const userId = 'dev_user_123';
-        const existingIntegration = await storage.getIntegration(userId, 'quickbooks');
+        const userId = req.user?.claims?.sub || 'dev_user_123';
         
         // Calculate expiration date
         const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000));
         
-        if (existingIntegration) {
-          await storage.updateIntegration(existingIntegration.id, {
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token || '',
-            expiresAt,
-            companyId: String(realmId),
-            connected: true
-          });
-          console.log('✅ Updated existing QuickBooks integration');
-        } else {
-          await storage.createIntegration({
-            userId: userId,
-            provider: 'quickbooks',
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token || '',
-            expiresAt,
-            companyId: String(realmId),
-            connected: true
-          });
-          console.log('✅ Created new QuickBooks integration');
-        }
+        // Use upsertIntegration to create or update the integration
+        const integrationData = {
+          userId: userId,
+          provider: 'quickbooks',
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token || '',
+          expiresAt,
+          realmId: String(realmId),
+          isActive: true,
+          lastSyncAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        await storage.upsertIntegration(integrationData);
+        console.log('✅ QuickBooks integration stored successfully');
         
         // Log the connection activity
         await storage.createActivityLog({
           userId,
-          type: 'quickbooks_connected',
-          description: 'QuickBooks account successfully connected',
-          metadata: { companyId: String(realmId), provider: 'quickbooks' }
+          action: 'quickbooks_connected',
+          details: 'QuickBooks account successfully connected',
+          metadata: { companyId: String(realmId), provider: 'quickbooks' },
+          createdAt: new Date()
         });
         
         return res.redirect('/settings?qb_success=1');
