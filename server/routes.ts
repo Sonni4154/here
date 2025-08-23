@@ -2611,6 +2611,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Environment variables check endpoint 
+  app.get("/api/env-check", async (req, res) => {
+    const envVars = {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      DATABASE_URL: process.env.DATABASE_URL ? "✓ Set" : "✗ Missing",
+      SESSION_SECRET: process.env.SESSION_SECRET ? "✓ Set" : "✗ Missing", 
+      REPL_ID: process.env.REPL_ID ? "✓ Set" : "✗ Missing",
+      QBO_CLIENT_ID: process.env.QBO_CLIENT_ID ? "✓ Set" : "✗ Missing",
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? "✓ Set" : "✗ Missing",
+      dotenvStatus: "✓ .env file loaded via dotenv.config()"
+    };
+    res.json({ 
+      status: "Environment variables check", 
+      variables: envVars,
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Version endpoint
   app.get('/api/version', (req, res) => {
     res.json({
