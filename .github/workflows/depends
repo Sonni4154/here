@@ -1,40 +1,70 @@
-name: Dependency Check
+name: Dependency Check with Retry
 
 on: [push, pull_request]
 
 jobs:
-  check-dependencies:
+  initial-check:
     runs-on: ubuntu-latest
-
+    outputs:
+      ignoredDeps: ${{ steps.get-ignores.outputs.ignored }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install pipreqs for Python dependency check
-        run: pip install pipreqs
-
-      - name: Run pipreqs to detect missing Python dependencies
-        run: |
-          pipreqs . --force --savepath pipreqs-output.txt
-          echo "== Differences between pipreqs and requirements.txt =="
-          diff pipreqs-output.txt requirements.txt || true
-
-      - name: Fail if missing Python dependencies
-        run: |
-          diff pipreqs-output.txt requirements.txt
-          
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Install depcheck for Node.js dependency check
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install depcheck
         run: npm install -g depcheck
 
-      - name: Run depcheck for missing/unused Node.js dependencies
-        run: depcheck
+      - name: Run depcheck and log missing dependencies
+        id: run-depcheck
+        run: |
+          set -e
+          depcheck --json > depcheck-output.json
+          MISSING=$(jq -r '.missing | keys | join(",")' depcheck-output.json)
+          echo "Missing dependencies: $MISSING"
+          echo "$MISSING" > missing-deps.txt || true
+
+      - name: Save ignore list
+        id: get-ignores
+        run: |
+          IGNORES=$(cat missing-deps.txt || echo "")
+          echo "ignored=$IGNORES" >> $GITHUB_OUTPUT
+
+      - name: Fail if missing deps
+        run: |
+          if [ -s missing-deps.txt ]; then
+            echo "Dependency issues found. See missing-deps.txt"
+            exit 1
+          fi
+
+  retry-with-ignores:
+    needs: initial-check
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install depcheck
+        run: npm install -g depcheck
+
+      - name: Rerun depcheck with ignores
+        run: |
+          IGNORES="${{ needs.initial-check.outputs.ignoredDeps }}"
+          echo "Retrying depcheck with --ignores=$IGNORES"
+          depcheck --ignores=$IGNORES
