@@ -1,0 +1,40 @@
+name: Dependency Check
+
+on: [push, pull_request]
+
+jobs:
+  check-dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pipreqs for Python dependency check
+        run: pip install pipreqs
+
+      - name: Run pipreqs to detect missing Python dependencies
+        run: |
+          pipreqs . --force --savepath pipreqs-output.txt
+          echo "== Differences between pipreqs and requirements.txt =="
+          diff pipreqs-output.txt requirements.txt || true
+
+      - name: Fail if missing Python dependencies
+        run: |
+          diff pipreqs-output.txt requirements.txt
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install depcheck for Node.js dependency check
+        run: npm install -g depcheck
+
+      - name: Run depcheck for missing/unused Node.js dependencies
+        run: depcheck
